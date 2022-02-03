@@ -88,13 +88,22 @@ def filters_to_searchfilter(filters: tuple) -> tgbox.tools.SearchFilter:
     This function will make SearchFilter from
     tuple like ('id=5', 'max_size='1024', ...)
     """
-    sorted_filters = {}
+    include = {}
+    exclude = {}
+    current = 0 # Include
     
     for filter in filters:
-        filter = filter.split('=',1)
-        if filter[0] not in sorted_filters:
-            sorted_filters[filter[0]] = [filter[1]]
+        if filter in ('+i', '++include'):
+            current = 0
+        elif filter in ('+e', '++exclude'):
+            current = 1
         else:
-            sorted_filters[filter[0]].append(filter[1])
+            current_filter = exclude if current else include
+            filter = filter.split('=',1)
 
-    return tgbox.tools.SearchFilter(**sorted_filters)
+            if filter[0] not in current_filter:
+                current_filter[filter[0]] = [filter[1]]
+            else:
+                current_filter[filter[0]].append(filter[1])
+    
+    return tgbox.tools.SearchFilter(**include).exclude(**exclude)
