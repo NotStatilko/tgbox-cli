@@ -6,12 +6,12 @@ from hashlib import sha256
 from asyncio import gather
 
 from ast import literal_eval
-from datetime import datetime
 from pickle import loads, dumps
 
 from base64 import urlsafe_b64encode
 from traceback import format_exception
 from typing import Union, AsyncGenerator
+from datetime import datetime, timedelta
 
 from os import (
     getenv, _exit, 
@@ -25,8 +25,12 @@ from tools import (
 )
 from enlighten import get_manager
 
-
-for color in ['red','cyan','blue','green','white','yellow','magenta','bright_black']:
+COLORS = [
+    'red','cyan','blue','green',
+    'white','yellow','magenta',
+    'bright_black','bright_red'
+]
+for color in COLORS:
     # No problem with using exec function here
     exec(f'{color} = lambda t: click.style(t, fg="{color}", bold=True)')
 
@@ -111,7 +115,7 @@ def safe_cli():
     '--phone', '-p', required=True, prompt=True,
     help='Phone number of your Telegram account'
 )
-def accounts_connect(phone):
+def account_connect(phone):
     """Connect to Telegram"""
     check_sk()
 
@@ -167,7 +171,7 @@ def accounts_connect(phone):
     exit_program()
 
 @cli.command()
-def accounts_list():
+def account_list():
     """List all connected accounts"""
     check_sk()
 
@@ -197,7 +201,7 @@ def accounts_list():
     '--number', '-n', required=True, type=int,
     help='Switch to another connected account'
 )
-def accounts_switch(number):
+def account_switch(number):
     """This will set your CURRENT_ACCOUNT to selected"""
     check_sk()
     
@@ -207,17 +211,17 @@ def accounts_switch(number):
     if 'ACCOUNTS' not in state:
         click.echo(
             red('You didn\'t connected account yet. Use ')\
-            + white('accounts-connect ') + red('command')
+            + white('account-connect ') + red('command')
         )
     elif number < 1 or number > len(state['ACCOUNTS']):
         click.echo(
             red(f'There is no account #{number}. Use ')\
-            + white('accounts-list ') + red('command')
+            + white('account-list ') + red('command')
         )
     elif number == state['CURRENT_ACCOUNT']:
         click.echo(
             blue(f'You already on this account. See other with ')\
-            + white('accounts-list ') + blue('command')
+            + white('account-list ') + blue('command')
         )
     else:
         state['CURRENT_ACCOUNT'] = number
@@ -483,6 +487,15 @@ def box_list():
 def file_upload(path, folder, comment, thumb, workers):
     dlb, drb = _select_box()
     
+    def _upload(to_upload: list):
+        try:
+            tgbox.sync(gather(*to_upload))
+            to_upload.clear()
+        except tgbox.errors.NotEnoughRights as e:
+            click.echo('\n' + red(e))
+            manager.stop()
+            exit_program()
+
     if path.is_dir():
         iter_over = path.rglob('*')
     else:
@@ -493,31 +506,27 @@ def file_upload(path, folder, comment, thumb, workers):
         if file_path.is_dir():
             continue
 
-        if len(to_upload) < workers:
-            if not folder:
-                folder = str(file_path.parent)
-                folder = folder if folder != '.' else None
-            try:
-                comment_ = literal_eval(comment)
-                comment = tgbox.tools.CustomAttributes.make(**comment_)
-            except (ValueError, TypeError, SyntaxError):
-                comment = comment.encode() if comment else b''
+        current_folder = str(file_path.parent) if not folder else folder
+        try:
+            comment_ = literal_eval(comment)
+            comment = tgbox.tools.CustomAttributes.make(**comment_)
+        except (ValueError, TypeError, SyntaxError):
+            comment = comment.encode() if comment else b''
 
-            ff = tgbox.sync(dlb.make_file(
-                file = open(file_path,'rb'),
-                foldername = folder.encode(), 
-                comment = comment,
-                make_preview = thumb
-            ))
-            to_upload.append(drb.push_file(ff, Progress(
-                manager, file_path.name).update))
-        else:
-            tgbox.sync(gather(*to_upload))
-            to_upload.clear()
+        ff = tgbox.sync(dlb.make_file(
+            file = open(file_path,'rb'),
+            foldername = current_folder.encode(), 
+            comment = comment,
+            make_preview = thumb
+        ))
+        if len(to_upload) >= workers:
+            _upload(to_upload)
+
+        to_upload.append(drb.push_file(ff, Progress(
+            manager, file_path.name).update))
 
     if to_upload: # If any files left
-        tgbox.sync(gather(*to_upload))
-        to_upload.clear()
+        _upload(to_upload)
     
     manager.stop()
     exit_program()
@@ -533,13 +542,18 @@ def file_list(filters, force_remote):
     
     def bfi_gen(search_file_gen):
         for bfi in sync_async_gen(search_file_gen):
-            id = red(f'[{str(bfi.id)}]')
+            id = bright_red(f'[{str(bfi.id)}]')
             indent = ' ' * (len(str(bfi.id)) + 3)
 
             name = white(bfi.file_name.decode())
             size = green(format_bytes(bfi.size))
-            salt = yellow(urlsafe_b64encode(bfi.file_salt).decode()[:32] + '...')
+
+            salt = yellow(urlsafe_b64encode(bfi.file_salt).decode()[:25] + '...')
             
+            dur_color = cyan if bfi.duration else bright_black
+            duration = dur_color(str(timedelta(seconds=round(bfi.duration,2))))
+            duration = duration.split('.')[0]
+
             time = datetime.fromtimestamp(bfi.upload_time)
             time = magenta(time.strftime('%d/%m/%y, %H:%M:%S'))
 
@@ -574,8 +588,9 @@ def file_list(filters, force_remote):
             text = (
                 f'''{id} {name}\n'''
                 f'''{indent}| Folder: {folder}\n'''
-                f'''{indent}| Size, Time: {size}, {time}\n'''
+                f'''{indent}| Upload Time: {time}\n'''
                 f'''{indent}| Salt: {salt}\n'''
+                f'''{indent}| Size, Duration: {size}, {duration}\n'''
                 f'''{indent}| {comment}\n\n'''
             )
             yield text
@@ -589,8 +604,16 @@ def file_list(filters, force_remote):
 @cli.command()
 @click.argument('filters',nargs=-1)
 @click.option(
-    '--preview','-p', is_flag=True,
+    '--preview', '-p', is_flag=True,
     help='If specified, will download ONLY thumbnails'
+)
+@click.option(
+    '--hide-name', is_flag=True,
+    help='If specified, will hide file name'
+)
+@click.option(
+    '--hide-folder', is_flag=True,
+    help='If specified, will hide folder'
 )
 @click.option(
     '--out','-o',
@@ -603,9 +626,13 @@ def file_list(filters, force_remote):
 )
 @click.option(
     '--workers', '-w', default=3, type=click.IntRange(1,10), 
-    help='How many files will be uploaded at the same time',
+    help='How many files will be downloaded at the same time',
 )
-def file_download(filters, preview, out, force_remote, workers):
+def file_download(
+        filters, preview, hide_name, 
+        hide_folder, out, force_remote, workers):
+    """
+    """
     dlb, drb = _select_box()
     sf = filters_to_searchfilter(filters)
 
@@ -655,10 +682,18 @@ def file_download(filters, preview, out, force_remote, workers):
                     else:
                         outpath = out
                     
-                    to_gather_files.append(drbfi.download(
-                        outfile = outpath, progress_callback = Progress(
-                            manager, drbfi.file_name.decode()).update)
+                    p_file_name = 'Filename was hidden' if hide_name\
+                        else drbfi.file_name.decode()
+
+                    download_coroutine = drbfi.download(
+                        outfile = outpath, 
+                        progress_callback = Progress(
+                            manager, p_file_name).update,
+                        hide_folder = hide_folder,
+                        hide_name = hide_name
                     )
+                    to_gather_files.append(download_coroutine)
+
             if to_gather_files:
                 tgbox.sync(gather(*to_gather_files))
         
