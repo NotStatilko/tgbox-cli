@@ -21,8 +21,9 @@ class Progress:
     This is a little wrapper around enlighten
     
     from enlighten import get_manager
-    manager = get_manager()
 
+    manager = get_manager()
+    
     tgbox.api.DecryptedLocalBox.push_file(
         ..., progress_callback=Progress(manager).update
     )
