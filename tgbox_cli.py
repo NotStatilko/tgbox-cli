@@ -109,7 +109,6 @@ def _select_account() -> tgbox.api.TelegramAccount:
         )
         if click.prompt('\nDo you want to use its account?'):
             ta = _select_box()[1]._ta
-    
     if ta:
         return ta
 
@@ -535,12 +534,13 @@ def box_list_remote(prefix):
     click.echo(yellow('Done.'))
     exit_program()
 
+@cli.command()
 @click.option(
     '--number', '-n', required=True, type=int,
     help='Number of RemoteBox, use box-list-remote command'
 )
 @click.option(
-    '--phrase', '-p', help='RemoteBox passphrase'
+    '--key', '-k', help='RemoteBox Passphrase/MainKey/BaseKey'
 )
 @click.option(
     '--box-path', '-b',
@@ -548,11 +548,45 @@ def box_list_remote(prefix):
     type=click.Path(writable=True, readable=True, path_type=Path)
 )
 @click.option(
-    '--box-name', '-n',
+    '--box-name', '-f',
     help='Filename of cloned DecryptedLocalBox',
 )
-def box_clone(number, phrase, box_path, box_name):
-    pass
+def box_clone(number, key, box_path, box_name):
+    """"""
+    ta, count, erb = _select_account(), 0, None
+    iter_over = ta.tgboxes(yield_with=prefix)
+    
+    while True:
+        try:
+            count += 1
+            if count == number:
+                erb = tgbox.sync(tgbox.tools.anext(iter_over))
+                break
+        except StopAsyncIteration:
+            pass
+
+    if not erb:
+        click.echo(
+            red(f'There is no RemoteBox by {number} number, use ')+\
+            white('box-list-remote ') + red('command')
+        )
+    else:
+        try:
+            key = tgbox.keys.Key.decode(key)
+        except KeyError:
+            pass
+
+    exit_program()
+
+@cli.command()
+def box_sync():
+    """Will synchronize your current LocalBox with RemoteBox
+    
+    After this operation, all info about your LocalFiles that are
+    not in RemoteBox will be deleted from LocalBox. Files that
+    not in LocalBox but in RemoteBox will be imported.
+    """
+
 
 @cli.command()
 @click.option(
