@@ -274,11 +274,14 @@ def account_switch(number):
     prompt=True, help='Name of your Box'
 )
 @click.option(
+    '--box-salt', help='BoxSalt as hexadecimal'
+)
+@click.option(
     '--phrase', '-p', 
     help='Passphrase to your Box. Keep it secret'
 )
 @click.option(
-    '--salt', '-s', 's', 
+    '--scrypt-salt', 's', 
     default=tgbox.constants.SCRYPT_SALT.hex(),
     help='Scrypt salt as hexadecimal'
 )
@@ -298,7 +301,7 @@ def account_switch(number):
     '--scrypt-dklen', '-L', 'l', help='Scrypt key length',
     default=tgbox.constants.SCRYPT_DKLEN
 )
-def box_make(box_name, phrase, s, n, p, r, l):
+def box_make(box_name, box_salt, phrase, s, n, p, r, l):
     """Create new TGBOX, the Remote and Local"""
     
     ta = _select_account()
@@ -326,15 +329,20 @@ def box_make(box_name, phrase, s, n, p, r, l):
 
     click.echo(cyan('Making BaseKey... '), nl=False) 
     
+    s = bytes.fromhex(s) if s else tgbox.constants.SCRYPT_SALT
+    box_salt = bytes.fromhex(box_salt) if box_salt else None
+
     basekey = tgbox.keys.make_basekey(
         phrase.encode(), 
-        salt=bytes.fromhex(s), 
-        n=n, p=p, r=r, dklen=l
+        salt=s, n=n, p=p, 
+        r=r, dklen=l
     )
     click.echo(green('Successful!'))
 
     click.echo(cyan('Making RemoteBox... '), nl=False) 
-    erb = tgbox.sync(tgbox.api.make_remote_box(ta, box_name))
+    erb = tgbox.sync(tgbox.api.make_remote_box(
+        ta, box_name, box_salt=box_salt)
+    )
     click.echo(green('Successful!'))
 
     click.echo(cyan('Making LocalBox... '), nl=False) 
@@ -579,14 +587,25 @@ def box_clone(number, key, box_path, box_name):
     exit_program()
 
 @cli.command()
-def box_sync():
+@click.option(
+    '--start-from-id','-s', default=0,
+    help='Will check files that > specified ID'
+)
+def box_sync(start_from_id):
     """Will synchronize your current LocalBox with RemoteBox
     
     After this operation, all info about your LocalFiles that are
     not in RemoteBox will be deleted from LocalBox. Files that
     not in LocalBox but in RemoteBox will be imported.
     """
+    dlb, drb = _select_box()
+    manager = get_manager()
 
+    tgbox.sync(dlb.sync(drb, start_from_id, 
+        Progress(manager, 'Synchronizing...').update_2)
+    )
+    manager.stop()
+    exit_program()
 
 @cli.command()
 @click.option(
@@ -615,6 +634,7 @@ def box_sync():
     help='Will get absolute file path'
 )
 def file_upload(path, folder, comment, thumb, workers, absolute):
+    """Will upload specified path to the Box"""
     dlb, drb = _select_box()
     
     def _upload(to_upload: list):
