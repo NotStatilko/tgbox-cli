@@ -31,8 +31,13 @@ class Progress:
     def __init__(self, manager, desc: str=None):
         self.desc = desc
         self.counter = None
-        self.total_blocks = 0
         self.manager = manager
+        
+        # For update
+        self.total_blocks = 0
+        
+        # For update_2
+        self.initialized = False
 
         self.BAR_FORMAT = '{desc} {percentage:3.0f}%|{bar}| [ETA {eta}]'
 
@@ -57,6 +62,20 @@ class Progress:
                 bar_format=self.BAR_FORMAT
             )
         self.counter.update()
+
+    def update_2(self, current, total):
+        if not self.initialized:
+            self.counter = self.manager.counter(
+                total=total, desc='Synchronizing...',
+                unit='ID', color='gray', 
+                bar_format=self.BAR_FORMAT
+            )
+            for _ in range(current):
+                self.counter.update()
+            self.initialized = True
+        else:
+            self.counter.update()
+
 
 def format_bytes(size):
     # That's not mine. Thanks to the 
