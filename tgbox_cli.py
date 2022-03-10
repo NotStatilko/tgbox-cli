@@ -719,8 +719,21 @@ def file_list(filters, force_remote):
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
     \b
+    You can also use special flags to specify
+    that filters is for include or exclude search.
+    \b
     Example:\b
+        # Include is used by default
         tgbox-cli file-list min_id=3 max_id=100
+        \b
+        # Include flag (will ignore unmatched)
+        tgbox-cli file-list ++i file_name=.png
+        \b
+        # Exclude flag (will ignore matched)
+        tgbox-cli file-list ++e file_name=.png
+        \b
+        You can use both, the ++include and
+        ++exclude (++i, ++e) in one command.
     """
     dlb, drb = _select_box()
     
@@ -842,8 +855,21 @@ def file_download(
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
     \b
+    You can also use special flags to specify
+    that filters is for include or exclude search.
+    \b
     Example:\b
-        tgbox-cli file-download min_id=3 max_id=100
+        # Include is used by default
+        tgbox-cli file-list min_id=3 max_id=100
+        \b
+        # Include flag (will ignore unmatched)
+        tgbox-cli file-list ++i file_name=.png
+        \b
+        # Exclude flag (will ignore matched)
+        tgbox-cli file-list ++e file_name=.png
+        \b
+        You can use both, the ++include and
+        ++exclude (++i, ++e) in one command.
     """
     dlb, drb = _select_box()
     sf = filters_to_searchfilter(filters)
