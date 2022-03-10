@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name="tgbox-cli",
     version='0.1',
-    py_modules=['tgbox_cli'],
+    py_modules=['tgbox_cli','tools'],
     install_requires=[
         'click', 'tgbox'
     ],
