@@ -66,7 +66,7 @@ class Progress:
     def update_2(self, current, total):
         if not self.initialized:
             self.counter = self.manager.counter(
-                total=total, desc='Synchronizing...',
+                total=total, desc=self.desc,
                 unit='ID', color='gray', 
                 bar_format=self.BAR_FORMAT
             )
