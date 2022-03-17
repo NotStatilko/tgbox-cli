@@ -96,6 +96,29 @@ def _select_box():
 
         return dlb, drb
 
+def _select_remotebox(number: int, prefix: str):
+    ta, count, erb = _select_account(), 0, None
+    iter_over = ta.tgboxes(yield_with=prefix)
+    
+    while True:
+        try:
+            count += 1
+
+            erb = tgbox.sync(tgbox.tools.anext(iter_over))
+            if count == number: 
+                break
+        except StopAsyncIteration:
+            break 
+
+    if not erb:
+        click.echo(
+            red(f'There is no RemoteBox by {number} number, use ')+\
+            white('box-list-remote ') + red('command')
+        )
+        exit_program()
+    else:
+        return erb
+
 def _select_account() -> tgbox.api.TelegramAccount:
     check_sk()
 
@@ -104,15 +127,15 @@ def _select_account() -> tgbox.api.TelegramAccount:
 
     if 'ACCOUNTS' not in state and 'CURRENT_TGBOX' in state:
         click.echo(
-            'You ' + red('didn\'t connected') + ' account with '\
+            '\nYou ' + red('didn\'t connected') + ' account with '\
             + white('account-connect, ') + 'however, you already connected Box.'\
         )
-        if click.prompt('\nDo you want to use its account?'):
+        if click.confirm('\nDo you want to use its account?'):
             ta = _select_box()[1]._ta
     if ta:
         return ta
 
-    elif not ta:
+    elif 'ACCOUNTS' in state:
         session = state['ACCOUNTS'][state['CURRENT_ACCOUNT']]
         ta = tgbox.api.TelegramAccount(session=session)
         tgbox.sync(ta.connect()); return ta
@@ -122,6 +145,7 @@ def _select_account() -> tgbox.api.TelegramAccount:
             + white('tgbox-cli account-connect ')\
             + red('firstly.')
         )
+        exit_program()
 
 @click.group()
 def cli():
@@ -329,13 +353,12 @@ def box_make(box_name, box_salt, phrase, s, n, p, r, l):
 
     click.echo(cyan('Making BaseKey... '), nl=False) 
     
-    s = bytes.fromhex(s) if s else tgbox.constants.SCRYPT_SALT
     box_salt = bytes.fromhex(box_salt) if box_salt else None
 
     basekey = tgbox.keys.make_basekey(
         phrase.encode(), 
-        salt=s, n=n, p=p, 
-        r=r, dklen=l
+        salt=bytes.fromhex(s), 
+        n=n, p=p, r=r, dklen=l
     )
     click.echo(green('Successful!'))
 
@@ -544,50 +567,6 @@ def box_list_remote(prefix):
 
 @cli.command()
 @click.option(
-    '--number', '-n', required=True, type=int,
-    help='Number of RemoteBox, use box-list-remote command'
-)
-@click.option(
-    '--key', '-k', help='RemoteBox Passphrase/MainKey/BaseKey'
-)
-@click.option(
-    '--box-path', '-b',
-    help='Path to which we will clone',
-    type=click.Path(writable=True, readable=True, path_type=Path)
-)
-@click.option(
-    '--box-name', '-f',
-    help='Filename of cloned DecryptedLocalBox',
-)
-def box_clone(number, key, box_path, box_name):
-    """"""
-    ta, count, erb = _select_account(), 0, None
-    iter_over = ta.tgboxes(yield_with=prefix)
-    
-    while True:
-        try:
-            count += 1
-            if count == number:
-                erb = tgbox.sync(tgbox.tools.anext(iter_over))
-                break
-        except StopAsyncIteration:
-            pass
-
-    if not erb:
-        click.echo(
-            red(f'There is no RemoteBox by {number} number, use ')+\
-            white('box-list-remote ') + red('command')
-        )
-    else:
-        try:
-            key = tgbox.keys.Key.decode(key)
-        except KeyError:
-            pass
-
-    exit_program()
-
-@cli.command()
-@click.option(
     '--start-from-id','-s', default=0,
     help='Will check files that > specified ID'
 )
@@ -605,6 +584,194 @@ def box_sync(start_from_id):
         Progress(manager, 'Synchronizing...').update_2)
     )
     manager.stop()
+    exit_program()
+
+@cli.command()
+@click.option(
+    '--number', '-n', required=True, type=int,
+    help='Number of RemoteBox, use box-list-remote command'
+)
+@click.option(
+    '--phrase', '-p', required=True, hide_input=True,
+    help='To request Box you need to specify phrase to it',
+    prompt='Phrase to your future cloned Box'
+)
+@click.option(
+    '--salt', '-s', 's', 
+    default=tgbox.constants.SCRYPT_SALT.hex(),
+    help='Scrypt salt as hexadecimal number'
+)
+@click.option(
+    '--scrypt-n', '-N', 'n', help='Scrypt N',
+    default=tgbox.constants.SCRYPT_N
+)
+@click.option(
+    '--scrypt-p', '-P', 'p', help='Scrypt P',
+    default=tgbox.constants.SCRYPT_P
+)
+@click.option(
+    '--scrypt-r', '-R', 'r', help='Scrypt R',
+    default=tgbox.constants.SCRYPT_R
+)
+@click.option(
+    '--scrypt-dklen', '-L', 'l', help='Scrypt key length',
+    default=tgbox.constants.SCRYPT_DKLEN
+)
+@click.option(
+    '--prefix', default=tgbox.constants.REMOTEBOX_PREFIX,
+    help='Telegram channels with this prefix will be searched'
+)
+def box_request(number, phrase, s, n, p, r, l, prefix):
+    """Command to receive RequestKey"""
+    erb = _select_remotebox(number, prefix) 
+    
+    basekey = tgbox.keys.make_basekey(
+        phrase.encode(), 
+        salt=bytes.fromhex(s), 
+        n=n, p=p, r=r, dklen=l
+    )
+    reqkey = tgbox.sync(erb.get_requestkey(basekey))
+    click.echo(
+        '''\nSend this Key to the Box owner:\n'''
+        f'''    {white(reqkey.encode())}\n'''
+    )
+    exit_program()
+
+@cli.command()
+@click.option(
+    '--requestkey', '-r',
+    help='Requester\'s RequestKey, by box-request command'
+)
+def box_share(requestkey):
+    """Command to make ShareKey & to share Box"""
+    dlb, _ = _select_box()
+
+    requestkey = requestkey if not requestkey\
+        else tgbox.keys.Key.decode(requestkey)
+
+    sharekey = dlb.get_sharekey(requestkey)
+
+    if not requestkey:
+        click.echo(
+            red('You didn\'t specified requestkey. You ')\
+            + red('will receive decryption key IN PLAIN') 
+        )
+        if not click.confirm('Are you sure?'):
+            exit_program()
+    
+    click.echo(
+        '''\nSend this Key to the Box requester:\n'''
+        f'''    {white(sharekey.encode())}\n'''
+    )
+    exit_program()
+
+@cli.command()
+@click.option(
+    '--box-path', '-b', help='Path to which we will clone',
+    type=click.Path(writable=True, readable=True, path_type=Path)
+)
+@click.option(
+    '--box-filename', '-f',
+    help='Filename of cloned DecryptedLocalBox',
+)
+@click.option(
+    '--box-number', '-n', required=True, type=int,
+    prompt=True, help='Number of Box you want to clone',
+)
+@click.option(
+    '--prefix', default=tgbox.constants.REMOTEBOX_PREFIX,
+    help='Telegram channels with this prefix will be searched'
+)
+@click.option(
+    '--key', '-k', prompt=True,
+    help='ShareKey/ImportKey received from Box owner.'
+)
+@click.option(
+    '--phrase', '-p', prompt='Phrase to your cloned Box',
+    help='To request Box you need to specify phrase to it',
+    hide_input=True, required=True
+)
+@click.option(
+    '--salt', '-s', 's', 
+    default=tgbox.constants.SCRYPT_SALT.hex(),
+    help='Scrypt salt as hexadecimal number'
+)
+@click.option(
+    '--scrypt-n', '-N', 'n', help='Scrypt N',
+    default=tgbox.constants.SCRYPT_N
+)
+@click.option(
+    '--scrypt-p', '-P', 'p', help='Scrypt P',
+    default=tgbox.constants.SCRYPT_P
+)
+@click.option(
+    '--scrypt-r', '-R', 'r', help='Scrypt R',
+    default=tgbox.constants.SCRYPT_R
+)
+@click.option(
+    '--scrypt-dklen', '-L', 'l', help='Scrypt key length',
+    default=tgbox.constants.SCRYPT_DKLEN
+)
+def box_clone(
+        box_path, box_filename, 
+        box_number, prefix, key, 
+        phrase, s, n, p, r, l):
+    """
+    Will clone RemoteBox to LocalBox by your passphrase
+    """
+    state_key = get_sk()
+    state = get_state(state_key)
+    erb = _select_remotebox(box_number, prefix)
+    try:
+        key = tgbox.keys.Key.decode(key)
+    except tgbox.errors.IncorrectKey:
+        pass
+        
+    click.echo(cyan('\nMaking BaseKey... '), nl=False)
+
+    basekey = tgbox.keys.make_basekey(
+        phrase.encode(), 
+        salt=bytes.fromhex(s), 
+        n=n, p=p, r=r, dklen=l
+    )
+    click.echo(green('Successful!'))
+
+    if key is None:
+        key = basekey
+    else:
+        key = tgbox.keys.make_importkey(
+            key=basekey, sharekey=key,
+            box_salt=tgbox.sync(erb.get_box_salt())
+        )
+    drb = tgbox.sync(erb.decrypt(key=key))
+    
+    if box_path is None:
+        box_path = tgbox.sync(drb.get_box_name())
+
+    manager = get_manager()
+
+    tgbox.sync(drb.clone(
+        basekey=basekey, box_path=box_path,
+        progress_callback=Progress(manager, 'Cloning...').update_2
+    ))
+    manager.stop()
+
+    click.echo(cyan('\nUpdating local data... '), nl=False)
+
+    if 'TGBOXES' not in state:
+        state['TGBOXES'] = [[box_path, basekey.key]]
+        state['CURRENT_TGBOX'] = 0
+    else:
+        for _, other_basekey in state['TGBOXES']:
+            if basekey.key == other_basekey:
+                click.echo(red('This Box is already opened'))
+                exit_program()
+
+        state['TGBOXES'].append([box_path, basekey.key])
+        state['CURRENT_TGBOX'] = len(state['TGBOXES']) - 1 
+        
+    write_state(state, state_key)
+    click.echo(green('Successful!'))
     exit_program()
 
 @cli.command()
