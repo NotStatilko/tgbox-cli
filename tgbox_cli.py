@@ -434,8 +434,13 @@ def box_connect(box_path, phrase, s, n, p, r, l):
     )
     click.echo(green('Successful!'))
 
-    click.echo(cyan('Opening LocalBox... '), nl=False) 
-    dlb = tgbox.sync(tgbox.api.get_local_box(basekey, box_path))
+    click.echo(cyan('Opening LocalBox... '), nl=False)
+    try:
+        dlb = tgbox.sync(tgbox.api.get_local_box(basekey, box_path))
+    except tgbox.errors.IncorrectKey:
+        click.echo(red('Incorrect passphrase!'))
+        exit_program()
+
     click.echo(green('Successful!'))
     
     click.echo(cyan('Updating local data... '), nl=False)
@@ -526,8 +531,15 @@ def box_list():
 
     state_key = get_sk()
     state = get_state(state_key)
-        
+    
+    if 'CURRENT_TGBOX' in state:
+        click.echo(
+            white('\nYou\'re using Box ')\
+          + red('#' + str(state['CURRENT_TGBOX'] + 1)) + '\n'
+        )
+    dlb, drb = _select_box()
     lost_boxes, count = [], 0
+
     for box_path, basekey in state['TGBOXES']:
         try:
             dlb = tgbox.sync(tgbox.api.get_local_box(
@@ -710,12 +722,11 @@ def box_share(requestkey):
     help='Telegram channels with this prefix will be searched'
 )
 @click.option(
-    '--key', '-k', prompt=True,
-    help='ShareKey/ImportKey received from Box owner.'
+    '--key', '-k', help='ShareKey/ImportKey received from Box owner.'
 )
 @click.option(
     '--phrase', '-p', prompt='Phrase to your cloned Box',
-    help='To request Box you need to specify phrase to it',
+    help='To clone Box you need to specify phrase to it',
     hide_input=True, required=True
 )
 @click.option(
@@ -749,6 +760,7 @@ def box_clone(
     state_key = get_sk()
     state = get_state(state_key)
     erb = _select_remotebox(box_number, prefix)
+    
     try:
         key = tgbox.keys.Key.decode(key)
     except tgbox.errors.IncorrectKey:
@@ -762,7 +774,7 @@ def box_clone(
         n=n, p=p, r=r, dklen=l
     )
     click.echo(green('Successful!'))
-
+    
     if key is None:
         key = basekey
     else:
@@ -801,7 +813,7 @@ def box_clone(
                 exit_program()
 
         state['TGBOXES'].append([box_path, basekey.key])
-        state['CURRENT_TGBOX'] = len(state['TGBOXES']) - 1 
+        state['CURRENT_TGBOX'] = len(state['TGBOXES']) - 1
         
     write_state(state, state_key)
     click.echo(green('Successful!'))
