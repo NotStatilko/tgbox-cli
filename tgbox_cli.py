@@ -342,7 +342,7 @@ def box_make(box_name, box_salt, phrase, s, n, p, r, l):
             + ', we will ' + red('clear ') + 'shell for you'
         )
         input(); clear_console()
-    else:
+    elif not phrase:
         phrase, phrase_repeat = 0, 1
         while phrase != phrase_repeat:
             if phrase != 0: # Init value
@@ -456,6 +456,33 @@ def box_connect(box_path, phrase, s, n, p, r, l):
     click.echo(green('Successful!'))
     exit_program()
 
+@cli.command()
+@click.option(
+    '--number', '-n', required=True, type=int,
+    help='Number of other connected box, use box-list command'
+)
+def box_disconnect(number):
+    """Will disconnect connected LocalBox"""
+    check_sk()
+    
+    state_key = get_sk()
+    state = get_state(state_key)
+
+    if not state['TGBOXES']:
+        click.echo(red('You don\'t have any connected Box.'))
+    elif number < 1 or number > len(state['TGBOXES']):
+        click.echo(red('Invalid number, see box-list'))
+    else:
+        state['TGBOXES'].pop(number-1)
+        if not state['TGBOXES']:
+            state.pop('TGBOXES')
+            state.pop('CURRENT_TGBOX')
+            click.echo(green('Removed. No more Boxes.'))
+        else:
+            state['CURRENT_TGBOX'] = 0
+            click.echo(green('Removed & switched to the Box #1'))
+            write_state(state, state_key)
+            exit_program()
 
 @cli.command()
 @click.option(
@@ -463,7 +490,7 @@ def box_connect(box_path, phrase, s, n, p, r, l):
     help='Number of other connected box, use box-list command'
 )
 def box_switch(number):
-    """This will set your CURRENT_BOX to selected"""
+    """This will set your CURRENT_TGBOX to selected"""
     check_sk()
     
     state_key = get_sk()
@@ -746,7 +773,13 @@ def box_clone(
     drb = tgbox.sync(erb.decrypt(key=key))
     
     if box_path is None:
-        box_path = tgbox.sync(drb.get_box_name())
+        if box_filename:
+            box_path = box_filename
+        else:
+            box_path = tgbox.sync(drb.get_box_name())
+    else:
+        box_path += tgbox.sync(drb.get_box_name())\
+            if not box_filename else box_filename
 
     manager = get_manager()
 
