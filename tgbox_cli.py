@@ -497,11 +497,11 @@ def box_disconnect(number):
 def box_switch(number):
     """This will set your CURRENT_TGBOX to selected"""
     check_sk()
-    
+        
     state_key = get_sk()
     state = get_state(state_key)
     number -= 1
-
+    
     if 'TGBOXES' not in state:
         click.echo(
             red('You didn\'t connected box yet. Use ')\
@@ -939,13 +939,13 @@ def file_list(filters, force_remote):
         tgbox-cli file-list min_id=3 max_id=100
         \b
         # Include flag (will ignore unmatched)
-        tgbox-cli file-list ++i file_name=.png
+        tgbox-cli file-list +i file_name=.png
         \b
         # Exclude flag (will ignore matched)
-        tgbox-cli file-list ++e file_name=.png
+        tgbox-cli file-list +e file_name=.png
         \b
         You can use both, the ++include and
-        ++exclude (++i, ++e) in one command.
+        ++exclude (+i, +e) in one command.
     """
     dlb, drb = _select_box()
     
@@ -1075,13 +1075,13 @@ def file_download(
         tgbox-cli file-list min_id=3 max_id=100
         \b
         # Include flag (will ignore unmatched)
-        tgbox-cli file-list ++i file_name=.png
+        tgbox-cli file-list +i file_name=.png
         \b
         # Exclude flag (will ignore matched)
-        tgbox-cli file-list ++e file_name=.png
+        tgbox-cli file-list +e file_name=.png
         \b
         You can use both, the ++include and
-        ++exclude (++i, ++e) in one command.
+        ++exclude (+i, +e) in one command.
     """
     dlb, drb = _select_box()
     sf = filters_to_searchfilter(filters)
