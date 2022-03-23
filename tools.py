@@ -5,7 +5,7 @@ from os import system, _exit, name as os_name
 
 
 # This is a dirty way to exit from program,
-# but should be OK for this CLI design. The
+# but should be OK for such CLI design. The
 # default sys.exit doesn't work, and script
 # just freeze, seems that event loop isn't
 # closed for some reason, or maybe some
