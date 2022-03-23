@@ -73,7 +73,7 @@ def write_state(state: dict, state_key: str) -> None:
     with open(state_file,'wb') as f:
         f.write(tgbox.crypto.AESwState(state_enc_key).encrypt(dumps(state)))
 
-def _select_box():
+def _select_box(ignore_remote: bool=False):
     check_sk()
 
     state_key = get_sk()
@@ -92,7 +92,10 @@ def _select_box():
         dlb = tgbox.sync(tgbox.api.get_local_box(
             tgbox.keys.BaseKey(basekey), box_path)
         )
-        drb = tgbox.sync(tgbox.api.get_remote_box(dlb))
+        if not ignore_remote:
+            drb = tgbox.sync(tgbox.api.get_remote_box(dlb))
+        else:
+            drb = None
 
         return dlb, drb
 
@@ -192,6 +195,8 @@ def account_connect(phone):
     
     state_key = get_sk()
     state = get_state(state_key)
+    
+    ta_id = tgbox.sync(ta.TelegramClient.get_me()).id
 
     if 'ACCOUNTS' not in state:
         state['ACCOUNTS'] = [ta.get_session()]
@@ -204,7 +209,6 @@ def account_connect(phone):
             )
             try:
                 other_ta_id = tgbox.sync(other_ta.TelegramClient.get_me()).id
-                ta_id = tgbox.sync(other_ta.TelegramClient.get_me()).id
             except AttributeError:
                 # If session was disconnected
                 disconnected_sessions.append(session)
@@ -212,7 +216,8 @@ def account_connect(phone):
             
             if other_ta_id == ta_id:
                 tgbox.sync(ta.log_out())
-                click.echo(red('Account already added')); exit_program()
+                click.echo(red('Account already added'))
+                exit_program()
 
         for d_session in disconnected_sessions:
             state['ACCOUNTS'].remove(d_session)
@@ -225,6 +230,46 @@ def account_connect(phone):
     exit_program()
 
 @cli.command()
+@click.option(
+    '--number','-n', required=True, type=int,
+    help='Number of connected account'
+)
+@click.option(
+    '--log-out', is_flag=True, 
+    help='Will log out from account if specified'
+)
+def account_disconnect(number, log_out):
+    """Will disconnect selected account"""
+    state_key = get_sk()
+    state = get_state(state_key)
+    
+    if 'ACCOUNTS' not in state or not state['ACCOUNTS']:
+        click.echo(red('You don\'t have any connected account.'))
+        exit_program()
+
+    elif number < 1 or number > len(state['ACCOUNTS']):
+        click.echo(
+            red(f'There is no account #{number}. Use ')\
+            + white('account-list ') + red('command')
+        )
+    if log_out:
+        session = state['ACCOUNTS'][number-1]
+        ta = tgbox.api.TelegramAccount(session=session)
+        tgbox.sync(ta.connect()); tgbox.sync(ta.log_out())
+
+    state['ACCOUNTS'].pop(number-1)
+
+    if not state['ACCOUNTS']:
+        state.pop('ACCOUNTS')
+        state.pop('CURRENT_ACCOUNT')
+        click.echo(green('Disconnected. No more accounts.'))
+    else:
+        state['CURRENT_ACCOUNT'] = 0
+        click.echo(green('Disconnected & switched to the account #1'))
+        write_state(state, state_key)
+        exit_program()
+
+@cli.command()
 def account_list():
     """List all connected accounts"""
     check_sk()
@@ -232,12 +277,16 @@ def account_list():
     state_key = get_sk()
     state = get_state(state_key)
     
-    if 'ACCOUNTS' not in state:
+    if 'ACCOUNTS' not in state or not state['ACCOUNTS']:
         click.echo(
               red('You didn\'t connect any account yet. Run ')\
             + white('tgbox-cli account-connect ') + red('firstly.')
         )
     else:
+        click.echo(
+            white('\nYou\'re using account ')\
+          + red('#' + str(state['CURRENT_ACCOUNT'] + 1)) + '\n'
+        )
         disconnected_sessions = []
         for count, session in enumerate(state['ACCOUNTS']):
             try:
@@ -275,9 +324,9 @@ def account_switch(number):
             red('You didn\'t connected account yet. Use ')\
             + white('account-connect ') + red('command')
         )
-    elif number < 1 or number > len(state['ACCOUNTS']):
+    elif number < 1 or account > len(state['ACCOUNTS']):
         click.echo(
-            red(f'There is no account #{number}. Use ')\
+            red(f'There is no account #{account}. Use ')\
             + white('account-list ') + red('command')
         )
     elif number == state['CURRENT_ACCOUNT']:
@@ -467,13 +516,13 @@ def box_connect(box_path, phrase, s, n, p, r, l):
     help='Number of other connected box, use box-list command'
 )
 def box_disconnect(number):
-    """Will disconnect connected LocalBox"""
+    """Will disconnect selected LocalBox"""
     check_sk()
     
     state_key = get_sk()
     state = get_state(state_key)
 
-    if not state['TGBOXES']:
+    if 'TGBOXES' not in state or not state['TGBOXES']:
         click.echo(red('You don\'t have any connected Box.'))
     elif number < 1 or number > len(state['TGBOXES']):
         click.echo(red('Invalid number, see box-list'))
@@ -482,10 +531,10 @@ def box_disconnect(number):
         if not state['TGBOXES']:
             state.pop('TGBOXES')
             state.pop('CURRENT_TGBOX')
-            click.echo(green('Removed. No more Boxes.'))
+            click.echo(green('Disconnected. No more Boxes.'))
         else:
             state['CURRENT_TGBOX'] = 0
-            click.echo(green('Removed & switched to the Box #1'))
+            click.echo(green('Disconnected & switched to the Box #1'))
             write_state(state, state_key)
             exit_program()
 
@@ -537,7 +586,7 @@ def box_list():
             white('\nYou\'re using Box ')\
           + red('#' + str(state['CURRENT_TGBOX'] + 1)) + '\n'
         )
-    dlb, drb = _select_box()
+    dlb, _ = _select_box(ignore_remote=True)
     lost_boxes, count = [], 0
 
     for box_path, basekey in state['TGBOXES']:
@@ -623,6 +672,45 @@ def box_sync(start_from_id):
         Progress(manager, 'Synchronizing...').update_2)
     )
     manager.stop()
+
+    click.echo(green('Syncing complete'))
+    exit_program()
+
+@cli.command()
+@click.option(
+    '--number','-n', required=True, type=int,
+    help='Number of connected account. We will take session from it.'
+)
+def box_replace_session(number):
+    """Will replace Telegram session of your current Box
+
+    This can be useful if you disconnected your TGBOX in
+    Telegram settings (Privacy & Security > Devices) or
+    your local TGBOX was too long offline.
+    """
+    state_key = get_sk()
+    state = get_state(state_key)
+    
+    dlb, _ = _select_box(ignore_remote=True)
+    
+    if number < 1 or number > len(state['ACCOUNTS']):
+        click.echo(
+            red('Invalid account number! See ')\
+          + white('account-list ') + red('command')
+        )
+        exit_program()
+
+    session = state['ACCOUNTS'][number-1]
+    ta = tgbox.api.TelegramAccount(session=session)
+    
+    tgbox.sync(ta.connect())
+
+    basekey = tgbox.keys.BaseKey(
+        state['TGBOXES'][state['CURRENT_TGBOX']][1]
+    )
+    tgbox.sync(dlb.replace_session(basekey, ta))
+    click.echo(green('Session replaced successfully'))
+
     exit_program()
 
 @cli.command()
@@ -683,7 +771,7 @@ def box_request(number, phrase, s, n, p, r, l, prefix):
 )
 def box_share(requestkey):
     """Command to make ShareKey & to share Box"""
-    dlb, _ = _select_box()
+    dlb, _ = _select_box(ignore_remote=True)
 
     requestkey = requestkey if not requestkey\
         else tgbox.keys.Key.decode(requestkey)
@@ -947,7 +1035,10 @@ def file_list(filters, force_remote):
         You can use both, the ++include and
         ++exclude (+i, +e) in one command.
     """
-    dlb, drb = _select_box()
+    if force_remote:
+        dlb, drb = _select_box()
+    else:
+        dlb, drb = _select_box(ignore_remote=True)
     
     def bfi_gen(search_file_gen):
         for bfi in sync_async_gen(search_file_gen):
