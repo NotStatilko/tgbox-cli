@@ -29,6 +29,7 @@ exe = EXE(
     a.zipfiles,
     a.datas, [],
     name = 'tgbox-cli',
+    icon = 'tgbox-cli_logo.ico',
     debug = False,
     bootloader_ignore_signals = False,
     strip = False,
