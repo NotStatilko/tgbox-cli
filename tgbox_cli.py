@@ -29,8 +29,6 @@ from enlighten import get_manager
 __version__ = '0.1_' + tgbox.constants.VERSION
 tgbox.constants.VERSION = __version__
 
-print(__version__)
-
 COLORS = [
     'red','cyan','blue','green',
     'white','yellow','magenta',
@@ -1284,10 +1282,13 @@ def cli_start():
 @cli.command()
 def cli_info():
     """Get base information about TGBOX-CLI"""
+
+    ver = __version__.split('_')
+
     click.echo(
         f'''\nCopyright {white('(c) Non [github.com/NotStatilko]')}, the MIT License\n\n'''
-        f'''TGBOX-CLI Version: {yellow(__version__)}\n'''
-        f'''TGBOX Version: {magenta(tgbox.constants.VERSION)}\n\n'''
+        f'''TGBOX-CLI Version: {yellow(ver[0])}\n'''
+        f'''TGBOX Version: {magenta(ver[1])}\n\n'''
         f'''FAST_ENCRYPTION: {green('OK') if tgbox.crypto.FAST_ENCRYPTION else red('NO')}\n'''
         f'''FAST_TELETHON: {green('OK') if tgbox.crypto.FAST_TELETHON else red('NO')}\n'''
     )
