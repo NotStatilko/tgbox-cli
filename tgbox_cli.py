@@ -26,7 +26,10 @@ from tools import (
 from enlighten import get_manager
 
 
-__version__ = '0.1'
+__version__ = '0.1_' + tgbox.constants.VERSION
+tgbox.constants.VERSION = __version__
+
+print(__version__)
 
 COLORS = [
     'red','cyan','blue','green',
