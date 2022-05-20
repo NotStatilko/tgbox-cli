@@ -1286,11 +1286,11 @@ def cli_info():
 
     ver = __version__.split('_')
     
-    sp_result = subprocess_run(
-        args=[tgbox.constants.FFMPEG, '-version'],
-        stdout=PIPE, stderr=None
-    )
     try:
+        sp_result = subprocess_run(
+            args=[tgbox.constants.FFMPEG, '-version'],
+            stdout=PIPE, stderr=None
+        )
         ffmpeg_version = green(sp_result.stdout.split(b' ',3)[2].decode())
     except:
         ffmpeg_version = red('NO')
