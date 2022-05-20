@@ -13,6 +13,7 @@ from base64 import urlsafe_b64encode
 from traceback import format_exception
 from typing import Union, AsyncGenerator
 from datetime import datetime, timedelta
+from subprocess import run as subprocess_run, PIPE
 
 from os import (
     getenv, _exit, 
@@ -38,7 +39,7 @@ for color in COLORS:
     # No problem with using exec function here
     exec(f'{color} = lambda t: click.style(t, fg="{color}", bold=True)')
 
-def get_sk() -> Union[str, None] :
+def get_sk() -> Union[str, None]:
     """
     This will return StateKey 
     from env vars, if present.
@@ -1284,13 +1285,23 @@ def cli_info():
     """Get base information about TGBOX-CLI"""
 
     ver = __version__.split('_')
+    
+    sp_result = subprocess_run(
+        args=[tgbox.constants.FFMPEG, '-version'],
+        stdout=PIPE, stderr=None
+    )
+    try:
+        ffmpeg_version = green(sp_result.stdout.split(b' ',3)[2].decode())
+    except:
+        ffmpeg_version = red('NO')
 
     click.echo(
         f'''\nCopyright {white('(c) Non [github.com/NotStatilko]')}, the MIT License\n\n'''
         f'''TGBOX-CLI Version: {yellow(ver[0])}\n'''
         f'''TGBOX Version: {magenta(ver[1])}\n\n'''
-        f'''FAST_ENCRYPTION: {green('OK') if tgbox.crypto.FAST_ENCRYPTION else red('NO')}\n'''
-        f'''FAST_TELETHON: {green('OK') if tgbox.crypto.FAST_TELETHON else red('NO')}\n'''
+        f'''FFMPEG: {ffmpeg_version}\n'''
+        f'''FAST_ENCRYPTION: {green('YES') if tgbox.crypto.FAST_ENCRYPTION else red('NO')}\n'''
+        f'''FAST_TELETHON: {green('YES') if tgbox.crypto.FAST_TELETHON else red('NO')}\n'''
     )
 
 if __name__ == '__main__':
