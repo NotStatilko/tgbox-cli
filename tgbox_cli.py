@@ -30,6 +30,11 @@ from enlighten import get_manager
 __version__ = '0.1_' + tgbox.constants.VERSION
 tgbox.constants.VERSION = __version__
 
+# Please DO NOT use this parameters in your projects. 
+# You can get your own at my.telegram.org. Thanks.
+API_ID = 2210681
+API_HASH = '33755adb5ba3c296ccf0dd5220143841'
+
 COLORS = [
     'red','cyan','blue','green',
     'white','yellow','magenta',
@@ -142,8 +147,14 @@ def _select_account() -> tgbox.api.TelegramAccount:
 
     elif 'ACCOUNTS' in state:
         session = state['ACCOUNTS'][state['CURRENT_ACCOUNT']]
-        ta = tgbox.api.TelegramAccount(session=session)
-        tgbox.sync(ta.connect()); return ta
+
+        ta = tgbox.api.TelegramAccount(
+            session=session, 
+            api_id=API_ID, 
+            api_hash=API_HASH
+        )
+        tgbox.sync(ta.connect())
+        return ta
     else:
         click.echo(
               red('You should run ')\
@@ -178,8 +189,11 @@ def account_connect(phone):
     """Connect to Telegram"""
     check_sk()
 
-    ta = tgbox.api.TelegramAccount(phone_number=phone)
-    
+    ta = tgbox.api.TelegramAccount(
+        phone_number=phone,
+        api_id=API_ID,
+        api_hash=API_HASH
+    )
     click.echo(cyan('Connecting to Telegram...'))
     tgbox.sync(ta.connect())
 
@@ -206,9 +220,13 @@ def account_connect(phone):
     else:
         disconnected_sessions = []
         for session in state['ACCOUNTS']:
-            other_ta = tgbox.sync(
-                tgbox.api.TelegramAccount(session=session).connect()
+
+            other_ta = tgbox.api.TelegramAccount(
+                session=session,
+                api_id=API_ID,
+                api_hash=API_HASH
             )
+            other_ta = tgbox.sync(other_ta.connect())
             try:
                 other_ta_id = tgbox.sync(other_ta.TelegramClient.get_me()).id
             except AttributeError:
@@ -256,8 +274,14 @@ def account_disconnect(number, log_out):
         )
     if log_out:
         session = state['ACCOUNTS'][number-1]
-        ta = tgbox.api.TelegramAccount(session=session)
-        tgbox.sync(ta.connect()); tgbox.sync(ta.log_out())
+        
+        ta = tgbox.api.TelegramAccount(
+            session=session,
+            api_id=API_ID,
+            api_hash=API_HASH
+        )
+        tgbox.sync(ta.connect())
+        tgbox.sync(ta.log_out())
 
     state['ACCOUNTS'].pop(number-1)
 
@@ -292,7 +316,12 @@ def account_list():
         disconnected_sessions = []
         for count, session in enumerate(state['ACCOUNTS']):
             try:
-                ta = tgbox.sync(tgbox.api.TelegramAccount(session=session).connect())
+                ta = tgbox.api.TelegramAccount(
+                    session=session,
+                    api_id=API_ID,
+                    api_hash=API_HASH
+                )
+                ta = tgbox.sync(ta.connect())
                 info = tgbox.sync(ta.TelegramClient.get_me())
 
                 name = f'@{info.username}' if info.username else info.first_name
@@ -703,8 +732,12 @@ def box_replace_session(number):
         exit_program()
 
     session = state['ACCOUNTS'][number-1]
-    ta = tgbox.api.TelegramAccount(session=session)
     
+    ta = tgbox.api.TelegramAccount(
+        session=session,
+        api_id=API_ID,
+        api_hash=API_HASH
+    )
     tgbox.sync(ta.connect())
 
     basekey = tgbox.keys.BaseKey(
