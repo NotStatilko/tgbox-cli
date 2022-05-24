@@ -1079,10 +1079,12 @@ def file_list(filters, force_remote):
         for bfi in sync_async_gen(search_file_gen):
             id = bright_red(f'[{str(bfi.id)}]')
             indent = ' ' * (len(str(bfi.id)) + 3)
+            try:
+                name = white(bfi.file_name.decode())
+            except UnicodeDecodeError:
+                name = red('[Unable to display]')
 
-            name = white(bfi.file_name.decode())
             size = green(format_bytes(bfi.size))
-
             salt = yellow(urlsafe_b64encode(bfi.file_salt).decode()[:25] + '...')
             
             dur_color = cyan if bfi.duration else bright_black
@@ -1111,14 +1113,19 @@ def file_list(filters, force_remote):
                         comment += '\n' + (indent*2)[:-3] + '* '\
                             + cyan(k) + white('=') + green(v) + ' '
                 else:
-                    comment = 'Comment: ' + magenta(bfi.comment.decode())
+                    try:
+                        comment = 'Comment: ' + magenta(bfi.comment.decode())
+                    except UnicodeDecodeError:
+                        comment = red('[Unable to display]')
             else:
                 comment = 'Comment: ' + bright_black('Empty.')
-            
-            if len(bfi.foldername.decode()) > 32:
-                folder = blue('...' + bfi.foldername.decode()[-32:])
-            else:
-                folder = blue(bfi.foldername.decode())
+            try:
+                if len(bfi.foldername.decode()) > 32:
+                    folder = blue('...' + bfi.foldername.decode()[-32:])
+                else:
+                    folder = blue(bfi.foldername.decode())
+            except UnicodeDecodeError:
+                folder = red('[Unable to display]')
 
             text = (
                 f'''{id} {name}\n'''
