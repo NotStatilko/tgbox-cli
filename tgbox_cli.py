@@ -5,9 +5,9 @@ from pathlib import Path
 from hashlib import sha256
 from asyncio import gather
 
-from sys import platform
 from ast import literal_eval
 from pickle import loads, dumps
+from sys import platform, stdout
 
 from base64 import urlsafe_b64encode
 from traceback import format_exception
@@ -1080,7 +1080,7 @@ def file_list(filters, force_remote):
             id = bright_red(f'[{str(bfi.id)}]')
             indent = ' ' * (len(str(bfi.id)) + 3)
             try:
-                name = white(bfi.file_name.decode())
+                name = white(bfi.file_name.decode(stdout.encoding))
             except UnicodeDecodeError:
                 name = red('[Unable to display]')
 
@@ -1100,11 +1100,11 @@ def file_list(filters, force_remote):
                     comment = 'Attributes: '
                     for k,v in comment_.items():
                         try:
-                            v = v.decode()
+                            v = v.decode(stdout.encoding)
                         except UnicodeDecodeError:
                             v = v.hex()
                         try:
-                            k = k.decode()
+                            k = k.decode(stdout.encoding)
                         except AttributeError:
                             k = k
                         except UnicodeDecodeError:
@@ -1114,16 +1114,17 @@ def file_list(filters, force_remote):
                             + cyan(k) + white('=') + green(v) + ' '
                 else:
                     try:
-                        comment = 'Comment: ' + magenta(bfi.comment.decode())
+                        comment = 'Comment: ' + magenta(
+                            bfi.comment.decode(stdout.encoding))
                     except UnicodeDecodeError:
                         comment = red('[Unable to display]')
             else:
                 comment = 'Comment: ' + bright_black('Empty.')
             try:
-                if len(bfi.foldername.decode()) > 32:
-                    folder = blue('...' + bfi.foldername.decode()[-32:])
+                if len(bfi.foldername.decode(stdout.encoding)) > 32:
+                    folder = blue('...' + bfi.foldername.decode(stdout.encoding)[-32:])
                 else:
-                    folder = blue(bfi.foldername.decode())
+                    folder = blue(bfi.foldername.decode(stdout.encoding))
             except UnicodeDecodeError:
                 folder = red('[Unable to display]')
 
