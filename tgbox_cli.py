@@ -1,10 +1,10 @@
 import click
 import tgbox
 
+from time import sleep
 from pathlib import Path
 from copy import deepcopy
 from hashlib import sha256
-from asyncio import gather
 
 from ast import literal_eval
 from pickle import loads, dumps
@@ -17,11 +17,12 @@ from datetime import datetime, timedelta
 
 from subprocess import run as subprocess_run, PIPE
 from os import getenv, _exit, system as os_system
+from asyncio import gather, get_event_loop
 
 from tools import (
     Progress, sync_async_gen, exit_program,
     filters_to_searchfilter, clear_console,
-    format_bytes, splitpath
+    format_bytes, splitpath, env_proxy_to_pysocks
 )
 from enlighten import get_manager
 
@@ -100,7 +101,15 @@ def _select_box(ignore_remote: bool=False):
             tgbox.keys.BaseKey(basekey), box_path)
         )
         if not ignore_remote:
-            drb = tgbox.sync(tgbox.api.get_remotebox(dlb))
+            if getenv('https_proxy'):
+                proxy = env_proxy_to_pysocks(getenv('https_proxy'))
+
+            elif getenv('http_proxy'):
+                proxy = env_proxy_to_pysocks(getenv('http_proxy'))
+            else:
+                proxy = None
+
+            drb = tgbox.sync(tgbox.api.get_remotebox(dlb, proxy=proxy))
         else:
             drb = None
 
@@ -142,9 +151,6 @@ def _select_account() -> tgbox.api.TelegramClient:
             dlb, drb = _select_box()
             tc = drb._tc
             tgbox.sync(dlb.done())
-    if tc:
-        tgbox.sync(tc.connect())
-        return tc
 
     elif 'ACCOUNTS' in state:
         session = state['ACCOUNTS'][state['CURRENT_ACCOUNT']]
@@ -154,8 +160,6 @@ def _select_account() -> tgbox.api.TelegramClient:
             api_id=API_ID,
             api_hash=API_HASH
         )
-        tgbox.sync(tc.connect())
-        return tc
     else:
         click.echo(
               red('You should run ')\
@@ -163,6 +167,18 @@ def _select_account() -> tgbox.api.TelegramClient:
             + red('firstly.')
         )
         tgbox.sync(exit_program())
+
+    if getenv('https_proxy'):
+        proxy = env_proxy_to_pysocks(getenv('https_proxy'))
+
+    elif getenv('http_proxy'):
+        proxy = env_proxy_to_pysocks(getenv('http_proxy'))
+    else:
+        proxy = None
+
+    tc.set_proxy(proxy)
+    tgbox.sync(tc.connect())
+    return tc
 
 def _format_dxbf(
         dxbf: Union[tgbox.api.DecryptedRemoteBoxFile,
@@ -173,7 +189,7 @@ def _format_dxbf(
     idsalt = '[' + bright_red(f'{str(dxbf.id)}') + ':'
     idsalt += (bright_black(f'{salt[:12]}') + ']')
     try:
-        name = white(dxbf.file_name)
+        name = white(click.format_filename(dxbf.file_name))
     except UnicodeDecodeError:
         name = red('[Unable to display]')
 
@@ -240,7 +256,7 @@ def safe_cli():
                 tb = e.__traceback__
             ))
         click.echo(red(e))
-        tgbox.sync(exit_program())
+        _exit(1)
 
 @cli.command()
 @click.option(
@@ -1011,6 +1027,31 @@ def box_clone(
     tgbox.sync(exit_program(drb=drb))
 
 @cli.command()
+@click.argument('defaults',nargs=-1)
+def box_default(defaults):
+    """Change the TGBOX default values to your own
+
+    \b
+    I.e:\b
+        # Change METADATA_MAX to the max allowed size
+        tgbox-cli box-default METADATA_MAX=1677721
+        \b
+        # Change download path from DownloadsTGBOX to Downloads
+        tgbox-cli box-default DOWNLOAD_PATH=Downloads
+    """
+    dlb, _ = _select_box(ignore_remote=True)
+
+    for default in defaults:
+        try:
+            key, value = default.split('=',1)
+            tgbox.sync(dlb.defaults.change(key, value))
+            click.echo(green(f'Successfuly changed {key} to {value}'))
+        except AttributeError as e:
+            click.echo(red(f'Default {key} doesn\'t exist, skipping'))
+
+    tgbox.sync(exit_program(dlb=dlb))
+
+@cli.command()
 @click.option(
     '--path', '-p', required=True, prompt=True,
     help='Will upload specified path. If directory, upload all files in it',
@@ -1082,13 +1123,20 @@ def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
                 raise ValueError('Invalid cattrs!', e) from None
         else:
             parsed_cattrs = None
+        try:
+            pf = tgbox.sync(dlb.prepare_file(
+                file = open(current_path,'rb'),
+                file_path = remote_path,
+                cattrs = parsed_cattrs,
+                make_preview = thumb
+            ))
+        except tgbox.errors.InvalidFile as e:
+            click.echo(yellow(f'{current_path} is empty. Skipping.'))
+            continue
+        except tgbox.errors.FingerprintExists as e:
+            click.echo(yellow(f'{current_path} already uploaded. Skipping.'))
+            continue
 
-        pf = tgbox.sync(dlb.prepare_file(
-            file = open(current_path,'rb'),
-            file_path = remote_path,
-            cattrs = parsed_cattrs,
-            make_preview = thumb
-        ))
         current_bytes -= pf.filesize
         current_workers -= 1
 
@@ -1202,6 +1250,14 @@ def file_search(filters, force_remote, non_interactive):
     help='If specified, will download ONLY thumbnails'
 )
 @click.option(
+    '--show', '-s', is_flag=True,
+    help='If specified, will open file on downloading'
+)
+@click.option(
+    '--locate', '-l', is_flag=True,
+    help='If specified, will open file path in file manager'
+)
+@click.option(
     '--hide-name', is_flag=True,
     help='If specified, will hide file name'
 )
@@ -1228,9 +1284,9 @@ def file_search(filters, force_remote, non_interactive):
     help='Max amount of bytes uploaded at the same time',
 )
 def file_download(
-        filters, preview, hide_name,
-        hide_folder, out, force_remote,
-        max_workers, max_bytes):
+        filters, preview, show, locate,
+        hide_name, hide_folder, out,
+        force_remote, max_workers, max_bytes):
     """Will download files by filters
 
     \b
@@ -1279,7 +1335,10 @@ def file_download(
         You can use both, the ++include and
         ++exclude (+i, +e) in one command.
     """
-    dlb, drb = _select_box()
+    if preview and not force_remote:
+        dlb, drb = _select_box(ignore_remote=True)
+    else:
+        dlb, drb = _select_box()
     try:
         sf = filters_to_searchfilter(filters)
     except ValueError as e: # Unsupported filters
@@ -1300,19 +1359,26 @@ def file_download(
                 preview_bytes = None
 
                 if preview and not force_remote:
+                    tgbox.sync(dlbfi.directory.lload(full=True))
+
                     file_name = dlbfi.file_name
-                    folder = dlbfi.foldername.decode()
-                    preview_bytes = tgbox.sync(dlbfi.get_preview())
+                    folder = str(dlbfi.directory)
+                    preview_bytes = dlbfi.preview
 
                 elif preview and force_remote:
                     drbfi = tgbox.sync(drb.get_file(dlbfi.id))
 
                     file_name = drbfi.file_name
-                    folder = drbfi.foldername.decode()
-
-                    preview_bytes = tgbox.sync(drbfi.get_preview())
+                    folder = str(drbfi.file_path)
+                    preview_bytes = drbfi.preview
 
                 if preview_bytes is not None:
+                    if preview_bytes == b'':
+                        click.echo(yellow(
+                            f'{name} doesn\'t have preview. Try -r flag. Skipping.')
+                        )
+                        continue
+
                     if not out:
                         outpath = tgbox.defaults.DOWNLOAD_PATH\
                             / 'Previews' / folder.lstrip('/')
@@ -1320,25 +1386,36 @@ def file_download(
                     else:
                         outpath = out
 
-                    with open(outpath/(file_name+'.jpg'), 'wb') as f:
+                    file_path = outpath / (file_name+'.jpg')
+
+                    with open(file_path, 'wb') as f:
                         f.write(preview_bytes)
+
+                    if show or locate:
+                        click.launch(str(file_path), locate)
 
                     click.echo(
                         f'''{white(file_name)} preview downloaded '''
                         f'''to {white(str(outpath))}''')
                 else:
                     drbfi = tgbox.sync(drb.get_file(dlbfi.id))
+
                     if not drbfi:
                         click.echo(yellow(
-                            f'There is no file with ID={dlbfi.id} in RemoteBox, skipping.'
+                            f'There is no file with ID={dlbfi.id} in RemoteBox. Skipping.'
                         ))
                     else:
                         current_workers -= 1
                         current_bytes -= drbfi.file_size
 
                         if not out:
-                            outpath = tgbox.defaults.DOWNLOAD_PATH / 'Files'
+                            tgbox.sync(dlbfi.directory.lload(full=True))
+
+                            outpath = tgbox.defaults.DOWNLOAD_PATH / 'Files' / '@'
+                            outpath = outpath / str(dlbfi.directory).strip('/')
                             outpath.mkdir(parents=True, exist_ok=True)
+
+                            outpath = open(outpath / dlbfi.file_name, 'wb')
                         else:
                             outpath = out
 
@@ -1354,6 +1431,17 @@ def file_download(
                         )
                         to_gather_files.append(download_coroutine)
 
+                        if show or locate:
+                            def _launch(path: str, locate: bool, size: int) -> None:
+                                while (Path(path).stat().st_size+1) / size * 100 < 5:
+                                    sleep(1)
+                                click.launch(path, locate=locate)
+
+                            loop = get_event_loop()
+
+                            to_gather_files.append(loop.run_in_executor(
+                                None, lambda: _launch(outpath.name, locate, dlbfi.size))
+                            )
             if to_gather_files:
                 tgbox.sync(gather(*to_gather_files))
 
@@ -1370,8 +1458,9 @@ def file_download(
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
 @cli.command()
-def file_list_forwarded():
-    """Will list forwarded from other Box files
+def file_list_non_imported():
+    """Will list files not imported to your
+    DecryptedLocalBox from other RemoteBox
 
     Will also show a RequestKey. Send it to the
     file owner. He will use a file-share command
@@ -1397,7 +1486,7 @@ def file_list_forwarded():
                 idsalt += (bright_black(f'{salt[:12]}') + ']')
 
                 size = green(format_bytes(xrbf.file_size))
-                name = red('[N\A: No FileKey available]')
+                name = red('[N/A: No FileKey available]')
 
                 req_key = white(xrbf.get_requestkey(dlb._mainkey).encode())
 
@@ -1421,6 +1510,8 @@ def file_list_forwarded():
     help='ID of file to share'
 )
 def file_share(requestkey, id):
+    """Use this command to get a ShareKey to your file"""
+
     dlb, _ = _select_box(ignore_remote=True)
     dlbf = tgbox.sync(dlb.get_file(id=id))
 
@@ -1560,30 +1651,5 @@ def cli_info():
         f'''FAST_ENCRYPTION: {green('YES') if tgbox.crypto.FAST_ENCRYPTION else red('NO')}\n'''
         f'''FAST_TELETHON: {green('YES') if tgbox.crypto.FAST_TELETHON else red('NO')}\n'''
     )
-@cli.command()
-@click.argument('defaults',nargs=-1)
-def cli_default(defaults):
-    """Change the TGBOX default values to your own
-
-    \b
-    I.e:\b
-        # Change METADATA_MAX to the max allowed size
-        tgbox-cli cli-default METADATA_MAX=1677721
-        \b
-        # Change download path from DownloadsTGBOX to Downloads
-        tgbox-cli cli-default DOWNLOAD_PATH=Downloads
-    """
-    dlb, _ = _select_box(ignore_remote=True)
-
-    for default in defaults:
-        try:
-            key, value = default.split('=',1)
-            tgbox.sync(dlb.defaults.change(key, value))
-            click.echo(green(f'Successfuly changed {key} to {value}'))
-        except AttributeError as e:
-            click.echo(red(f'Default {key} doesn\'t exist, skipping'))
-
-    tgbox.sync(exit_program(dlb=dlb))
-
 if __name__ == '__main__':
     safe_cli()

@@ -2,6 +2,7 @@ import tgbox
 
 from sys import exit
 from typing import AsyncGenerator
+from urllib3.util import parse_url
 from shutil import get_terminal_size
 from os import system, name as os_name
 
@@ -163,3 +164,20 @@ def splitpath(path: str, indent: int=0) -> str:
 
     joinsymbols = '\n'+' '*indent
     return joinsymbols.join(parts).strip()
+
+def env_proxy_to_pysocks(env_proxy: str) -> tuple:
+    p = parse_url(env_proxy)
+
+    if p.auth:
+        username, password = p.auth.split(':')
+    else:
+        username, password = None, None
+
+    return (
+        p.scheme,
+        p.host,
+        p.port,
+        True,
+        username,
+        password
+    )
