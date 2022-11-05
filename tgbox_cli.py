@@ -2,17 +2,16 @@ import click
 import tgbox
 
 from time import sleep
+from typing import Union
 from pathlib import Path
 from copy import deepcopy
 from hashlib import sha256
 
-from ast import literal_eval
 from pickle import loads, dumps
 from sys import platform, stdout
 from base64 import urlsafe_b64encode
 
 from traceback import format_exception
-from typing import Union, AsyncGenerator
 from datetime import datetime, timedelta
 
 from subprocess import run as subprocess_run, PIPE
@@ -21,11 +20,13 @@ from asyncio import gather, get_event_loop
 
 from tools import (
     Progress, sync_async_gen, exit_program,
-    filters_to_searchfilter, clear_console,
-    format_bytes, splitpath, env_proxy_to_pysocks
+    format_bytes, splitpath, env_proxy_to_pysocks,
+    filters_to_searchfilter, clear_console, color
 )
 from enlighten import get_manager
 
+# tools.color with a click.echo function
+echo = lambda t,**k: click.echo(color(t), **k)
 
 __version__ = '1.0_' + tgbox.defaults.VERSION
 tgbox.defaults.VERSION = __version__
@@ -33,17 +34,6 @@ tgbox.defaults.VERSION = __version__
 # Please DO NOT use this parameters in your projects.
 # You can get your own at my.telegram.org. Thanks.
 API_ID, API_HASH = 2210681, '33755adb5ba3c296ccf0dd5220143841'
-
-COLORS = [
-    'red','cyan','blue','green',
-    'white','yellow','magenta',
-    'bright_black','bright_red',
-    'bright_magenta', 'bright_blue',
-    'bright_cyan', 'bright_white'
-]
-for color in COLORS:
-    # No problem with using exec function here
-    exec(f'{color} = lambda t: click.style(t, fg="{color}", bold=True)')
 
 def get_sk() -> Union[str, None]:
     """
@@ -54,10 +44,9 @@ def get_sk() -> Union[str, None]:
 
 def check_sk():
     if not get_sk():
-        click.echo(
-              red('You should run ')\
-            + white('tgbox-cli cli-start ')\
-            + red('firstly.')
+        echo(
+            '''[RED]You should run[RED] [WHITE]tgbox-cli '''
+            '''cli-start[WHITE] [RED]firstly.[RED]'''
         )
         tgbox.sync(exit_program())
     else:
@@ -88,9 +77,9 @@ def _select_box(ignore_remote: bool=False):
     state = get_state(state_key)
 
     if 'TGBOXES' not in state:
-        click.echo(
-            red('You didn\'t connected box yet. Use ')\
-            + white('box-connect ') + red('command')
+        echo(
+            '''[RED]You didn\'t connected box yet. Use[RED] '''
+            '''[WHITE]box-connect[WHITE] [RED]command.[RED]'''
         )
         tgbox.sync(exit_program())
     else:
@@ -130,8 +119,7 @@ def _select_remotebox(number: int, prefix: str):
             break
 
     if not erb:
-        click.echo(
-        )
+        echo(f'[RED]RemoteBox by number={number} not found.[RED]')
         tgbox.sync(exit_program())
     else:
         return erb
@@ -143,9 +131,10 @@ def _select_account() -> tgbox.api.TelegramClient:
     state = get_state(state_key)
 
     if 'ACCOUNTS' not in state and 'CURRENT_TGBOX' in state:
-        click.echo(
-            '\nYou ' + red('didn\'t connected') + ' account with '\
-            + white('account-connect, ') + 'however, you already connected Box.'\
+        echo(
+            '''\nYou [RED]didn\'t connected[RED] account with '''
+            '''[WHITE]account-connect, [WHITE]however, you '''
+            '''already connected Box.'''
         )
         if click.confirm('\nDo you want to use its account?'):
             dlb, drb = _select_box()
@@ -161,10 +150,9 @@ def _select_account() -> tgbox.api.TelegramClient:
             api_hash=API_HASH
         )
     else:
-        click.echo(
-              red('You should run ')\
-            + white('tgbox-cli account-connect ')\
-            + red('firstly.')
+        echo(
+          '''[RED]You should run [RED][WHITE]tgbox-cli '''
+          '''account-connect [WHITE][RED]firstly.[RED]'''
         )
         tgbox.sync(exit_program())
 
@@ -185,26 +173,25 @@ def _format_dxbf(
                     tgbox.api.DecryptedLocalBoxFile]) -> str:
 
     salt = urlsafe_b64encode(dxbf.file_salt).decode()
-
-    idsalt = '[' + bright_red(f'{str(dxbf.id)}') + ':'
-    idsalt += (bright_black(f'{salt[:12]}') + ']')
+    idsalt = f'[[BRIGHT_RED]{str(dxbf.id)}[BRIGHT_RED]:'
+    idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
     try:
-        name = white(click.format_filename(dxbf.file_name))
+        name = f'[WHITE]{click.format_filename(dxbf.file_name)}[WHITE]'
     except UnicodeDecodeError:
-        name = red('[Unable to display]')
+        name = '[RED][Unable to display][RED]'
 
-    size = green(format_bytes(dxbf.size))
+    size = f'[GREEN]{format_bytes(dxbf.size)}[GREEN]'
 
     if dxbf.duration:
-        duration = cyan(str(timedelta(seconds=round(dxbf.duration,2))))
-        duration = f' ({duration.split(".")[0]})'
+        duration = str(timedelta(seconds=round(dxbf.duration,2)))
+        duration = f'[CYAN] ({duration.split(".")[0]})[CYAN]'
     else:
         duration = ''
 
     time = datetime.fromtimestamp(dxbf.upload_time)
-    time = cyan(time.strftime('%d/%m/%y, %H:%M:%S'))
+    time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN]"
 
-    mimedur = white(dxbf.mime if dxbf.mime else 'regular file')
+    mimedur = f'[WHITE]{dxbf.mime}[WHITE]' if dxbf.mime else 'regular file'
     mimedur += duration
 
     if dxbf.cattrs:
@@ -224,7 +211,7 @@ def _format_dxbf(
             tgbox.sync(dxbf.directory.lload(full=True))
             file_path = str(dxbf.directory)
         else:
-            file_path = red('[Unknown Folder]')
+            file_path = '[RED][Unknown Folder][RED]'
 
     formatted = (
        f"""\nFile: {idsalt} {name}\n"""
@@ -235,11 +222,13 @@ def _format_dxbf(
         formatted += "* CustomAttributes:\n"
         n = 1
         for k,v in tuple(cattrs.items()):
-            color = green if n % 2 else yellow; n+=1
-            formatted += f'   {white(k)}: {color(v)}\n'
-
+            color_ = 'GREEN' if n % 2 else 'YELLOW'; n+=1
+            formatted += (
+                f'''   [WHITE]{k}[WHITE]: '''
+                f'''[{color_}]{v}[{color_}]\n'''
+            )
     formatted += f"* Uploaded {time}\n"
-    return formatted
+    return color(formatted)
 
 @click.group()
 def cli():
@@ -255,7 +244,7 @@ def safe_cli():
                 value = e,
                 tb = e.__traceback__
             ))
-        click.echo(red(e))
+        echo(f'[RED]{e}[RED]\n')
         _exit(1)
 
 @cli.command()
@@ -272,20 +261,20 @@ def account_connect(phone):
         api_id=API_ID,
         api_hash=API_HASH
     )
-    click.echo(cyan('Connecting to Telegram...'))
+    echo('[CYAN]Connecting to Telegram...[CYAN]')
     tgbox.sync(tc.connect())
 
-    click.echo(cyan('Sending code request...'))
+    echo('[CYAN]Sending code request...[CYAN]')
     tgbox.sync(tc.send_code())
 
     code = click.prompt('Received code', type=int)
     password = click.prompt('Password', hide_input=True)
 
-    click.echo(cyan('Trying to sign-in... '), nl=False)
+    echo('[CYAN]Trying to sign-in...[CYAN] ', nl=False)
     tgbox.sync(tc.log_in(code=code, password=password))
 
-    click.echo(green('Successful!'))
-    click.echo(cyan('Updating local data... '), nl=False)
+    echo('[GREEN]Successful![GREEN]')
+    echo('[CYAN]Updating local data...[CYAN] ', nl=False)
 
     state_key = get_sk()
     state = get_state(state_key)
@@ -314,7 +303,7 @@ def account_connect(phone):
 
             if other_tc_id == tc_id:
                 tgbox.sync(tc.log_out())
-                click.echo(red('Account already added'))
+                echo('[RED]Account already added[RED]')
                 tgbox.sync(exit_program())
 
         for d_session in disconnected_sessions:
@@ -324,7 +313,7 @@ def account_connect(phone):
         state['CURRENT_ACCOUNT'] = len(state['ACCOUNTS']) - 1
 
     write_state(state, state_key)
-    click.echo(green('Successful!'))
+    echo('[GREEN]Successful![GREEN]')
     tgbox.sync(exit_program())
 
 @cli.command()
@@ -342,13 +331,13 @@ def account_disconnect(number, log_out):
     state = get_state(state_key)
 
     if 'ACCOUNTS' not in state or not state['ACCOUNTS']:
-        click.echo(red('You don\'t have any connected account.'))
+        echo('[RED]You don\'t have any connected account.[RED]')
         tgbox.sync(exit_program())
 
     elif number < 1 or number > len(state['ACCOUNTS']):
-        click.echo(
-            red(f'There is no account #{number}. Use ')\
-            + white('account-list ') + red('command')
+        echo(
+            f'''[RED]There is no account #{number}. Use [RED]'''
+             '''[WHITE]account-list[WHITE] [RED]command.[RED]'''
         )
     if log_out:
         session = state['ACCOUNTS'][number-1]
@@ -366,10 +355,10 @@ def account_disconnect(number, log_out):
     if not state['ACCOUNTS']:
         state.pop('ACCOUNTS')
         state.pop('CURRENT_ACCOUNT')
-        click.echo(green('Disconnected. No more accounts.'))
+        echo('[GREEN]Disconnected. No more accounts.[GREEN]')
     else:
         state['CURRENT_ACCOUNT'] = 0
-        click.echo(green('Disconnected & switched to the account #1'))
+        echo('[GREEN]Disconnected & switched to the account #1[GREEN]')
         write_state(state, state_key)
         tgbox.sync(exit_program())
 
@@ -382,14 +371,14 @@ def account_list():
     state = get_state(state_key)
 
     if 'ACCOUNTS' not in state or not state['ACCOUNTS']:
-        click.echo(
-              red('You didn\'t connect any account yet. Run ')\
-            + white('tgbox-cli account-connect ') + red('firstly.')
+        echo(
+            '''[RED]You didn\'t connected any account yet. Use[RED] '''
+            '''[WHITE]account-connect[WHITE] [RED]command firstly.[RED]'''
         )
     else:
-        click.echo(
-            white('\nYou\'re using account ')\
-          + red('#' + str(state['CURRENT_ACCOUNT'] + 1)) + '\n'
+        echo(
+            '''\n[WHITE]You\'re using account[WHITE] [RED]'''
+           f'''#{str(state['CURRENT_ACCOUNT'] + 1)}[RED]\n'''
         )
         disconnected_sessions = []
         for count, session in enumerate(state['ACCOUNTS']):
@@ -403,10 +392,10 @@ def account_list():
                 info = tgbox.sync(tc.get_me())
 
                 name = f'@{info.username}' if info.username else info.first_name
-                click.echo(white(f'{count+1}) ') + blue(name) + f' (id{info.id})')
-            except AttributeError: # TODO: Info is invalid?
+                echo(f'[WHITE]{count+1})[WHITE] [BLUE]{name}[BLUE] (id{info.id})')
+            except AttributeError:
                 # If session was disconnected
-                click.echo(white(f'{count+1}) ') + red('disconnected, so removed'))
+                echo(f'#[WHITE]{count+1}[WHITE] [RED]disconnected, so removed[RED]')
                 disconnected_sessions.append(session)
 
         for d_session in disconnected_sessions:
@@ -429,24 +418,24 @@ def account_switch(number):
     state = get_state(state_key)
 
     if 'ACCOUNTS' not in state:
-        click.echo(
-            red('You didn\'t connected account yet. Use ')\
-            + white('account-connect ') + red('command')
+        echo(
+            '''[RED]You didn\'t connected any account yet. Use[RED] '''
+            '''[WHITE]account-connect[WHITE] [RED]command firstly.[RED]'''
         )
     elif number < 1 or account > len(state['ACCOUNTS']):
-        click.echo(
-            red(f'There is no account #{account}. Use ')\
-            + white('account-list ') + red('command')
+        echo(
+            f'''[RED]There is no account #{account}. Use [RED]'''
+             '''[WHITE]account-list[WHITE] [RED]command.[RED]'''
         )
     elif number == state['CURRENT_ACCOUNT']:
-        click.echo(
-            yellow(f'You already on this account. See other with ')\
-            + white('account-list ') + yellow('command')
+        echo(
+            f'''[YELLOW]You already on this account. See other with[YELLOW] '''
+             '''[WHITE]account-list[WHITE] [YELLOW]command.[YELLOW]'''
         )
     else:
         state['CURRENT_ACCOUNT'] = number
         write_state(state, state_key)
-        click.echo(green(f'You switched to account #{number}'))
+        echo(f'[GREEN]You switched to account #{number}[GREEN]')
 
     tgbox.sync(exit_program())
 
@@ -493,11 +482,12 @@ def box_make(box_name, box_salt, phrase, s, n, p, r, l):
 
     if not phrase and click.confirm('Generate passphrase for you?'):
         phrase = tgbox.keys.Phrase.generate().phrase.decode()
+        echo(f'\nYour Phrase is [MAGENTA]{phrase}[MAGENTA]')
 
-        click.echo('\nYour Phrase is ' + magenta(phrase))
-        click.echo(
-            'Please, write it down on paper and press ' + red('Enter')\
-            + ', we will ' + red('clear ') + 'shell for you'
+        echo(
+            '''Please, write it down [WHITE]on paper[WHITE] '''
+            '''and press [RED]Enter[RED]'''
+            ''', we will [RED]clear[RED] shell for you'''
         )
         input(); clear_console()
 
@@ -505,12 +495,12 @@ def box_make(box_name, box_salt, phrase, s, n, p, r, l):
         phrase, phrase_repeat = 0, 1
         while phrase != phrase_repeat:
             if phrase != 0: # Init value
-                click.echo(red('Phrase mismatch! Try again\n'))
+                echo('[RED]Phrase mismatch! Try again[RED]\n')
 
             phrase = click.prompt('Phrase', hide_input=True)
             phrase_repeat = click.prompt('Repeat phrase', hide_input=True)
 
-    click.echo(cyan('Making BaseKey... '), nl=False)
+    echo('[CYAN]Making BaseKey...[CYAN] ', nl=False)
 
     box_salt = bytes.fromhex(box_salt) if box_salt else None
 
@@ -519,19 +509,19 @@ def box_make(box_name, box_salt, phrase, s, n, p, r, l):
         salt=bytes.fromhex(s),
         n=n, p=p, r=r, dklen=l
     )
-    click.echo(green('Successful!'))
+    echo('[GREEN]Successful![GREEN]')
 
-    click.echo(cyan('Making RemoteBox... '), nl=False)
+    echo('[CYAN]Making RemoteBox...[CYAN] ', nl=False)
     erb = tgbox.sync(tgbox.api.make_remotebox(
         tc, box_name, box_salt=box_salt)
     )
-    click.echo(green('Successful!'))
+    echo('[GREEN]Successful![GREEN]')
 
-    click.echo(cyan('Making LocalBox... '), nl=False)
+    echo('[CYAN]Making LocalBox...[CYAN] ', nl=False)
     dlb = tgbox.sync(tgbox.api.make_localbox(erb, basekey))
-    click.echo(green('Successful!'))
+    echo('[GREEN]Successful![GREEN]')
 
-    click.echo(cyan('Updating local data... '), nl=False)
+    echo('[CYAN]Updating local data...[CYAN] ', nl=False)
 
     if 'TGBOXES' not in state:
         state['TGBOXES'] = [[box_name, basekey.key]]
@@ -541,7 +531,7 @@ def box_make(box_name, box_salt, phrase, s, n, p, r, l):
         state['CURRENT_TGBOX'] = len(state['TGBOXES']) - 1
 
     write_state(state, state_key)
-    click.echo(green('Successful!'))
+    echo('[GREEN]Successful![GREEN]')
 
     tgbox.sync(exit_program(dlb=dlb, drb=erb))
 
@@ -584,25 +574,25 @@ def box_connect(box_path, phrase, s, n, p, r, l):
     state_key = get_sk()
     state = get_state(state_key)
 
-    click.echo(cyan('Making BaseKey... '), nl=False)
+    echo('[CYAN]Making BaseKey...[CYAN] ', nl=False)
 
     basekey = tgbox.keys.make_basekey(
         phrase.encode(),
         salt=bytes.fromhex(s),
         n=n, p=p, r=r, dklen=l
     )
-    click.echo(green('Successful!'))
+    echo('[GREEN]Successful![GREEN]')
 
-    click.echo(cyan('Opening LocalBox... '), nl=False)
+    echo('[CYAN]Opening LocalBox...[CYAN] ', nl=False)
     try:
         dlb = tgbox.sync(tgbox.api.get_localbox(basekey, box_path))
     except tgbox.errors.IncorrectKey:
-        click.echo(red('Incorrect passphrase!'))
+        echo('[RED]Incorrect passphrase![RED]')
         tgbox.sync(exit_program())
 
-    click.echo(green('Successful!'))
+    echo('[GREEN]Successful![GREEN]')
 
-    click.echo(cyan('Updating local data... '), nl=False)
+    echo('[CYAN]Updating local data...[CYAN] ', nl=False)
 
     if 'TGBOXES' not in state:
         state['TGBOXES'] = [[box_path, basekey.key]]
@@ -610,14 +600,14 @@ def box_connect(box_path, phrase, s, n, p, r, l):
     else:
         for _, other_basekey in state['TGBOXES']:
             if basekey.key == other_basekey:
-                click.echo(red('This Box is already opened'))
+                echo('[RED]This Box is already opened[RED]')
                 tgbox.sync(exit_program(dlb=dlb))
 
         state['TGBOXES'].append([box_path, basekey.key])
         state['CURRENT_TGBOX'] = len(state['TGBOXES']) - 1
 
     write_state(state, state_key)
-    click.echo(green('Successful!'))
+    echo('[GREEN]Successful![GREEN]')
     tgbox.sync(exit_program(dlb=dlb))
 
 @cli.command()
@@ -633,18 +623,18 @@ def box_disconnect(number):
     state = get_state(state_key)
 
     if 'TGBOXES' not in state or not state['TGBOXES']:
-        click.echo(red('You don\'t have any connected Box.'))
+        echo('[RED]You don\'t have any connected Box.[RED]')
     elif number < 1 or number > len(state['TGBOXES']):
-        click.echo(red('Invalid number, see box-list'))
+        echo('[RED]Invalid number, see box-list[RED]')
     else:
         state['TGBOXES'].pop(number-1)
         if not state['TGBOXES']:
             state.pop('TGBOXES')
             state.pop('CURRENT_TGBOX')
-            click.echo(green('Disconnected. No more Boxes.'))
+            echo('[GREEN]Disconnected. No more Boxes.[GREEN]')
         else:
             state['CURRENT_TGBOX'] = 0
-            click.echo(green('Disconnected & switched to the Box #1'))
+            echo('[GREEN]Disconnected & switched to the Box #1[GREEN]')
             tgbox.sync(exit_program())
 
         write_state(state, state_key)
@@ -663,24 +653,24 @@ def box_switch(number):
     number -= 1
 
     if 'TGBOXES' not in state:
-        click.echo(
-            red('You didn\'t connected box yet. Use ')\
-            + white('box-connect ') + red('command')
+        echo(
+            '''[RED]You didn\'t connected box yet. Use[RED] '''
+            '''[WHITE]box-connect[WHITE] [RED]command.[RED]'''
         )
     elif number < 0 or number > len(state['TGBOXES'])-1:
-        click.echo(
-            red(f'There is no box #{number+1}. Use ')\
-            + white('box-list ') + red('command')
+        echo(
+            f'''[RED]There is no box #{number+1}. Use[RED] '''
+             '''[WHITE]box-list[WHITE] [RED]command.[RED]'''
         )
     elif number == state['CURRENT_TGBOX']:
-        click.echo(
-            yellow(f'You already use this box. See other with ')\
-            + white('box-list ') + yellow('command')
+        echo(
+            '''[YELLOW]You already use this box. See other with[YELLOW] '''
+            '''[WHITE]box-list[WHITE] [YELLOW]command.[YELLOW]'''
         )
     else:
         state['CURRENT_TGBOX'] = number
         write_state(state, state_key)
-        click.echo(green(f'You switched to box #{number+1}'))
+        echo(f'[GREEN]You switched to box #{number+1}[GREEN]')
 
     tgbox.sync(exit_program())
 
@@ -693,12 +683,12 @@ def box_list():
     state = get_state(state_key)
 
     if 'CURRENT_TGBOX' in state:
-        click.echo(
-            white('\nYou\'re using Box ')\
-          + red('#' + str(state['CURRENT_TGBOX'] + 1)) + '\n'
+        echo(
+            ''''\n[WHITE]You\'re using Box[WHITE] '''
+           f'''[RED]#{str(number+1)}[RED]\n'''
         )
     else:
-        click.echo(yellow('You don\'t have any connected Box.'))
+        echo('[YELLOW]You don\'t have any connected Box.[YELLOW]')
         tgbox.sync(exit_program())
 
     lost_boxes, count = [], 0
@@ -711,10 +701,13 @@ def box_list():
             name = Path(box_path).name
             salt = urlsafe_b64encode(dlb.box_salt).decode()
 
-            click.echo(white(f'{count+1}) ') + blue(name) + '@' + bright_black(salt))
+            echo(
+                f'''[WHITE]{count+1})[WHITE] [BLUE]{name}[BLUE]'''
+                f'''@[BRIGHT_BLACK]{salt}[BRIGHT_BLACK]'''
+            )
             tgbox.sync(dlb.done())
         except FileNotFoundError:
-            click.echo(white(f'{count+1}) ') + red('Moved, so removed'))
+            echo(f'#[WHITE]{count+1}[WHITE] [RED]Moved, so removed.[RED]')
             lost_boxes.append([box_path, basekey])
 
         count += 1
@@ -726,11 +719,12 @@ def box_list():
         if not state['TGBOXES']:
             state.pop('TGBOXES')
             state.pop('CURRENT_TGBOX')
-            click.echo('No more Boxes, use ' + white('box-connect'))
+            echo('No more Boxes, use [WHITE]box-connect[WHITE].')
         else:
             state['CURRENT_TGBOX'] = -1
-            click.echo(
-                'Switched to the last Box. Set other with ' + white('box-switch')
+            echo(
+                '''Switched to the last Box. Set other '''
+                '''with [WHITE]box-switch[WHITE].'''
             )
     write_state(state, state_key)
     tgbox.sync(exit_program())
@@ -746,7 +740,7 @@ def box_list_remote(prefix):
     tc, count = _select_account(), 0
     iter_over = tc.iter_dialogs()
 
-    click.echo(yellow('Searching...'))
+    echo('[YELLOW]Searching...[YELLOW]')
     while True:
         try:
             dialogue = tgbox.sync(tgbox.tools.anext(iter_over))
@@ -757,15 +751,15 @@ def box_list_remote(prefix):
                 erb_salt = tgbox.sync(erb.get_box_salt())
                 erb_salt = urlsafe_b64encode(erb_salt).decode()
 
-                click.echo(
-                    white(f'{count+1}) ') + blue(erb_name)\
-                    + '@' + bright_black(erb_salt)
+                echo(
+                    f'''[WHITE]{count+1}[WHITE]) [BLUE]{erb_name}[BLUE]'''
+                    f'''@[BRIGHT_BLACK]{erb_salt}[BRIGHT_BLACK]'''
                 )
                 count += 1
         except StopAsyncIteration:
             break
 
-    click.echo(yellow('Done.'))
+    echo('[YELLOW]Done.[YELLOW]')
     tgbox.sync(exit_program())
 
 @cli.command()
@@ -788,7 +782,7 @@ def box_sync(start_from_id):
     )
     manager.stop()
 
-    click.echo(green('Syncing complete'))
+    echo('[GREEN]Syncing complete.[GREEN]')
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
 @cli.command()
@@ -809,9 +803,9 @@ def box_replace_session(number):
     dlb, _ = _select_box(ignore_remote=True)
 
     if number < 1 or number > len(state['ACCOUNTS']):
-        click.echo(
-            red('Invalid account number! See ')\
-          + white('account-list ') + red('command')
+        echo(
+            '''[RED]Invalid account number! See[RED] '''
+            '''[WHITE]account-list[WHITE] [RED]command.[RED]'''
         )
         tgbox.sync(exit_program(dlb=dlb))
 
@@ -828,7 +822,7 @@ def box_replace_session(number):
         state['TGBOXES'][state['CURRENT_TGBOX']][1]
     )
     tgbox.sync(dlb.replace_session(basekey, tc))
-    click.echo(green('Session replaced successfully'))
+    echo('[GREEN]Session replaced successfully[GREEN]')
 
     tgbox.sync(exit_program(dlb=dlb))
 
@@ -877,9 +871,9 @@ def box_request(number, phrase, s, n, p, r, l, prefix):
         n=n, p=p, r=r, dklen=l
     )
     reqkey = tgbox.sync(erb.get_requestkey(basekey))
-    click.echo(
+    echo(
         '''\nSend this Key to the Box owner:\n'''
-        f'''    {white(reqkey.encode())}\n'''
+       f'''    [WHITE]{reqkey.encode()}[WHITE]\n'''
     )
     tgbox.sync(exit_program(drb=erb))
 
@@ -898,16 +892,16 @@ def box_share(requestkey):
     sharekey = dlb.get_sharekey(requestkey)
 
     if not requestkey:
-        click.echo(
-            red('\nYou didn\'t specified requestkey.\n   You ')\
-            + red('will receive decryption key IN PLAIN\n')
+        echo(
+            '''\n[RED]You didn\'t specified requestkey.\n   You '''
+            '''will receive decryption key IN PLAIN\n[RED]'''
         )
         if not click.confirm('Are you TOTALLY sure?'):
             tgbox.sync(exit_program(dlb=dlb))
 
-    click.echo(
+    echo(
         '''\nSend this Key to the Box requester:\n'''
-        f'''    {white(sharekey.encode())}\n'''
+       f'''    [WHITE]{sharekey.encode()}[WHITE]\n'''
     )
     tgbox.sync(exit_program(dlb=dlb))
 
@@ -973,14 +967,14 @@ def box_clone(
     except tgbox.errors.IncorrectKey:
         pass
 
-    click.echo(cyan('\nMaking BaseKey... '), nl=False)
+    echo('\n[CYAN]Making BaseKey...[CYAN] ', nl=False)
 
     basekey = tgbox.keys.make_basekey(
         phrase.encode(),
         salt=bytes.fromhex(s),
         n=n, p=p, r=r, dklen=l
     )
-    click.echo(green('Successful!'))
+    echo('[GREEN]Successful![GREEN]')
 
     if key is None:
         key = basekey
@@ -1008,7 +1002,7 @@ def box_clone(
     ))
     manager.stop()
 
-    click.echo(cyan('\nUpdating local data... '), nl=False)
+    echo('\n[CYAN]Updating local data...[CYAN] ', nl=False)
 
     if 'TGBOXES' not in state:
         state['TGBOXES'] = [[box_path, basekey.key]]
@@ -1016,14 +1010,14 @@ def box_clone(
     else:
         for _, other_basekey in state['TGBOXES']:
             if basekey.key == other_basekey:
-                click.echo(red('This Box is already opened'))
+                echo('[RED]This Box is already opened[RED]')
                 tgbox.sync(exit_program(drb=drb))
 
         state['TGBOXES'].append([box_path, basekey.key])
         state['CURRENT_TGBOX'] = len(state['TGBOXES']) - 1
 
     write_state(state, state_key)
-    click.echo(green('Successful!'))
+    echo('[GREEN]Successful![GREEN]')
     tgbox.sync(exit_program(drb=drb))
 
 @cli.command()
@@ -1045,9 +1039,9 @@ def box_default(defaults):
         try:
             key, value = default.split('=',1)
             tgbox.sync(dlb.defaults.change(key, value))
-            click.echo(green(f'Successfuly changed {key} to {value}'))
+            echo(f'[GREEN]Successfuly changed {key} to {value}[GREEN]')
         except AttributeError as e:
-            click.echo(red(f'Default {key} doesn\'t exist, skipping'))
+            echo(f'[RED]Default {key} doesn\'t exist, skipping[RED]')
 
     tgbox.sync(exit_program(dlb=dlb))
 
@@ -1089,7 +1083,7 @@ def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
             tgbox.sync(gather(*to_upload))
             to_upload.clear()
         except tgbox.errors.NotEnoughRights as e:
-            click.echo('\n' + red(e))
+            echo(f'\n[RED]{e}[RED]')
             manager.stop()
             tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
@@ -1131,10 +1125,10 @@ def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
                 make_preview = thumb
             ))
         except tgbox.errors.InvalidFile as e:
-            click.echo(yellow(f'{current_path} is empty. Skipping.'))
+            echo(f'[YELLOW]{current_path} is empty. Skipping.[YELLOW]')
             continue
         except tgbox.errors.FingerprintExists as e:
-            click.echo(yellow(f'{current_path} already uploaded. Skipping.'))
+            echo(f'[YELLOW]{current_path} already uploaded. Skipping.[YELLOW]')
             continue
 
         current_bytes -= pf.filesize
@@ -1225,18 +1219,18 @@ def file_search(filters, force_remote, non_interactive):
     try:
         sf = filters_to_searchfilter(filters)
     except ZeroDivisionError:#IndexError: # Incorrect filters format
-        click.echo(red('Incorrect filters! Make sure to use format filter=value'))
+        echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
         tgbox.sync(exit_program(dlb=dlb, drb=drb))
     except KeyError as e: # Unknown filters
-        click.echo(red(f'Filter "{e.args[0]}" doesn\'t exists'))
+        echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
         tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
     box = drb if force_remote else dlb
 
     if non_interactive:
         for dxbfs in bfi_gen(box.search_file(sf, cache_preview=False)):
-            click.echo(dxbfs, nl=False)
-        click.echo()
+            echo(dxbfs, nl=False)
+        echo('')
     else:
         click.echo_via_pager(bfi_gen(
             box.search_file(sf, cache_preview=False)
@@ -1342,7 +1336,7 @@ def file_download(
     try:
         sf = filters_to_searchfilter(filters)
     except ValueError as e: # Unsupported filters
-        click.echo(red(e.args[0]))
+        echo(f'[RED]{e.args[0]}[RED]')
         tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
     manager, to_upload = get_manager(), []
@@ -1374,8 +1368,9 @@ def file_download(
 
                 if preview_bytes is not None:
                     if preview_bytes == b'':
-                        click.echo(yellow(
-                            f'{name} doesn\'t have preview. Try -r flag. Skipping.')
+                        echo(
+                            f'''[YELLOW]{name} doesn\'t have preview. Try '''
+                             '''-r flag. Skipping.[YELLOW]'''
                         )
                         continue
 
@@ -1394,16 +1389,16 @@ def file_download(
                     if show or locate:
                         click.launch(str(file_path), locate)
 
-                    click.echo(
-                        f'''{white(file_name)} preview downloaded '''
-                        f'''to {white(str(outpath))}''')
+                    echo(
+                        f'''[WHITE]{file_name}[WHITE] preview downloaded '''
+                        f'''to [WHITE]{str(outpath)}[WHITE]''')
                 else:
                     drbfi = tgbox.sync(drb.get_file(dlbfi.id))
 
                     if not drbfi:
-                        click.echo(yellow(
-                            f'There is no file with ID={dlbfi.id} in RemoteBox. Skipping.'
-                        ))
+                        echo(
+                            f'''[YELLOW]There is no file with ID={dlbfi.id} in '''
+                             '''RemoteBox. Skipping.[YELLOW]''')
                     else:
                         current_workers -= 1
                         current_bytes -= drbfi.file_size
@@ -1479,25 +1474,26 @@ def file_list_non_imported():
             xrbf = tgbox.sync(tgbox.tools.anext(iter_over))
             if isinstance(xrbf, tgbox.api.EncryptedRemoteBoxFile):
                 time = datetime.fromtimestamp(xrbf.upload_time)
-                time = cyan(time.strftime('%d/%m/%y, %H:%M:%S'))
+                time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN]"
 
                 salt = urlsafe_b64encode(xrbf.file_salt).decode()
-                idsalt = '[' + bright_red(f'{str(xrbf.id)}') + ':'
-                idsalt += (bright_black(f'{salt[:12]}') + ']')
+                idsalt = f'[[BRIGHT_RED]{str(xrbf.id)}[BRIGHT_RED]:'
+                idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
 
-                size = green(format_bytes(xrbf.file_size))
-                name = red('[N/A: No FileKey available]')
+                size = f'[GREEN]{format_bytes(xrbf.file_size)}[GREEN]'
+                name = '[RED][N/A: No FileKey available][RED]'
 
-                req_key = white(xrbf.get_requestkey(dlb._mainkey).encode())
+                req_key = xrbf.get_requestkey(dlb._mainkey).encode()
+                req_key = f'[WHITE]{req_key}[WHITE]'
 
                 formatted = (
                    f"""\nFile: {idsalt} {name}\n"""
                    f"""Size, Time: {size}({xrbf.file_size}), {time}\n"""
                    f"""RequestKey: {req_key}"""
                 )
-                click.echo(formatted)
+                echo(formatted)
         except StopAsyncIteration:
-            click.echo()
+            echo('')
             tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
 @cli.command()
@@ -1516,7 +1512,7 @@ def file_share(requestkey, id):
     dlbf = tgbox.sync(dlb.get_file(id=id))
 
     if not dlbf:
-        click.echo(red(f'There is no file in LocalBox by ID {id}'))
+        echo(f'[RED]There is no file in LocalBox by ID {id}[RED]')
         tgbox.sync(exit_program(dlb=dlb))
 
     requestkey = requestkey if not requestkey\
@@ -1525,16 +1521,15 @@ def file_share(requestkey, id):
     sharekey = dlbf.get_sharekey(requestkey)
 
     if not requestkey:
-        click.echo(
-            red('\nYou didn\'t specified requestkey.\n   You ')\
-            + red('will receive decryption key IN PLAIN\n')
+        echo(
+            '''\n[RED]You didn\'t specified requestkey.\n   You '''
+            '''will receive decryption key IN PLAIN[RED]\n'''
         )
         if not click.confirm('Are you TOTALLY sure?'):
             tgbox.sync(exit_program(dlb=dlb))
-
-    click.echo(
+    echo(
         '''\nSend this Key to the Box requester:\n'''
-        f'''    {white(sharekey.encode())}\n'''
+       f'''    [WHITE]{sharekey.encode()}[WHITE]\n'''
     )
     tgbox.sync(exit_program(dlb=dlb))
 
@@ -1558,12 +1553,12 @@ def file_import(key, id, file_path):
         id, return_imported_as_erbf=True))
 
     if not erbf:
-        click.echo(red(f'There is no file in RemoteBox by ID {id}'))
+        echo(f'[RED]There is no file in RemoteBox by ID {id}[RED]')
         tgbox.sync(exit_program(dlb=dlb, drb=drb))
     try:
         key = tgbox.keys.Key.decode(key)
     except tgbox.errors.IncorrectKey:
-        click.echo(red(f'Specified Key is invalid'))
+        echo(f'[RED]Specified Key is invalid[RED]')
     else:
         if isinstance(key, tgbox.keys.ShareKey):
             key = tgbox.keys.make_importkey(
@@ -1573,7 +1568,7 @@ def file_import(key, id, file_path):
         drbf = tgbox.sync(erbf.decrypt(key))
         dlbf = tgbox.sync(dlb.import_file(drbf, file_path))
 
-        click.echo(_format_dxbf(drbf))
+        echo(_format_dxbf(drbf))
 
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
@@ -1588,7 +1583,7 @@ def dir_list():
         try:
             dir = tgbox.sync(tgbox.tools.anext(dirs))
             tgbox.sync(dir.lload(full=True))
-            click.echo(str(dir))
+            echo(str(dir))
         except StopAsyncIteration:
             break
 
@@ -1598,7 +1593,7 @@ def dir_list():
 def cli_start():
     """Get commands for initializing TGBOX-CLI"""
     if get_sk():
-        click.echo(white('CLI is already initialized.'))
+        echo('[WHITE]CLI is already initialized.[WHITE]')
     else:
         state_key = urlsafe_b64encode(
             tgbox.crypto.get_rnd_bytes(32)
@@ -1611,7 +1606,7 @@ def cli_start():
                 '''cls # Clear this shell\n'''
             )
         else:
-            click.echo(blue('\n# (Execute commands below if eval doesn\'t work)\n'))
+            echo('\n[BLUE]# (Execute commands below if eval doesn\'t work)[BLUE]\n')
 
             real_commands = (
                 '''set +o history # Disable shell history\n'''
@@ -1619,13 +1614,13 @@ def cli_start():
                 '''set -o history # Enable shell history\n'''
                 '''clear # Clear this shell'''
             )
-            click.echo(real_commands)
+            echo(real_commands)
             commands = 'eval "$(!!)" || true && clear\n'
 
-        click.echo(
-            yellow('\nWelcome to the TGBOX-CLI!\n\n')\
-            + 'Copy & Paste below commands to your shell:\n\n'\
-            + white(commands)
+        echo(
+            '''\n[YELLOW]Welcome to the TGBOX-CLI![YELLOW]\n\n'''
+            '''Copy & Paste below commands to your shell:\n\n'''
+           f'''[WHITE]{commands}[WHITE]'''
         )
 
 @cli.command()
@@ -1638,18 +1633,28 @@ def cli_info():
             args=[tgbox.defaults.FFMPEG, '-version'],
             stdout=PIPE, stderr=None
         )
-        ffmpeg_version = green(sp_result.stdout.split(b' ',3)[2].decode())
+        ffmpeg_version = f"[GREEN]{sp_result.stdout.split(b' ',3)[2].decode()}[GREEN]"
     except:
-        ffmpeg_version = red('NO')
+        ffmpeg_version = '[RED]NO[RED]'
 
-    click.echo(
-        f'''\n# Copyright {white('(c) Non [github.com/NotStatilko]')}, the MIT License\n'''
-        f'''# Author Email: {white('thenonproton@protonmail.com')}\n\n'''
-        f'''TGBOX-CLI Version: {yellow(ver[0])}\n'''
-        f'''TGBOX Version: {magenta(ver[1])}\n\n'''
+    if tgbox.crypto.FAST_ENCRYPTION:
+        fast_encryption = '[GREEN]YES[GREEN]'
+    else:
+        fast_encryption = '[RED]NO[RED]'
+
+    if tgbox.crypto.FAST_TELETHON:
+        fast_telethon = '[GREEN]YES[GREEN]'
+    else:
+        fast_telethon = '[RED]NO[RED]'
+
+    echo(
+        '''\n# Copyright [WHITE](c) Non [github.com/NotStatilko][WHITE], the MIT License\n'''
+        '''# Author Email: [WHITE]thenonproton@protonmail.com[WHITE]\n\n'''
+        f'''TGBOX-CLI Version: [YELLOW]{ver[0]}[YELLOW]\n'''
+        f'''TGBOX Version: [MAGENTA]{ver[1]}[MAGENTA]\n\n'''
         f'''FFMPEG: {ffmpeg_version}\n'''
-        f'''FAST_ENCRYPTION: {green('YES') if tgbox.crypto.FAST_ENCRYPTION else red('NO')}\n'''
-        f'''FAST_TELETHON: {green('YES') if tgbox.crypto.FAST_TELETHON else red('NO')}\n'''
+        f'''FAST_ENCRYPTION: {fast_encryption}\n'''
+        f'''FAST_TELETHON: {fast_telethon}\n'''
     )
 if __name__ == '__main__':
     safe_cli()
