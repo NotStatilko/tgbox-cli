@@ -1,23 +1,50 @@
 import tgbox
 
 from sys import exit
+from click import style
+from typing import Union
+from itertools import cycle
+
 from typing import AsyncGenerator
 from urllib3.util import parse_url
 from shutil import get_terminal_size
 from os import system, name as os_name
 
+AVAILABLE_COLORS = [
+    'red','cyan','blue','green',
+    'white','yellow','magenta',
+    'bright_black','bright_red',
+    'bright_magenta', 'bright_blue',
+    'bright_cyan', 'bright_white'
+]
+def color(text: Union[str, bytes]) -> Union[str, bytes]:
+    """
+    Will color special formatted parts of text to the
+    specified color. [RED]This will be red[RED], [BLUE]
+    and this is blue[BLUE]. Color should be in uppercase
+    and should be in the tools.AVAILABLE_COLORS list
+    and should supported by the click.style function.
+    """
+    NOCOLOR = '\x1b[0m'
 
-# This is a dirty way to exit from program,
-# but should be OK for such CLI design. The
-# default sys.exit doesn't work, and script
-# just freeze, seems that event loop isn't
-# closed for some reason, or maybe some
-# threads prevent stoping. Tgbox is async
-# library, so maybe we should deal with it.
+    available = {
+        ccolor.upper(): style('%', fg=ccolor, bold=True).rstrip(NOCOLOR)[:-1]
+        for ccolor in AVAILABLE_COLORS
+    }
+    for color_, ansi_code in available.items():
+        # State 0 is color, state 1 is NOCOLOR
+        state = cycle(range(2))
+
+        while f'[{color_}]' in text:
+            current = NOCOLOR if next(state) else ansi_code
+            text = text.replace(f'[{color_}]', current, 1)
+
+    return text
+
 async def exit_program(*, dlb=None, drb=None):
     if dlb: await dlb.done()
     if drb: await drb.done()
-    exit()
+    exit(0)
 
 # This will clear console, we use it once.
 clear_console = lambda: system('cls' if os_name in ('nt','dos') else 'clear')
