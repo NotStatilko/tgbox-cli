@@ -23,7 +23,7 @@ def color(text: Union[str, bytes]) -> Union[str, bytes]:
     specified color. [RED]This will be red[RED], [BLUE]
     and this is blue[BLUE]. Color should be in uppercase
     and should be in the tools.AVAILABLE_COLORS list
-    and should supported by the click.style function.
+    and should be supported by the click.style function.
     """
     NOCOLOR = '\x1b[0m'
 
