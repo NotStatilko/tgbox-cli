@@ -10,6 +10,8 @@ from urllib3.util import parse_url
 from shutil import get_terminal_size
 from os import system, name as os_name
 
+clear_console = lambda: system('cls' if os_name in ('nt','dos') else 'clear')
+
 AVAILABLE_COLORS = [
     'red','cyan','blue','green',
     'white','yellow','magenta',
@@ -42,12 +44,11 @@ def color(text: Union[str, bytes]) -> Union[str, bytes]:
     return text
 
 async def exit_program(*, dlb=None, drb=None):
-    if dlb: await dlb.done()
-    if drb: await drb.done()
+    if dlb:
+        await dlb.done()
+    if drb:
+        await drb.done()
     exit(0)
-
-# This will clear console, we use it once.
-clear_console = lambda: system('cls' if os_name in ('nt','dos') else 'clear')
 
 class Progress:
     """
