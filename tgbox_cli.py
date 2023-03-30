@@ -23,7 +23,7 @@ from tools import (
     format_bytes, splitpath, env_proxy_to_pysocks,
     filters_to_searchfilter, clear_console, color
 )
-from enlighten import get_manager
+from enlighten import get_manager as get_enlighten_manager
 
 # tools.color with a click.echo function
 echo = lambda t,**k: click.echo(color(t), **k)
@@ -79,7 +79,7 @@ def _select_box(ignore_remote: bool=False):
     if 'TGBOXES' not in state:
         echo(
             '''[RED]You didn\'t connected box yet. Use[RED] '''
-            '''[WHITE]box-connect[WHITE] [RED]command.[RED]'''
+            '''[WHITE]box-open[WHITE] [RED]command.[RED]'''
         )
         tgbox.sync(exit_program())
     else:
@@ -105,18 +105,15 @@ def _select_box(ignore_remote: bool=False):
         return dlb, drb
 
 def _select_remotebox(number: int, prefix: str):
-    tc, count, erb = _select_account(), 0, None
-    iter_over = tc.tgboxes(yield_with=prefix)
+    tc, count, erb = _select_account(), 1, None
 
-    while True:
-        try:
-            count += 1
-
-            erb = tgbox.sync(tgbox.tools.anext(iter_over))
-            if count == number:
+    for d in sync_async_gen(tc.iter_dialogs()):
+        if prefix in d.title and d.is_channel:
+            if count != number:
+                count += 1
+            else:
+                erb = tgbox.api.remote.EncryptedRemoteBox(d,tc)
                 break
-        except StopAsyncIteration:
-            break
 
     if not erb:
         echo(f'[RED]RemoteBox by number={number} not found.[RED]')
@@ -149,7 +146,7 @@ def _select_account() -> tgbox.api.TelegramClient:
             api_id=API_ID,
             api_hash=API_HASH
         )
-    else:
+    if not tc:
         echo(
           '''[RED]You should run [RED][WHITE]tgbox-cli '''
           '''account-connect [WHITE][RED]firstly.[RED]'''
@@ -170,10 +167,18 @@ def _select_account() -> tgbox.api.TelegramClient:
 
 def _format_dxbf(
         dxbf: Union[tgbox.api.DecryptedRemoteBoxFile,
-                    tgbox.api.DecryptedLocalBoxFile]) -> str:
-
+            tgbox.api.DecryptedLocalBoxFile]) -> str:
+    """
+    This will make a colored information string from
+    the DecryptedRemoteBoxFile or DecryptedLocalBoxFile
+    """
     salt = urlsafe_b64encode(dxbf.file_salt).decode()
-    idsalt = f'[[BRIGHT_RED]{str(dxbf.id)}[BRIGHT_RED]:'
+
+    if dxbf.imported:
+        idsalt = f'[[BRIGHT_BLUE]{str(dxbf.id)}[BRIGHT_BLUE]:'
+    else:
+        idsalt = f'[[BRIGHT_RED]{str(dxbf.id)}[BRIGHT_RED]:'
+
     idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
     try:
         name = f'[WHITE]{click.format_filename(dxbf.file_name)}[WHITE]'
@@ -295,7 +300,7 @@ def account_connect(phone):
             )
             other_tc = tgbox.sync(other_tc.connect())
             try:
-                other_ta_id = tgbox.sync(other_tc.get_me()).id
+                other_tc_id = tgbox.sync(other_tc.get_me()).id
             except AttributeError:
                 # If session was disconnected
                 disconnected_sessions.append(session)
@@ -422,9 +427,9 @@ def account_switch(number):
             '''[RED]You didn\'t connected any account yet. Use[RED] '''
             '''[WHITE]account-connect[WHITE] [RED]command firstly.[RED]'''
         )
-    elif number < 1 or account > len(state['ACCOUNTS']):
+    elif number < 1 or number > len(state['ACCOUNTS']):
         echo(
-            f'''[RED]There is no account #{account}. Use [RED]'''
+            f'''[RED]There is no account #{number}. Use [RED]'''
              '''[WHITE]account-list[WHITE] [RED]command.[RED]'''
         )
     elif number == state['CURRENT_ACCOUNT']:
@@ -567,7 +572,7 @@ def box_make(box_name, box_salt, phrase, s, n, p, r, l):
     '--scrypt-dklen', '-L', 'l', help='Scrypt key length',
     default=int(tgbox.defaults.Scrypt.DKLEN)
 )
-def box_connect(box_path, phrase, s, n, p, r, l):
+def box_open(box_path, phrase, s, n, p, r, l):
     """Decrypt & connect existing LocalTgbox"""
     check_sk()
 
@@ -615,7 +620,7 @@ def box_connect(box_path, phrase, s, n, p, r, l):
     '--number', '-n', required=True, type=int,
     help='Number of other connected box, use box-list command'
 )
-def box_disconnect(number):
+def box_close(number):
     """Will disconnect selected LocalBox"""
     check_sk()
 
@@ -655,7 +660,7 @@ def box_switch(number):
     if 'TGBOXES' not in state:
         echo(
             '''[RED]You didn\'t connected box yet. Use[RED] '''
-            '''[WHITE]box-connect[WHITE] [RED]command.[RED]'''
+            '''[WHITE]box-open[WHITE] [RED]command.[RED]'''
         )
     elif number < 0 or number > len(state['TGBOXES'])-1:
         echo(
@@ -685,7 +690,7 @@ def box_list():
     if 'CURRENT_TGBOX' in state:
         echo(
             ''''\n[WHITE]You\'re using Box[WHITE] '''
-           f'''[RED]#{str(number+1)}[RED]\n'''
+           f'''[RED]#{str(state['CURRENT_TGBOX']+1)}[RED]\n'''
         )
     else:
         echo('[YELLOW]You don\'t have any connected Box.[YELLOW]')
@@ -719,7 +724,7 @@ def box_list():
         if not state['TGBOXES']:
             state.pop('TGBOXES')
             state.pop('CURRENT_TGBOX')
-            echo('No more Boxes, use [WHITE]box-connect[WHITE].')
+            echo('No more Boxes, use [WHITE]box-open[WHITE].')
         else:
             state['CURRENT_TGBOX'] = -1
             echo(
@@ -738,26 +743,22 @@ def box_list_remote(prefix):
     """List all RemoteBoxes on account"""
 
     tc, count = _select_account(), 0
-    iter_over = tc.iter_dialogs()
 
     echo('[YELLOW]Searching...[YELLOW]')
-    while True:
-        try:
-            dialogue = tgbox.sync(tgbox.tools.anext(iter_over))
-            if prefix in dialogue.title and dialogue.is_channel:
-                erb = tgbox.api.EncryptedRemoteBox(dialogue, tc)
 
-                erb_name = tgbox.sync(erb.get_box_name())
-                erb_salt = tgbox.sync(erb.get_box_salt())
-                erb_salt = urlsafe_b64encode(erb_salt).decode()
+    for dialogue in sync_async_gen(tc.iter_dialogs()):
+        if prefix in dialogue.title and dialogue.is_channel:
+            erb = tgbox.api.EncryptedRemoteBox(dialogue, tc)
 
-                echo(
-                    f'''[WHITE]{count+1}[WHITE]) [BLUE]{erb_name}[BLUE]'''
-                    f'''@[BRIGHT_BLACK]{erb_salt}[BRIGHT_BLACK]'''
-                )
-                count += 1
-        except StopAsyncIteration:
-            break
+            erb_name = tgbox.sync(erb.get_box_name())
+            erb_salt = tgbox.sync(erb.get_box_salt())
+            erb_salt = urlsafe_b64encode(erb_salt).decode()
+
+            echo(
+                f'''[WHITE]{count+1}[WHITE]) [BLUE]{erb_name}[BLUE]'''
+                f'''@[BRIGHT_BLACK]{erb_salt}[BRIGHT_BLACK]'''
+            )
+            count += 1
 
     echo('[YELLOW]Done.[YELLOW]')
     tgbox.sync(exit_program())
@@ -775,7 +776,7 @@ def box_sync(start_from_id):
     not in LocalBox but in RemoteBox will be imported.
     """
     dlb, drb = _select_box()
-    manager = get_manager()
+    manager = get_enlighten_manager()
 
     tgbox.sync(dlb.sync(drb, start_from_id,
         Progress(manager, 'Synchronizing...').update_2)
@@ -790,8 +791,8 @@ def box_sync(start_from_id):
     '--number','-n', required=True, type=int,
     help='Number of connected account. We will take session from it.'
 )
-def box_replace_session(number):
-    """Will replace Telegram session of your current Box
+def box_replace_account(number):
+    """Will replace Telegram account of your current Box
 
     This can be useful if you disconnected your TGBOX in
     Telegram settings (Privacy & Security > Devices) or
@@ -994,7 +995,7 @@ def box_clone(
         box_path += tgbox.sync(drb.get_box_name())\
             if not box_filename else box_filename
 
-    manager = get_manager()
+    manager = get_enlighten_manager()
 
     tgbox.sync(drb.clone(
         basekey=basekey, box_path=box_path,
@@ -1063,13 +1064,13 @@ def box_default(defaults):
     help='Add thumbnail or not, boolean'
 )
 @click.option(
-    '--max-workers', '-w', default=10, type=click.IntRange(1,50),
-    help='Max amount of files uploaded at the same time',
+    '--max-workers', default=10, type=click.IntRange(1,50),
+    help='Max amount of files uploaded at the same time, default=10',
 )
 @click.option(
-    '--max-bytes', '-w', default=1000000000,
+    '--max-bytes', default=1000000000,
     type=click.IntRange(1000000, 10000000000),
-    help='Max amount of bytes uploaded at the same time',
+    help='Max amount of bytes uploaded at the same time, default=1000000000',
 )
 def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
     """Will upload specified path to the Box"""
@@ -1092,7 +1093,7 @@ def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
     else:
         iter_over = (path,)
 
-    manager, to_upload = get_manager(), []
+    manager, to_upload = get_enlighten_manager(), []
     for current_path in iter_over:
 
         if current_path.is_dir():
@@ -1269,13 +1270,13 @@ def file_search(filters, force_remote, non_interactive):
     help='If specified, will fetch file data from RemoteBox'
 )
 @click.option(
-    '--max-workers', '-w', default=10, type=click.IntRange(1,50),
-    help='Max amount of files uploaded at the same time',
+    '--max-workers', default=10, type=click.IntRange(1,50),
+    help='Max amount of files downloaded at the same time, default=10',
 )
 @click.option(
-    '--max-bytes', '-w', default=1000000000,
+    '--max-bytes', default=1000000000,
     type=click.IntRange(1000000, 10000000000),
-    help='Max amount of bytes uploaded at the same time',
+    help='Max amount of bytes downloaded at the same time, default=1000000000',
 )
 def file_download(
         filters, preview, show, locate,
@@ -1318,13 +1319,13 @@ def file_download(
     \b
     Example:\b
         # Include is used by default
-        tgbox-cli file-search min_id=3 max_id=100
+        tgbox-cli file-download min_id=3 max_id=100
         \b
         # Include flag (will ignore unmatched)
-        tgbox-cli file-search +i file_name=.png
+        tgbox-cli file-download +i file_name=.png
         \b
         # Exclude flag (will ignore matched)
-        tgbox-cli file-search +e file_name=.png
+        tgbox-cli file-download +e file_name=.png
         \b
         You can use both, the ++include and
         ++exclude (+i, +e) in one command.
@@ -1335,11 +1336,14 @@ def file_download(
         dlb, drb = _select_box()
     try:
         sf = filters_to_searchfilter(filters)
-    except ValueError as e: # Unsupported filters
-        echo(f'[RED]{e.args[0]}[RED]')
+    except ZeroDivisionError:#IndexError: # Incorrect filters format
+        echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
+        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    except KeyError as e: # Unknown filters
+        echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
         tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
-    manager, to_upload = get_manager(), []
+    manager, to_upload = get_enlighten_manager(), []
 
     current_workers = max_workers
     current_bytes = max_bytes
@@ -1369,7 +1373,7 @@ def file_download(
                 if preview_bytes is not None:
                     if preview_bytes == b'':
                         echo(
-                            f'''[YELLOW]{name} doesn\'t have preview. Try '''
+                            f'''[YELLOW]{file_name} doesn\'t have preview. Try '''
                              '''-r flag. Skipping.[YELLOW]'''
                         )
                         continue
@@ -1469,32 +1473,29 @@ def file_list_non_imported():
         return_imported_as_erbf=True,
         min_id=tgbox.sync(dlb.get_last_file_id())
     )
-    while True:
-        try:
-            xrbf = tgbox.sync(tgbox.tools.anext(iter_over))
-            if isinstance(xrbf, tgbox.api.EncryptedRemoteBoxFile):
-                time = datetime.fromtimestamp(xrbf.upload_time)
-                time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN]"
+    for xrbf in sync_async_gen(iter_over):
+        if isinstance(xrbf, tgbox.api.EncryptedRemoteBoxFile):
+            time = datetime.fromtimestamp(xrbf.upload_time)
+            time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN]"
 
-                salt = urlsafe_b64encode(xrbf.file_salt).decode()
-                idsalt = f'[[BRIGHT_RED]{str(xrbf.id)}[BRIGHT_RED]:'
-                idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
+            salt = urlsafe_b64encode(xrbf.file_salt).decode()
+            idsalt = f'[[BRIGHT_RED]{str(xrbf.id)}[BRIGHT_RED]:'
+            idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
 
-                size = f'[GREEN]{format_bytes(xrbf.file_size)}[GREEN]'
-                name = '[RED][N/A: No FileKey available][RED]'
+            size = f'[GREEN]{format_bytes(xrbf.file_size)}[GREEN]'
+            name = '[RED][N/A: No FileKey available][RED]'
 
-                req_key = xrbf.get_requestkey(dlb._mainkey).encode()
-                req_key = f'[WHITE]{req_key}[WHITE]'
+            req_key = xrbf.get_requestkey(dlb._mainkey).encode()
+            req_key = f'[WHITE]{req_key}[WHITE]'
 
-                formatted = (
-                   f"""\nFile: {idsalt} {name}\n"""
-                   f"""Size, Time: {size}({xrbf.file_size}), {time}\n"""
-                   f"""RequestKey: {req_key}"""
-                )
-                echo(formatted)
-        except StopAsyncIteration:
-            echo('')
-            tgbox.sync(exit_program(dlb=dlb, drb=drb))
+            formatted = (
+               f"""\nFile: {idsalt} {name}\n"""
+               f"""Size, Time: {size}({xrbf.file_size}), {time}\n"""
+               f"""RequestKey: {req_key}"""
+            )
+            echo(formatted)
+    echo('')
+    tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
 @cli.command()
 @click.option(
@@ -1573,19 +1574,144 @@ def file_import(key, id, file_path):
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
 @cli.command()
+@click.option(
+    '--remote','-r', is_flag=True,
+    help='If specified, will return ID of last file on RemoteBox'
+)
+def file_last_id(remote):
+    """Will return ID of last uploaded to Box file"""
+    dlb, drb = _select_box(ignore_remote=False if remote else True)
+    lfid = tgbox.sync((drb if remote else dlb).get_last_file_id())
+
+    sbox = 'Remote' if remote else 'Local'
+    echo(f'ID of last uploaded to {sbox}Box file is [GREEN]{lfid}[GREEN]')
+    tgbox.sync(exit_program(drb=drb, dlb=dlb))
+
+
+@cli.command()
+@click.argument('filters', nargs=-1)
+@click.option(
+    '--local-only','-l', is_flag=True,
+    help='If specified, will remove file ONLY from LocalBox'
+)
+@click.option(
+    '--ask-before-remove','-a', is_flag=True,
+    help='If specified, will ask "Are you sure?" for each file'
+)
+def file_remove(filters, local_only, ask_before_remove):
+    """Will remove files by filters
+
+    \b
+    Available filters:\b
+        id integer: File’s ID
+        mime str: File mime type
+        \b
+        cattrs: File CAttrs
+                -----------
+                Can be used hexed PackedAttributes
+                or special CLI format alternatively:
+                cattrs="comment:test type:message"
+        \b
+        file_path str: File path
+        file_name str: File name
+        file_salt str: File salt
+        \b
+        min_id integer: File ID should be > min_id
+        max_id integer: File ID should be < max_id
+        \b
+        min_size integer: File Size should be > min_size
+        max_size integer: File Size should be < max_size
+        \b
+        min_time integer/float: Upload Time should be > min_time
+        max_time integer/float: Upload Time should be < max_time
+        \b
+        imported bool: Yield only imported files
+        re       bool: re_search for every bytes filter
+    \b
+    See tgbox.readthedocs.io/en/indev/
+        tgbox.html#tgbox.tools.SearchFilter
+    \b
+    You can also use special flags to specify
+    that filters is for include or exclude search.
+    \b
+    Example:\b
+        # Include is used by default
+        tgbox-cli file-remove min_id=3 max_id=100
+        \b
+        # Include flag (will ignore unmatched)
+        tgbox-cli file-remove +i file_name=.png
+        \b
+        # Exclude flag (will ignore matched)
+        tgbox-cli file-remove +e file_name=.png
+        \b
+        You can use both, the ++include and
+        ++exclude (+i, +e) in one command.
+    """
+    dlb, drb = _select_box()
+    try:
+        sf = filters_to_searchfilter(filters)
+    except ZeroDivisionError:#IndexError: # Incorrect filters format
+        echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
+        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    except KeyError as e: # Unknown filters
+        echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
+        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+
+    if not filters:
+        echo(
+            '''\n[RED]You didn\'t specified any search filter.\n   This '''
+            '''will [WHITE]REMOVE ALL FILES[WHITE] in your Box[RED]\n'''
+        )
+        if not click.confirm('Are you TOTALLY sure?'):
+            tgbox.sync(exit_program(dlb=dlb, drb=drb))
+
+    to_remove = dlb.search_file(sf, cache_preview=False)
+    for dlbf in sync_async_gen(to_remove):
+        tgbox.sync(dlbf.directory.lload(full=True))
+
+        file_path = str(Path(str(dlbf.directory)) / dlbf.file_name)
+        echo(f'@ [RED]Removing[RED] [WHITE]Box[WHITE]({file_path})')
+
+        if ask_before_remove:
+            while True:
+                echo('')
+                choice = click.prompt(
+                    'Are you TOTALLY sure? ([y]es | [n]o | [i]nfo | [e]xit)'
+                )
+                if choice.lower() in ('yes','y'):
+                    tgbox.sync(dlbf.delete())
+                    if not local_only:
+                        drbf = tgbox.sync(drb.get_file(dlbf.id))
+                        tgbox.sync(drbf.delete())
+                    echo('')
+                    break
+                elif choice.lower() in ('no','n'):
+                    echo('')
+                    break
+                elif choice.lower() in ('info','i'):
+                    echo(_format_dxbf(dlbf).rstrip())
+                elif choice.lower() in ('exit','e'):
+                    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+                else:
+                    echo('[RED]Invalid choice, try again[RED]')
+        else:
+            tgbox.sync(dlbf.delete())
+            if not local_only:
+                drbf = tgbox.sync(drb.get_file(dlbf.id))
+                tgbox.sync(drbf.delete())
+
+    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+
+@cli.command()
 def dir_list():
     """List all directories in LocalBox"""
 
     dlb, _ = _select_box(ignore_remote=True)
     dirs = dlb.contents(ignore_files=True)
 
-    while True:
-        try:
-            dir = tgbox.sync(tgbox.tools.anext(dirs))
-            tgbox.sync(dir.lload(full=True))
-            echo(str(dir))
-        except StopAsyncIteration:
-            break
+    for dir in sync_async_gen(dirs):
+        tgbox.sync(dir.lload(full=True))
+        echo(str(dir))
 
     tgbox.sync(exit_program(dlb=dlb))
 
@@ -1608,13 +1734,9 @@ def cli_start():
         else:
             echo('\n[BLUE]# (Execute commands below if eval doesn\'t work)[BLUE]\n')
 
-            real_commands = (
-                '''set +o history # Disable shell history\n'''
-               f'''export TGBOX_SK={state_key.decode()}\n'''
-                '''set -o history # Enable shell history\n'''
-                '''clear # Clear this shell'''
-            )
+            real_commands = 'export TGBOX_SK="$(head -c 32 /dev/urandom | base64)"'
             echo(real_commands)
+
             commands = 'eval "$(!!)" || true && clear\n'
 
         echo(
