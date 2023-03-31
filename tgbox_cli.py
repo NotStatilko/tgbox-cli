@@ -46,7 +46,7 @@ def check_sk():
     if not get_sk():
         echo(
             '''[RED]You should run[RED] [WHITE]tgbox-cli '''
-            '''cli-start[WHITE] [RED]firstly.[RED]'''
+            '''cli-init[WHITE] [RED]firstly.[RED]'''
         )
         tgbox.sync(exit_program())
     else:
@@ -1716,7 +1716,7 @@ def dir_list():
     tgbox.sync(exit_program(dlb=dlb))
 
 @cli.command()
-def cli_start():
+def cli_init():
     """Get commands for initializing TGBOX-CLI"""
     if get_sk():
         echo('[WHITE]CLI is already initialized.[WHITE]')
@@ -1725,24 +1725,15 @@ def cli_start():
             tgbox.crypto.get_rnd_bytes(32)
         )
         if platform in ('win32', 'cygwin', 'cli'):
-            commands = (
-                '''%__APPDIR__%doskey.exe /listsize=0 # Disable shell history\n'''
-               f'''set TGBOX_SK={state_key.decode()}\n'''
-                '''%__APPDIR__%doskey.exe /listsize=50 # Enable shell history\n'''
-                '''cls # Clear this shell\n'''
-            )
+            commands = 'echo off && (for /f %i in (\'tgbox-cli sk-gen\') '\
+                'do set "TGBOX_SK=%i") && echo on'
         else:
-            echo('\n[BLUE]# (Execute commands below if eval doesn\'t work)[BLUE]\n')
-
-            real_commands = 'export TGBOX_SK="$(head -c 32 /dev/urandom | base64)"'
-            echo(real_commands)
-
-            commands = 'eval "$(!!)" || true && clear\n'
+            commands = 'export TGBOX_SK="$(tgbox-cli sk-gen)"'
 
         echo(
             '''\n[YELLOW]Welcome to the TGBOX-CLI![YELLOW]\n\n'''
             '''Copy & Paste below commands to your shell:\n\n'''
-           f'''[WHITE]{commands}[WHITE]'''
+           f'''[WHITE]{commands}[WHITE]\n'''
         )
 
 @cli.command()
@@ -1778,5 +1769,15 @@ def cli_info():
         f'''FAST_ENCRYPTION: {fast_encryption}\n'''
         f'''FAST_TELETHON: {fast_telethon}\n'''
     )
+
+@cli.command(hidden=True)
+@click.option(
+    '--size', '-s', default=32,
+    help='SessionKey bytesize'
+)
+def sk_gen(size: int):
+    """Generate random urlsafe b64encoded SessionKey"""
+    echo(urlsafe_b64encode(tgbox.crypto.get_rnd_bytes(size)).decode())
+
 if __name__ == '__main__':
     safe_cli()
