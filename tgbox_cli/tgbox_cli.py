@@ -39,12 +39,13 @@ else:
     from os import getenv, _exit, system as os_system
     from asyncio import gather, get_event_loop
 
-    from .tools import (
+    from tools import (
         Progress, sync_async_gen, exit_program,
         format_bytes, splitpath, env_proxy_to_pysocks,
         filters_to_searchfilter, clear_console, color,
     )
     from enlighten import get_manager as get_enlighten_manager
+    from telethon.errors.rpcerrorlist import UsernameNotOccupiedError
 
     # tools.color with a click.echo function
     echo = lambda t,**k: click.echo(color(t), **k)
@@ -1721,6 +1722,38 @@ def file_remove(filters, local_only, ask_before_remove):
             if not local_only:
                 drbf = tgbox.sync(drb.get_file(dlbf.id))
                 tgbox.sync(drbf.delete())
+
+    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+
+@cli.command()
+@click.argument('entity', nargs=-1)
+@click.option(
+    '--id', required=True, type=int,
+    help='File ID to forward'
+)
+def file_forward(entity, id):
+    """
+    Will forward file to specified entity
+
+    Usage example:
+        tgbox-cli file-forward @username --id=161
+        tgbox-cli file-forward me @channel --id=22
+    """
+    dlb, drb = _select_box()
+
+    if entity:
+        for e in entity:
+            drbf = tgbox.sync(drb.get_file(id))
+            if not drbf:
+                echo(f'[RED]File with ID={id} doesn\'t exist in LocalBox[RED]')
+                tgbox.sync(exit_program(dlb=dlb, drb=drb))
+            try:
+                tgbox.sync(drb.tc.forward_messages(e, drbf.message))
+                echo(f'[GREEN]ID={id} forwarded to {e}[GREEN]')
+            except (UsernameNotOccupiedError, ValueError):
+                echo(f'[YELLOW]Entity {e} doesn\'t exists[YELLOW]')
+    else:
+        echo('[RED]At least one user should be specified[RED]')
 
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
