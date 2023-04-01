@@ -39,7 +39,7 @@ else:
     from os import getenv, _exit, system as os_system
     from asyncio import gather, get_event_loop
 
-    from tools import (
+    from .tools import (
         Progress, sync_async_gen, exit_program,
         format_bytes, splitpath, env_proxy_to_pysocks,
         filters_to_searchfilter, clear_console, color,
@@ -1735,7 +1735,8 @@ def file_forward(entity, id):
     """
     Will forward file to specified entity
 
-    Usage example:
+    \b
+    Example:\b
         tgbox-cli file-forward @username --id=161
         tgbox-cli file-forward me @channel --id=22
     """
