@@ -1,4 +1,7 @@
+#!/usr/bin/env python3
+
 import click
+import logging
 
 from os import getenv
 from typing import Union
@@ -28,6 +31,7 @@ else:
     from copy import deepcopy
     from hashlib import sha256
 
+    from platform import system
     from pickle import loads, dumps
     from sys import platform, stdout
     from base64 import urlsafe_b64encode
@@ -36,26 +40,67 @@ else:
     from datetime import datetime, timedelta
 
     from subprocess import run as subprocess_run, PIPE
-    from os import getenv, _exit, system as os_system
     from asyncio import gather, get_event_loop
 
-    from .tools import (
+    from os import getenv, _exit, system as os_system
+    from os.path import expandvars
+
+    from tools import (
         Progress, sync_async_gen, exit_program,
         format_bytes, splitpath, env_proxy_to_pysocks,
         filters_to_searchfilter, clear_console, color,
     )
+    from telethon.errors.rpcerrorlist import (
+        UsernameNotOccupiedError, UsernameInvalidError
+    )
     from enlighten import get_manager as get_enlighten_manager
-    from telethon.errors.rpcerrorlist import UsernameNotOccupiedError
 
     # tools.color with a click.echo function
     echo = lambda t,**k: click.echo(color(t), **k)
 
     __version__ = '1.0_' + tgbox.defaults.VERSION
-    tgbox.defaults.VERSION = __version__
+    tgbox.api.utils.TelegramClient.__version__ = __version__
 
-    # Please DO NOT use this parameters in your projects.
-    # You can get your own at my.telegram.org. Thanks.
-    API_ID, API_HASH = 2210681, '33755adb5ba3c296ccf0dd5220143841'
+    API_ID, API_HASH = getenv('TGBOX_CLI_API_ID'), getenv('TGBOX_CLI_API_HASH')
+
+    if not API_ID or not API_HASH:
+        # Please DO NOT use this parameters in your projects.
+        # You can get your own at my.telegram.org. Thanks.
+        API_ID, API_HASH = 2210681, '33755adb5ba3c296ccf0dd5220143841'
+
+    logging_level = getenv('TGBOX_CLI_LOGLEVEL')
+    logging_level = logging_level if logging_level else 'WARNING'
+
+    logfile = getenv('TGBOX_CLI_LOGFILE')
+
+    if not logfile:
+        current_system = system().lower()
+        if current_system == 'linux':
+            logfile = Path.home() / '.tgbox-cli'
+            logfile = logfile / f'log{__version__}.txt'
+
+        elif current_system == 'windows':
+            logfile = Path(str(expandvars('%APPDATA%'))) / '.tgbox-cli'
+            logfile = logfile / f'log{__version__}.txt'
+
+        elif current_system == 'darwin':
+            logfile = Path.home() / 'Library' / 'Logs' / '.tgbox-cli'
+            logfile = logfile / f'log{__version__}.txt'
+    else:
+        logfile = Path(logfile)
+
+    logfile.parent.mkdir(parents=True, exist_ok=True)
+
+    logging.basicConfig(
+        format = (
+            ''':%(asctime)s: %(levelname)s:%(name)s~'''
+            '''%(funcName)s{%(lineno)s} ::: %(message)s'''
+        ),
+        level = logging.getLevelName(logging_level),
+        datefmt = '%Y-%m-%d ^ %H:%M:%S',
+        filename = logfile,
+        filemode = 'a'
+    )
 
 def get_sk() -> Union[str, None]:
     """
@@ -256,6 +301,11 @@ def _format_dxbf(
                 f'''[{color_}]{v}[{color_}]\n'''
             )
     formatted += f"* Uploaded {time}\n"
+
+    if isinstance(dxbf, tgbox.api.remote.DecryptedRemoteBoxFile)\
+        and dxbf.sender:
+            formatted += f'* Author: [YELLOW]{dxbf.sender}[YELLOW]\n'
+
     return color(formatted)
 
 @click.group()
@@ -712,7 +762,7 @@ def box_list():
 
     if 'CURRENT_TGBOX' in state:
         echo(
-            ''''\n[WHITE]You\'re using Box[WHITE] '''
+            '''\n[WHITE]You\'re using Box[WHITE] '''
            f'''[RED]#{str(state['CURRENT_TGBOX']+1)}[RED]\n'''
         )
     else:
@@ -791,20 +841,52 @@ def box_list_remote(prefix):
     '--start-from-id','-s', default=0,
     help='Will check files that > specified ID'
 )
-def box_sync(start_from_id):
+@click.option(
+    '--deep','-d', default=False, is_flag=True,
+    help='Use a deep Box syncing instead of fast'
+)
+def box_sync(start_from_id, deep):
     """Will synchronize your current LocalBox with RemoteBox
 
     After this operation, all info about your LocalFiles that are
     not in RemoteBox will be deleted from LocalBox. Files that
     not in LocalBox but in RemoteBox will be imported.
+
+    There is two modes of sync: the Fast and the Deep. The
+    "Fast" mode will fetch data from the "Recent Actions"
+    Telegram channel admin log. The updates here will stay
+    up to 48 hours, so that's the best option. In any other
+    case specify a --deep flag to enable the "Deep" sync.
+
+    Deep sync will iterate over each file in Remote and
+    Local boxes, then compare them. This may take a
+    very long time. You can track state of remote
+    with the file-last-id command and specify
+    the last file ID of your LocalBox as
+    --start-from-id (-s) option here.
+
+    --start-from-id will be used only on deep sync.
     """
     dlb, drb = _select_box()
-    manager = get_enlighten_manager()
 
-    tgbox.sync(dlb.sync(drb, start_from_id,
-        Progress(manager, 'Synchronizing...').update_2)
+    if not deep:
+        progress_callback = lambda i,a: echo(f'* [WHITE]ID{i}[WHITE]: [CYAN]{a}[CYAN]')
+    else:
+        manager = get_enlighten_manager()
+        progress_callback = Progress(manager,
+            'Synchronizing...').update_2
+
+    box_sync_coro = dlb.sync(
+        drb = drb,
+        deep = deep,
+        start_from = start_from_id,
+        fast_progress_callback = progress_callback,
+        deep_progress_callback = progress_callback
     )
-    manager.stop()
+    tgbox.sync(box_sync_coro)
+
+    if deep:
+        manager.stop()
 
     echo('[GREEN]Syncing complete.[GREEN]')
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
@@ -1689,13 +1771,14 @@ def file_remove(filters, local_only, ask_before_remove):
             tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
     to_remove = dlb.search_file(sf, cache_preview=False)
-    for dlbf in sync_async_gen(to_remove):
-        tgbox.sync(dlbf.directory.lload(full=True))
 
-        file_path = str(Path(str(dlbf.directory)) / dlbf.file_name)
-        echo(f'@ [RED]Removing[RED] [WHITE]Box[WHITE]({file_path})')
+    if ask_before_remove:
+        for dlbf in sync_async_gen(to_remove):
+            tgbox.sync(dlbf.directory.lload(full=True))
 
-        if ask_before_remove:
+            file_path = str(Path(str(dlbf.directory)) / dlbf.file_name)
+            echo(f'@ [RED]Removing[RED] [WHITE]Box[WHITE]({file_path})')
+
             while True:
                 echo('')
                 choice = click.prompt(
@@ -1717,11 +1800,12 @@ def file_remove(filters, local_only, ask_before_remove):
                     tgbox.sync(exit_program(dlb=dlb, drb=drb))
                 else:
                     echo('[RED]Invalid choice, try again[RED]')
-        else:
-            tgbox.sync(dlbf.delete())
-            if not local_only:
-                drbf = tgbox.sync(drb.get_file(dlbf.id))
-                tgbox.sync(drbf.delete())
+    else:
+        echo('\n[YELLOW]Searching for LocalBox files[YELLOW]...')
+        to_remove = [dlbf for dlbf in sync_async_gen(to_remove)]
+        echo(f'[WHITE]Removing[WHITE] [RED]{len(to_remove)}[RED] [WHITE]files[WHITE]...')
+        tgbox.sync(dlb.delete_files(*to_remove, rb=(None if local_only else drb)))
+        echo('[GREEN]Done.[GREEN]')
 
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
@@ -1750,11 +1834,11 @@ def file_forward(entity, id):
                 tgbox.sync(exit_program(dlb=dlb, drb=drb))
             try:
                 tgbox.sync(drb.tc.forward_messages(e, drbf.message))
-                echo(f'[GREEN]ID={id} forwarded to {e}[GREEN]')
-            except (UsernameNotOccupiedError, ValueError):
-                echo(f'[YELLOW]Entity {e} doesn\'t exists[YELLOW]')
+                echo(f'[GREEN]ID={id} was forwarded to {e}[GREEN]')
+            except (UsernameNotOccupiedError, UsernameInvalidError, ValueError):
+                echo(f'[YELLOW]Can not find entity "{e}"[YELLOW]')
     else:
-        echo('[RED]At least one user should be specified[RED]')
+        echo('[RED]At least one entity should be specified[RED]')
 
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
@@ -1846,6 +1930,27 @@ def cli_info():
         f'''FAST_ENCRYPTION: {fast_encryption}\n'''
         f'''FAST_TELETHON: {fast_telethon}\n'''
     )
+
+@cli.command()
+@click.option(
+    '--locate', '-l', is_flag=True,
+    help='If specified, will open file path in file manager'
+)
+def logfile_show(locate):
+    """Open TGBOX-CLI log file with the default app"""
+    click.launch(str(logfile), locate=locate)
+
+@cli.command()
+def logfile_clear():
+    """Will clear TGBOX-CLI log file"""
+    open(logfile,'w').close()
+    echo('[GREEN]Done.[GREEN]')
+
+@cli.command()
+def logfile_size():
+    """Will return size of TGBOX-CLI log file"""
+    size = format_bytes(logfile.stat().st_size)
+    echo(f'[WHITE]{str(logfile)}[WHITE]: {size}')
 
 @cli.command(hidden=True)
 @click.option(
