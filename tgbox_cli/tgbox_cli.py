@@ -516,6 +516,49 @@ def account_switch(number):
 
 @cli.command()
 @click.option(
+    '--show-phone', is_flag=True,
+    help='Specify this to show phone number'
+)
+def account_info(show_phone):
+    """Show information about current account"""
+
+    tc = _select_account()
+    me = tgbox.sync(tc.get_me())
+
+    last_name = me.last_name if me.last_name else ''
+    full_name = f'[WHITE]{me.first_name} {last_name}[WHITE]'
+
+    if show_phone:
+        phone = f'[WHITE]+{me.phone}[WHITE]'
+    else:
+        phone = '[RED]<Was hidden>[RED]'
+
+    if me.premium:
+        premium = '[WHITE]yes[WHITE]'
+    else:
+        premium = '[RED]no[RED]'
+
+    if me.username:
+        username = f'[WHITE]@{me.username}[WHITE]'
+    else:
+        username = '[RED]<Not presented>[RED]'
+
+    user_id = f'[WHITE]id{me.id}[WHITE]'
+
+    echo(
+        '''\n ====== Current Account ====== \n\n'''
+
+        f'''| Full name: {full_name}\n'''
+        f'''| Username: {username}\n'''
+        f'''| Phone: {phone}\n'''
+        f'''| ID: {user_id}\n'''
+        f'''| Premium: {premium}\n'''
+
+        '''\n ============================= \n'''
+    )
+
+@cli.command()
+@click.option(
     '--box-name', '-b', required=True,
     prompt=True, help='Name of your Box'
 )
@@ -1148,7 +1191,68 @@ def box_default(defaults):
 
     tgbox.sync(exit_program(dlb=dlb))
 
+@cli.command()
+def box_info():
+    """Show information about current Box"""
 
+    dlb, drb = _select_box()
+
+    box_name = tgbox.sync(drb.get_box_name())
+    box_name = f'[WHITE]{box_name}[WHITE]'
+
+    box_id = f'[WHITE]id{drb.box_channel_id}[WHITE]'
+
+    participants = drb.box_channel.participants_count
+    participants = f'[BLUE]{participants}[BLUE]'
+
+    lfid_local = tgbox.sync(dlb.get_last_file_id())
+    lfid_remote = tgbox.sync(drb.get_last_file_id())
+
+    if lfid_local != lfid_remote:
+        status = f'[RED]Out of sync! ({lfid_local}L/{lfid_remote}R)[RED]'
+    else:
+        status = '[GREEN]Seems synchronized[GREEN]'
+
+    lfid_local = f'[WHITE]{lfid_local}[WHITE]'
+    lfid_remote = f'[WHITE]{lfid_remote}[WHITE]'
+
+    if drb.box_channel.username:
+        public_link = f'[WHITE]@{drb.box_channel.username}[WHITE]'
+    else:
+        public_link = '[RED]<Not presented>[RED]'
+
+    if drb.box_channel.restricted:
+        restricted = f'[RED]yes: {drb.box_channel.restriction_reason}[RED]'
+    else:
+        restricted = '[WHITE]no[WHITE]'
+
+    box_path = f'[WHITE]{dlb.tgbox_db.db_path.name}[WHITE]'
+
+    box_date = datetime.fromtimestamp(dlb.box_cr_time).strftime('%d/%m/%Y')
+    date_created = f'[WHITE]{box_date}[WHITE]'
+
+    echo(
+        '''\n ====== Current Box (remote) ======\n\n'''
+
+        f'''| Box name: {box_name}\n'''
+        f'''| Public link: {public_link}\n'''
+        f'''| ID: {box_id}\n'''
+        f'''| Last file ID: {lfid_remote}\n'''
+        f'''| Is restricted: {restricted}\n'''
+
+        '''\n ====== Current Box (local) =======\n\n'''
+
+        f'''| Box file: {box_path}\n'''
+        f'''| Date created: {date_created}\n'''
+        f'''| Last file ID: {lfid_local}\n'''
+
+        '''\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n'''
+
+        f'''| Status: {status}\n'''
+
+        '''\n =================================\n'''
+    )
+    tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
 @cli.command()
 @click.option(
@@ -1908,7 +2012,7 @@ def cli_info():
         )
         ffmpeg_version = f"[GREEN]{sp_result.stdout.split(b' ',3)[2].decode()}[GREEN]"
     except:
-        ffmpeg_version = '[RED]NO[RED]'
+        ffmpeg_version = '[RED]NOT FOUND[RED]'
 
     if tgbox.crypto.FAST_ENCRYPTION:
         fast_encryption = '[GREEN]YES[GREEN]'
@@ -1923,11 +2027,16 @@ def cli_info():
     echo(
         '''\n# Copyright [WHITE](c) Non [github.com/NotStatilko][WHITE], the MIT License\n'''
         '''# Author Email: [WHITE]thenonproton@protonmail.com[WHITE]\n\n'''
+
         f'''TGBOX-CLI Version: [YELLOW]{ver[0]}[YELLOW]\n'''
         f'''TGBOX Version: [MAGENTA]{ver[1]}[MAGENTA]\n\n'''
+
         f'''FFMPEG: {ffmpeg_version}\n'''
         f'''FAST_ENCRYPTION: {fast_encryption}\n'''
-        f'''FAST_TELETHON: {fast_telethon}\n'''
+        f'''FAST_TELETHON: {fast_telethon}\n\n'''
+
+        f'''LOGLEVEL: [BLUE]{logging_level}[BLUE]\n'''
+        f'''LOGFILE: [BLUE]{logfile.name}[BLUE]\n'''
     )
 
 @cli.command()
