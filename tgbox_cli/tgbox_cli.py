@@ -102,6 +102,8 @@ else:
         filemode = 'a'
     )
 
+ACTIVE_BOX = []
+
 def get_sk() -> Union[str, None]:
     """
     This will return StateKey
@@ -138,13 +140,18 @@ def write_state(state: dict, state_key: str) -> None:
     with open(state_file,'wb') as f:
         f.write(tgbox.crypto.AESwState(state_enc_key).encrypt(dumps(state)))
 
-def _select_box(ignore_remote: bool=False):
+def _select_box(ignore_remote: bool=False, raise_if_none: bool=False):
     check_sk()
 
     state_key = get_sk()
     state = get_state(state_key)
 
+    if ACTIVE_BOX:
+        return ACTIVE_BOX[0], ACTIVE_BOX[1]
+
     if 'TGBOXES' not in state:
+        if raise_if_none:
+            raise ValueError
         echo(
             '''[RED]You didn\'t connected box yet. Use[RED] '''
             '''[WHITE]box-open[WHITE] [RED]command.[RED]'''
@@ -170,7 +177,10 @@ def _select_box(ignore_remote: bool=False):
         else:
             drb = None
 
-        return dlb, drb
+        ACTIVE_BOX.append(dlb)
+        ACTIVE_BOX.append(drb)
+
+        return ACTIVE_BOX[0], ACTIVE_BOX[1]
 
 def _select_remotebox(number: int, prefix: str):
     tc, count, erb = _select_account(), 1, None
@@ -311,19 +321,6 @@ def _format_dxbf(
 @click.group()
 def cli():
    pass
-
-def safe_cli():
-    try:
-        cli()
-    except Exception as e:
-        if getenv('TGBOX_CLI_DEBUG'):
-            e = ''.join(format_exception(
-                etype = None,
-                value = e,
-                tb = e.__traceback__
-            ))
-        echo(f'[RED]{e}[RED]\n')
-        _exit(1)
 
 @cli.command()
 @click.option(
@@ -1151,6 +1148,8 @@ def box_default(defaults):
 
     tgbox.sync(exit_program(dlb=dlb))
 
+
+
 @cli.command()
 @click.option(
     '--path', '-p', required=True, prompt=True,
@@ -1952,6 +1951,24 @@ def logfile_size():
     size = format_bytes(logfile.stat().st_size)
     echo(f'[WHITE]{str(logfile)}[WHITE]: {size}')
 
+@cli.command()
+@click.argument('entity', nargs=-1)
+def logfile_send(entity):
+    """
+    Send logfile to the specified entity
+
+    \b
+    Example:\b
+        tgbox-cli logfile-send @username
+    """
+    dlb, drb = _select_box()
+
+    for e in entity:
+        tgbox.sync(drb.tc.send_file(e, logfile))
+        echo(f'[WHITE]Logfile has been sent to[WHITE] [BLUE]{e}[BLUE]')
+
+    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+
 @cli.command(hidden=True)
 @click.option(
     '--size', '-s', default=32,
@@ -1960,6 +1977,33 @@ def logfile_size():
 def sk_gen(size: int):
     """Generate random urlsafe b64encoded SessionKey"""
     echo(urlsafe_b64encode(tgbox.crypto.get_rnd_bytes(size)).decode())
+
+
+def safe_cli():
+    try:
+        cli(standalone_mode=False)
+    except Exception as e:
+        if getenv('TGBOX_CLI_DEBUG'):
+            e = ''.join(format_exception(
+                etype = None,
+                value = e,
+                tb = e.__traceback__
+            ))
+
+        # Will echo only if error have message
+        if isinstance(e, str) or e.args:
+            echo(f'[RED]{e}[RED]')
+        echo('')
+
+        try:
+            # Try to close all connections on exception
+            dlb, drb = _select_box(raise_if_none=True)
+            if dlb: tgbox.sync(dlb.done())
+            if drb: tgbox.sync(drb.done())
+        except ValueError: # Box wasn't connected to TGBOX-CLI
+            pass
+
+        _exit(1)
 
 if __name__ == '__main__':
     safe_cli()
