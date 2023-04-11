@@ -1,14 +1,21 @@
+import click
 import tgbox
 
 from sys import exit
-from click import style
 from typing import Union
+
+from copy import deepcopy
 from itertools import cycle
 
 from typing import AsyncGenerator
 from urllib3.util import parse_url
+
+from base64 import urlsafe_b64encode
 from shutil import get_terminal_size
+
 from os import system, name as os_name
+from datetime import datetime, timedelta
+
 
 clear_console = lambda: system('cls' if os_name in ('nt','dos') else 'clear')
 
@@ -30,7 +37,7 @@ def color(text: Union[str, bytes]) -> Union[str, bytes]:
     NOCOLOR = '\x1b[0m'
 
     available = {
-        ccolor.upper(): style('%', fg=ccolor, bold=True).rstrip(NOCOLOR)[:-1]
+        ccolor.upper(): click.style('%', fg=ccolor, bold=True).rstrip(NOCOLOR)[:-1]
         for ccolor in AVAILABLE_COLORS
     }
     for color_, ansi_code in available.items():
@@ -209,3 +216,78 @@ def env_proxy_to_pysocks(env_proxy: str) -> tuple:
         username,
         password
     )
+
+def format_dxbf(
+        dxbf: Union['tgbox.api.DecryptedRemoteBoxFile',
+            'tgbox.api.DecryptedLocalBoxFile']) -> str:
+    """
+    This will make a colored information string from
+    the DecryptedRemoteBoxFile or DecryptedLocalBoxFile
+    """
+    salt = urlsafe_b64encode(dxbf.file_salt).decode()
+
+    if dxbf.imported:
+        idsalt = f'[[BRIGHT_BLUE]{str(dxbf.id)}[BRIGHT_BLUE]:'
+    else:
+        idsalt = f'[[BRIGHT_RED]{str(dxbf.id)}[BRIGHT_RED]:'
+
+    idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
+    try:
+        name = f'[WHITE]{click.format_filename(dxbf.file_name)}[WHITE]'
+    except UnicodeDecodeError:
+        name = '[RED][Unable to display][RED]'
+
+    size = f'[GREEN]{format_bytes(dxbf.size)}[GREEN]'
+
+    if dxbf.duration:
+        duration = str(timedelta(seconds=round(dxbf.duration,2)))
+        duration = f'[CYAN] ({duration.split(".")[0]})[CYAN]'
+    else:
+        duration = ''
+
+    time = datetime.fromtimestamp(dxbf.upload_time)
+    time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN]"
+
+    mimedur = f'[WHITE]{dxbf.mime}[WHITE]' if dxbf.mime else 'regular file'
+    mimedur += duration
+
+    if dxbf.cattrs:
+        cattrs = deepcopy(dxbf.cattrs)
+        for k,v in tuple(cattrs.items()):
+            try:
+                cattrs[k] = v.decode()
+            except:
+                cattrs[k] = '<HEXED>' + v.hex()
+    else:
+        cattrs = None
+
+    if dxbf.file_path:
+        file_path = str(dxbf.file_path)
+    else:
+        if hasattr(dxbf, 'directory'):
+            tgbox.sync(dxbf.directory.lload(full=True))
+            file_path = str(dxbf.directory)
+        else:
+            file_path = '[RED][Unknown Folder][RED]'
+
+    formatted = (
+       f"""\nFile: {idsalt} {name}\n"""
+       f"""Path: {splitpath(file_path, 6)}\n"""
+       f"""Size: {size}({dxbf.size}), {mimedur}\n"""
+    )
+    if cattrs:
+        formatted += "* CustomAttributes:\n"
+        n = 1
+        for k,v in tuple(cattrs.items()):
+            color_ = 'GREEN' if n % 2 else 'YELLOW'; n+=1
+            formatted += (
+                f'''   [WHITE]{k}[WHITE]: '''
+                f'''[{color_}]{v}[{color_}]\n'''
+            )
+    formatted += f"* Uploaded {time}\n"
+
+    if isinstance(dxbf, tgbox.api.remote.DecryptedRemoteBoxFile)\
+        and dxbf.sender:
+            formatted += f'* Author: [YELLOW]{dxbf.sender}[YELLOW]\n'
+
+    return color(formatted)
