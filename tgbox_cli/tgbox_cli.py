@@ -28,27 +28,27 @@ else:
     import tgbox
 
     from time import sleep
-    from copy import deepcopy
     from hashlib import sha256
 
     from platform import system
+    from datetime import datetime
     from pickle import loads, dumps
-    from sys import platform, stdout
-    from base64 import urlsafe_b64encode
 
+    from sys import platform
+    from base64 import urlsafe_b64encode
+    from shutil import get_terminal_size
     from traceback import format_exception
-    from datetime import datetime, timedelta
 
     from subprocess import run as subprocess_run, PIPE
     from asyncio import gather, get_event_loop
 
-    from os import getenv, _exit, system as os_system
+    from os import getenv, _exit
     from os.path import expandvars
 
     from tools import (
         Progress, sync_async_gen, exit_program,
-        format_bytes, splitpath, env_proxy_to_pysocks,
-        filters_to_searchfilter, clear_console, color,
+        format_bytes, env_proxy_to_pysocks, color,
+        filters_to_searchfilter, clear_console, format_dxbf
     )
     from telethon.errors.rpcerrorlist import (
         UsernameNotOccupiedError, UsernameInvalidError
@@ -104,6 +104,8 @@ else:
 
 ACTIVE_BOX = []
 
+# = Functions for operating on temp CLI session =========== #
+
 def get_sk() -> Union[str, None]:
     """
     This will return StateKey
@@ -139,6 +141,10 @@ def write_state(state: dict, state_key: str) -> None:
 
     with open(state_file,'wb') as f:
         f.write(tgbox.crypto.AESwState(state_enc_key).encrypt(dumps(state)))
+
+# ========================================================= #
+
+# = Functions for extracting Account/Box data from sesssion #
 
 def _select_box(ignore_remote: bool=False, raise_if_none: bool=False):
     check_sk()
@@ -243,84 +249,52 @@ def _select_account() -> 'tgbox.api.TelegramClient':
     tgbox.sync(tc.connect())
     return tc
 
-def _format_dxbf(
-        dxbf: Union['tgbox.api.DecryptedRemoteBoxFile',
-            'tgbox.api.DecryptedLocalBoxFile']) -> str:
-    """
-    This will make a colored information string from
-    the DecryptedRemoteBoxFile or DecryptedLocalBoxFile
-    """
-    salt = urlsafe_b64encode(dxbf.file_salt).decode()
+# ========================================================= #
 
-    if dxbf.imported:
-        idsalt = f'[[BRIGHT_BLUE]{str(dxbf.id)}[BRIGHT_BLUE]:'
-    else:
-        idsalt = f'[[BRIGHT_RED]{str(dxbf.id)}[BRIGHT_RED]:'
+# = CLI configuration ===================================== #
 
-    idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
-    try:
-        name = f'[WHITE]{click.format_filename(dxbf.file_name)}[WHITE]'
-    except UnicodeDecodeError:
-        name = '[RED][Unable to display][RED]'
+class StructuredGroup(click.Group):
+    def __init__(self, name=None, commands=None, **kwargs):
+        super().__init__(name, commands, **kwargs)
+        self.commands = commands or {}
 
-    size = f'[GREEN]{format_bytes(dxbf.size)}[GREEN]'
+    def list_commands(self, ctx):
+        return self.commands
 
-    if dxbf.duration:
-        duration = str(timedelta(seconds=round(dxbf.duration,2)))
-        duration = f'[CYAN] ({duration.split(".")[0]})[CYAN]'
-    else:
-        duration = ''
+    def format_commands(self, ctx, formatter):
+        cmd_size = get_terminal_size().columns
+        cmd_size = cmd_size - 5 if cmd_size < 100 else 100
 
-    time = datetime.fromtimestamp(dxbf.upload_time)
-    time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN]"
+        formatter.width = cmd_size
 
-    mimedur = f'[WHITE]{dxbf.mime}[WHITE]' if dxbf.mime else 'regular file'
-    mimedur += duration
+        formatter.write_text('')
+        formatter.write_heading('Commands')
 
-    if dxbf.cattrs:
-        cattrs = deepcopy(dxbf.cattrs)
-        for k,v in tuple(cattrs.items()):
-            try:
-                cattrs[k] = v.decode()
-            except:
-                cattrs[k] = '<HEXED>' + v.hex()
-    else:
-        cattrs = None
+        largest_command = max(self.commands, key=lambda k: len(k))
+        shift = len(largest_command) + 2
 
-    if dxbf.file_path:
-        file_path = str(dxbf.file_path)
-    else:
-        if hasattr(dxbf, 'directory'):
-            tgbox.sync(dxbf.directory.lload(full=True))
-            file_path = str(dxbf.directory)
-        else:
-            file_path = '[RED][Unknown Folder][RED]'
+        last_letter = None
+        for k,v in self.commands.items():
+            if v.hidden:
+                continue
 
-    formatted = (
-       f"""\nFile: {idsalt} {name}\n"""
-       f"""Path: {splitpath(file_path, 6)}\n"""
-       f"""Size: {size}({dxbf.size}), {mimedur}\n"""
-    )
-    if cattrs:
-        formatted += "* CustomAttributes:\n"
-        n = 1
-        for k,v in tuple(cattrs.items()):
-            color_ = 'GREEN' if n % 2 else 'YELLOW'; n+=1
-            formatted += (
-                f'''   [WHITE]{k}[WHITE]: '''
-                f'''[{color_}]{v}[{color_}]\n'''
+            if last_letter != k[0]:
+                last_letter = k[0]
+                formatter.write_paragraph()
+
+            colored_name = color(f'[WHITE]{v.name}[WHITE]')
+            formatter.write_text(
+                f'  o  {colored_name} :: {v.get_short_help_str().strip()}'
             )
-    formatted += f"* Uploaded {time}\n"
+        formatter.write_text('\x1b[0m')
 
-    if isinstance(dxbf, tgbox.api.remote.DecryptedRemoteBoxFile)\
-        and dxbf.sender:
-            formatted += f'* Author: [YELLOW]{dxbf.sender}[YELLOW]\n'
-
-    return color(formatted)
-
-@click.group()
+@click.group(cls=StructuredGroup)
 def cli():
    pass
+
+# ========================================================= #
+
+# = Telegram account management commands ================== #
 
 @cli.command()
 @click.option(
@@ -556,6 +530,10 @@ def account_info(show_phone):
 
         '''\n ============================= \n'''
     )
+
+# ========================================================= #
+
+# = Local & Remote Box management commands ================ #
 
 @cli.command()
 @click.option(
@@ -1186,7 +1164,7 @@ def box_default(defaults):
             key, value = default.split('=',1)
             tgbox.sync(dlb.defaults.change(key, value))
             echo(f'[GREEN]Successfuly changed {key} to {value}[GREEN]')
-        except AttributeError as e:
+        except AttributeError:
             echo(f'[RED]Default {key} doesn\'t exist, skipping[RED]')
 
     tgbox.sync(exit_program(dlb=dlb))
@@ -1253,6 +1231,10 @@ def box_info():
         '''\n =================================\n'''
     )
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
+
+# ========================================================= #
+
+# = Local & Remote Boxfile management commands ============ #
 
 @cli.command()
 @click.option(
@@ -1333,10 +1315,10 @@ def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
                 cattrs = parsed_cattrs,
                 make_preview = thumb
             ))
-        except tgbox.errors.InvalidFile as e:
+        except tgbox.errors.InvalidFile:
             echo(f'[YELLOW]{current_path} is empty. Skipping.[YELLOW]')
             continue
-        except tgbox.errors.FingerprintExists as e:
+        except tgbox.errors.FingerprintExists:
             echo(f'[YELLOW]{current_path} already uploaded. Skipping.[YELLOW]')
             continue
 
@@ -1424,7 +1406,7 @@ def file_search(filters, force_remote, non_interactive):
 
     def bfi_gen(search_file_gen):
         for bfi in sync_async_gen(search_file_gen):
-            yield _format_dxbf(bfi)
+            yield format_dxbf(bfi)
     try:
         sf = filters_to_searchfilter(filters)
     except ZeroDivisionError:#IndexError: # Incorrect filters format
@@ -1551,8 +1533,7 @@ def file_download(
         echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
         tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
-    manager, to_upload = get_enlighten_manager(), []
-
+    manager = get_enlighten_manager()
     current_workers = max_workers
     current_bytes = max_bytes
 
@@ -1775,9 +1756,9 @@ def file_import(key, id, file_path):
                 box_salt=erbf.file_salt
             )
         drbf = tgbox.sync(erbf.decrypt(key))
-        dlbf = tgbox.sync(dlb.import_file(drbf, file_path))
+        tgbox.sync(dlb.import_file(drbf, file_path))
 
-        echo(_format_dxbf(drbf))
+        echo(format_dxbf(drbf))
 
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
@@ -1898,7 +1879,7 @@ def file_remove(filters, local_only, ask_before_remove):
                     echo('')
                     break
                 elif choice.lower() in ('info','i'):
-                    echo(_format_dxbf(dlbf).rstrip())
+                    echo(format_dxbf(dlbf).rstrip())
                 elif choice.lower() in ('exit','e'):
                     tgbox.sync(exit_program(dlb=dlb, drb=drb))
                 else:
@@ -1945,6 +1926,10 @@ def file_forward(entity, id):
 
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
+# ========================================================= #
+
+# = LocalBox directory management commands ================ #
+
 @cli.command()
 def dir_list():
     """List all directories in LocalBox"""
@@ -1958,15 +1943,16 @@ def dir_list():
 
     tgbox.sync(exit_program(dlb=dlb))
 
+# ========================================================= #
+
+# = CLI manage & setup commands =========================== #
+
 @cli.command()
 def cli_init():
     """Get commands for initializing TGBOX-CLI"""
     if get_sk():
         echo('[WHITE]CLI is already initialized.[WHITE]')
     else:
-        state_key = urlsafe_b64encode(
-            tgbox.crypto.get_rnd_bytes(32)
-        )
         if platform in ('win32', 'cygwin', 'cli'):
             commands = 'echo off && (for /f %i in (\'tgbox-cli sk-gen\') '\
                 'do set "TGBOX_CLI_SK=%i") && echo on'
@@ -2039,6 +2025,10 @@ def cli_info():
         f'''LOGFILE: [BLUE]{logfile.name}[BLUE]\n'''
     )
 
+# ========================================================= #
+
+# = Commands to manage TGBOX logger ======================= #
+
 @cli.command()
 @click.option(
     '--locate', '-l', is_flag=True,
@@ -2083,10 +2073,16 @@ def logfile_send(entity):
     '--size', '-s', default=32,
     help='SessionKey bytesize'
 )
+
+# ========================================================= #
+
+# = Hidden CLI tools commands ============================= #
+
 def sk_gen(size: int):
     """Generate random urlsafe b64encoded SessionKey"""
     echo(urlsafe_b64encode(tgbox.crypto.get_rnd_bytes(size)).decode())
 
+# ========================================================= #
 
 def safe_cli():
     try:
