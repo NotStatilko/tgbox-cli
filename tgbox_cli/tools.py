@@ -232,10 +232,14 @@ def format_dxbf(
         idsalt = f'[[BRIGHT_RED]{str(dxbf.id)}[BRIGHT_RED]:'
 
     idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
+
+    name_invalid = None
     try:
-        name = f'[WHITE]{click.format_filename(dxbf.file_name)}[WHITE]'
+        name = click.format_filename(dxbf.file_name)
+        name_invalid = False
     except UnicodeDecodeError:
         name = '[RED][Unable to display][RED]'
+        name_invalid = True
 
     size = f'[GREEN]{format_bytes(dxbf.size)}[GREEN]'
 
@@ -267,8 +271,21 @@ def format_dxbf(
         if hasattr(dxbf, 'directory'):
             tgbox.sync(dxbf.directory.lload(full=True))
             file_path = str(dxbf.directory)
+
         else:
             file_path = '[RED][Unknown Folder][RED]'
+
+    if not name_invalid:
+        path_cached = tgbox.defaults.DOWNLOAD_PATH / 'Files' / '@'
+        path_cached = path_cached / file_path.strip('/') / dxbf.file_name
+
+        if path_cached.exists():
+            if path_cached.stat().st_size == dxbf.size:
+                name = f'[GREEN]{name}[GREEN]'
+            else:
+                name = f'[YELLOW]{name}[YELLOW]'
+        else:
+            name = f'[WHITE]{name}[WHITE]'
 
     formatted = (
        f"""\nFile: {idsalt} {name}\n"""

@@ -45,7 +45,7 @@ else:
     from os import getenv, _exit
     from os.path import expandvars
 
-    from tools import (
+    from .tools import (
         Progress, sync_async_gen, exit_program,
         format_bytes, env_proxy_to_pysocks, color,
         filters_to_searchfilter, clear_console, format_dxbf
@@ -101,6 +101,8 @@ else:
         filename = logfile,
         filemode = 'a'
     )
+    # Progressbar manager
+    enlighten_manager = get_enlighten_manager()
 
 ACTIVE_BOX = []
 
@@ -890,8 +892,7 @@ def box_sync(start_from_id, deep):
     if not deep:
         progress_callback = lambda i,a: echo(f'* [WHITE]ID{i}[WHITE]: [CYAN]{a}[CYAN]')
     else:
-        manager = get_enlighten_manager()
-        progress_callback = Progress(manager,
+        progress_callback = Progress(enlighten_manager,
             'Synchronizing...').update_2
 
     box_sync_coro = dlb.sync(
@@ -904,7 +905,7 @@ def box_sync(start_from_id, deep):
     tgbox.sync(box_sync_coro)
 
     if deep:
-        manager.stop()
+        enlighten_manager.stop()
 
     echo('[GREEN]Syncing complete.[GREEN]')
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
@@ -1118,13 +1119,11 @@ def box_clone(
         box_path += tgbox.sync(drb.get_box_name())\
             if not box_filename else box_filename
 
-    manager = get_enlighten_manager()
-
     tgbox.sync(drb.clone(
         basekey=basekey, box_path=box_path,
-        progress_callback=Progress(manager, 'Cloning...').update_2
+        progress_callback=Progress(enlighten_manager, 'Cloning...').update_2
     ))
-    manager.stop()
+    enlighten_manager.stop()
 
     echo('\n[CYAN]Updating local data...[CYAN] ', nl=False)
 
@@ -1275,7 +1274,7 @@ def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
             to_upload.clear()
         except tgbox.errors.NotEnoughRights as e:
             echo(f'\n[RED]{e}[RED]')
-            manager.stop()
+            enlighten_manager.stop()
             tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
     if path.is_dir():
@@ -1283,7 +1282,7 @@ def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
     else:
         iter_over = (path,)
 
-    manager, to_upload = get_enlighten_manager(), []
+    to_upload = []
     for current_path in iter_over:
 
         if current_path.is_dir():
@@ -1332,12 +1331,12 @@ def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
             current_bytes = max_bytes - pf.filesize
 
         to_upload.append(drb.push_file(pf, Progress(
-            manager, current_path.name).update))
+            enlighten_manager, current_path.name).update))
 
     if to_upload: # If any files left
         _upload(to_upload)
 
-    manager.stop()
+    enlighten_manager.stop()
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
 @cli.command()
@@ -1460,6 +1459,10 @@ def file_search(filters, force_remote, non_interactive):
     help='If specified, will fetch file data from RemoteBox'
 )
 @click.option(
+    '--redownload', is_flag=True,
+    help='If specified, will redownload already cached files'
+)
+@click.option(
     '--max-workers', default=10, type=click.IntRange(1,50),
     help='Max amount of files downloaded at the same time, default=10',
 )
@@ -1471,7 +1474,8 @@ def file_search(filters, force_remote, non_interactive):
 def file_download(
         filters, preview, show, locate,
         hide_name, hide_folder, out,
-        force_remote, max_workers, max_bytes):
+        force_remote, redownload,
+        max_workers, max_bytes):
     """Will download files by filters
 
     \b
@@ -1533,7 +1537,6 @@ def file_download(
         echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
         tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
-    manager = get_enlighten_manager()
     current_workers = max_workers
     current_bytes = max_bytes
 
@@ -1593,19 +1596,29 @@ def file_download(
                             f'''[YELLOW]There is no file with ID={dlbfi.id} in '''
                              '''RemoteBox. Skipping.[YELLOW]''')
                     else:
-                        current_workers -= 1
-                        current_bytes -= drbfi.file_size
-
                         if not out:
                             tgbox.sync(dlbfi.directory.lload(full=True))
 
                             outpath = tgbox.defaults.DOWNLOAD_PATH / 'Files' / '@'
                             outpath = outpath / str(dlbfi.directory).strip('/')
-                            outpath.mkdir(parents=True, exist_ok=True)
-
-                            outpath = open(outpath / dlbfi.file_name, 'wb')
                         else:
                             outpath = out
+
+                        outpath = outpath / dlbfi.file_name
+
+                        if not redownload and outpath.exists() and\
+                            outpath.stat().st_size == dlbfi.size:
+                                if hide_name:
+                                    echo(f'[GREEN]ID{dlbfi.id} downloaded. Skipping...[GREEN]')
+                                else:
+                                    echo(f'[GREEN]{str(outpath)} downloaded. Skipping...[GREEN]')
+                                continue
+
+                        current_workers -= 1
+                        current_bytes -= drbfi.file_size
+
+                        outpath.parent.mkdir(parents=True, exist_ok=True)
+                        outpath = open(outpath, 'wb')
 
                         p_file_name = '<Filename hidden>' if hide_name\
                             else drbfi.file_name
@@ -1613,7 +1626,7 @@ def file_download(
                         download_coroutine = drbfi.download(
                             outfile = outpath,
                             progress_callback = Progress(
-                                manager, p_file_name).update,
+                                enlighten_manager, p_file_name).update,
                             hide_folder = hide_folder,
                             hide_name = hide_name
                         )
@@ -1642,7 +1655,7 @@ def file_download(
     if to_gather_files: # If any files left
         tgbox.sync(gather(*to_gather_files))
 
-    manager.stop()
+    enlighten_manager.stop()
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
 @cli.command()
@@ -1894,6 +1907,37 @@ def file_remove(filters, local_only, ask_before_remove):
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
 @cli.command()
+@click.option(
+    '--id', required=True, type=int,
+    help='File ID to forward'
+)
+@click.option(
+    '--locate', '-l', is_flag=True,
+    help='If specified, will open file path in file manager'
+)
+def file_open(id, locate):
+    """
+    Will try to open already downloaded
+    file in the default system app
+    """
+    dlb, drb = _select_box()
+
+    dlbf = tgbox.sync(dlb.get_file(id))
+
+    if not dlbf:
+        echo(f'[RED]File with ID={id} doesn\'t exist in LocalBox[RED]')
+    else:
+        tgbox.sync(dlbf.directory.lload(full=True))
+
+        outpath = tgbox.defaults.DOWNLOAD_PATH / 'Files' / '@'
+        outpath = outpath / str(dlbf.directory).strip('/')
+        outpath = str(outpath / dlbf.file_name)
+
+        click.launch(outpath, locate=locate)
+
+    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+
+@cli.command()
 @click.argument('entity', nargs=-1)
 @click.option(
     '--id', required=True, type=int,
@@ -1914,7 +1958,7 @@ def file_forward(entity, id):
         for e in entity:
             drbf = tgbox.sync(drb.get_file(id))
             if not drbf:
-                echo(f'[RED]File with ID={id} doesn\'t exist in LocalBox[RED]')
+                echo(f'[RED]File with ID={id} doesn\'t exist in RemoteBox[RED]')
                 tgbox.sync(exit_program(dlb=dlb, drb=drb))
             try:
                 tgbox.sync(drb.tc.forward_messages(e, drbf.message))
@@ -2094,6 +2138,8 @@ def safe_cli():
                 value = e,
                 tb = e.__traceback__
             ))
+        # Close Progressbar
+        enlighten_manager.stop()
 
         # Will echo only if error have message
         if isinstance(e, str) or e.args:
