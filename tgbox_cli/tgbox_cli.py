@@ -115,13 +115,14 @@ def get_sk() -> Union[str, None]:
     """
     return getenv('TGBOX_CLI_SK')
 
-def check_sk():
+def check_sk(echo_error: bool=True):
     """Will check if TGBOX_CLI_SK present in env vars"""
     if not get_sk():
-        echo(
-            '''[RED]You should run[RED] [WHITE]tgbox-cli '''
-            '''cli-init[WHITE] [RED]firstly.[RED]'''
-        )
+        if echo_error:
+            echo(
+                '''[RED]You should run[RED] [WHITE]tgbox-cli '''
+                '''cli-init[WHITE] [RED]firstly.[RED]'''
+            )
         tgbox.sync(exit_program())
     else:
         return True
@@ -149,7 +150,7 @@ def write_state(state: dict, state_key: str) -> None:
 # = Functions for extracting Account/Box data from sesssion #
 
 def _select_box(ignore_remote: bool=False, raise_if_none: bool=False):
-    check_sk()
+    check_sk(echo_error=False)
 
     state_key = get_sk()
     state = get_state(state_key)
@@ -284,7 +285,11 @@ class StructuredGroup(click.Group):
                 last_letter = k[0]
                 formatter.write_paragraph()
 
-            colored_name = color(f'[WHITE]{v.name}[WHITE]')
+            if v.name.lower() == 'readme':
+                colored_name = color(f'[GREEN]{v.name}[GREEN]')
+            else:
+                colored_name = color(f'[WHITE]{v.name}[WHITE]')
+
             formatter.write_text(
                 f'  o  {colored_name} :: {v.get_short_help_str().strip()}'
             )
@@ -1530,7 +1535,7 @@ def file_download(
         dlb, drb = _select_box()
     try:
         sf = filters_to_searchfilter(filters)
-    except ZeroDivisionError:#IndexError: # Incorrect filters format
+    except IndexError: # Incorrect filters format
         echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
         tgbox.sync(exit_program(dlb=dlb, drb=drb))
     except KeyError as e: # Unknown filters
@@ -2112,15 +2117,15 @@ def logfile_send(entity):
 
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
+# ========================================================= #
+
+# = Hidden CLI tools commands ============================= #
+
 @cli.command(hidden=True)
 @click.option(
     '--size', '-s', default=32,
     help='SessionKey bytesize'
 )
-
-# ========================================================= #
-
-# = Hidden CLI tools commands ============================= #
 
 def sk_gen(size: int):
     """Generate random urlsafe b64encoded SessionKey"""
@@ -2128,7 +2133,27 @@ def sk_gen(size: int):
 
 # ========================================================= #
 
-def safe_cli():
+# = Documentation commands  =============================== #
+
+@cli.command(name='README')
+@click.option(
+    '--non-interactive', '-n', is_flag=True,
+    help='If specified, will echo to shell instead of pager'
+)
+def readme(non_interactive):
+    """Write this command for extended Help!"""
+
+    readme_path = Path(__file__).parent / 'data'
+    readme_text = open(readme_path / 'README.txt').read()
+
+    if non_interactive:
+        echo(readme_text)
+    else:
+        click.echo_via_pager(color(readme_text))
+
+# ========================================================= #
+
+def safe_tgbox_cli_startup():
     try:
         cli(standalone_mode=False)
     except Exception as e:
@@ -2157,4 +2182,4 @@ def safe_cli():
         _exit(1)
 
 if __name__ == '__main__':
-    safe_cli()
+    safe_tgbox_cli_startup()
