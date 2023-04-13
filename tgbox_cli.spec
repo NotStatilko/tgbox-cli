@@ -1,7 +1,11 @@
 from tgbox.constants import PYINSTALLER_DATA
+from pathlib import Path
+
+MAIN_SCRIPT = Path('tgbox_cli') / 'tgbox_cli.py'
+SCRIPT_LOGO = Path('tgbox_cli') / 'data' / 'logo.ico'
 
 a = Analysis(
-    ['tgbox_cli.py'],
+    [str(MAIN_SCRIPT)],
     pathex = [],
     binaries = [],
     datas = [],
@@ -29,7 +33,7 @@ exe = EXE(
     a.zipfiles,
     a.datas, [],
     name = 'tgbox-cli',
-    icon = 'tgbox-cli_logo.ico',
+    icon = str(SCRIPT_LOGO),
     debug = False,
     bootloader_ignore_signals = False,
     strip = False,
