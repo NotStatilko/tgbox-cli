@@ -444,7 +444,7 @@ def account_list():
                     api_id=API_ID,
                     api_hash=API_HASH
                 )
-                tc = tgbox.sync(tc.connect())
+                tgbox.sync(tc.connect())
                 info = tgbox.sync(tc.get_me())
 
                 name = f'@{info.username}' if info.username else info.first_name
