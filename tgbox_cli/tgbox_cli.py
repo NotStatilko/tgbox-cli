@@ -2176,8 +2176,10 @@ def safe_tgbox_cli_startup():
             dlb, drb = _select_box(raise_if_none=True)
             if dlb: tgbox.sync(dlb.done())
             if drb: tgbox.sync(drb.done())
-        except ValueError: # Box wasn't connected to TGBOX-CLI
-            pass
+        except ValueError:
+            pass # Box wasn't connected to TGBOX-CLI
+        except tgbox.errors.SessionUnregistered:
+            pass # Session was disconnected
 
         _exit(1)
 
