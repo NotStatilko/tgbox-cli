@@ -1551,48 +1551,66 @@ def file_download(
             to_gather_files = []
             while all((current_workers, current_bytes)):
                 dlbfi = tgbox.sync(tgbox.tools.anext(to_download))
+
                 preview_bytes = None
 
-                if preview and not force_remote:
-                    tgbox.sync(dlbfi.directory.lload(full=True))
-
+                if hide_name:
+                    file_name = tgbox.tools.prbg(16).hex()
+                    file_name += Path(dlbfi.file_name).suffix
+                else:
                     file_name = dlbfi.file_name
-                    folder = str(dlbfi.directory)
+
+                file_name = file_name.lstrip('/')
+                file_name = file_name.lstrip('\\')
+
+                if not out:
+                    downloads = Path(dlbfi.defaults.DOWNLOAD_PATH)
+                    downloads = downloads / ('Previews' if preview else 'Files')
+
+                    if hide_folder:
+                        file_path = str(dlbfi.defaults.DEF_UNK_FOLDER)
+                    else:
+                        file_path = str(dlbfi.file_path)
+
+                    if file_path.startswith('/'):
+                        file_path = str(Path('@', file_path.lstrip('/')))
+
+                    elif file_path.startswith('\\'):
+                        file_path = str(Path('@', file_path.lstrip('\\')))
+
+                    outpath = Path(downloads, file_path, file_name)
+                else:
+                    outpath = out / file_name
+
+                if preview and not force_remote:
                     preview_bytes = dlbfi.preview
 
                 elif preview and force_remote:
                     drbfi = tgbox.sync(drb.get_file(dlbfi.id))
-
-                    file_name = drbfi.file_name
-                    folder = str(drbfi.file_path)
                     preview_bytes = drbfi.preview
 
                 if preview_bytes is not None:
                     if preview_bytes == b'':
-                        echo(
-                            f'''[YELLOW]{file_name} doesn\'t have preview. Try '''
-                             '''-r flag. Skipping.[YELLOW]'''
-                        )
+                        if force_remote:
+                            echo(f'[YELLOW]{file_name} doesn\'t have preview. Skipping.[YELLOW]')
+                        else:
+                            echo(
+                                f'''[YELLOW]{file_name} doesn\'t have preview. Try '''
+                                 '''-r flag. Skipping.[YELLOW]'''
+                            )
                         continue
 
-                    if not out:
-                        outpath = tgbox.defaults.DOWNLOAD_PATH\
-                            / 'Previews' / folder.lstrip('/')
-                        outpath.mkdir(parents=True, exist_ok=True)
-                    else:
-                        outpath = out
+                    outpath.parent.mkdir(parents=True, exist_ok=True)
 
-                    file_path = outpath / (file_name+'.jpg')
-
-                    with open(file_path, 'wb') as f:
+                    with open(outpath, 'wb') as f:
                         f.write(preview_bytes)
 
                     if show or locate:
-                        click.launch(str(file_path), locate)
+                        click.launch(str(outpath), locate)
 
                     echo(
                         f'''[WHITE]{file_name}[WHITE] preview downloaded '''
-                        f'''to [WHITE]{str(outpath)}[WHITE]''')
+                        f'''to [WHITE]{str(outpath.parent)}[WHITE]''')
                 else:
                     drbfi = tgbox.sync(drb.get_file(dlbfi.id))
 
@@ -1601,22 +1619,9 @@ def file_download(
                             f'''[YELLOW]There is no file with ID={dlbfi.id} in '''
                              '''RemoteBox. Skipping.[YELLOW]''')
                     else:
-                        if not out:
-                            tgbox.sync(dlbfi.directory.lload(full=True))
-
-                            outpath = tgbox.defaults.DOWNLOAD_PATH / 'Files' / '@'
-                            outpath = outpath / str(dlbfi.directory).strip('/')
-                        else:
-                            outpath = out
-
-                        outpath = outpath / dlbfi.file_name
-
                         if not redownload and outpath.exists() and\
                             outpath.stat().st_size == dlbfi.size:
-                                if hide_name:
-                                    echo(f'[GREEN]ID{dlbfi.id} downloaded. Skipping...[GREEN]')
-                                else:
-                                    echo(f'[GREEN]{str(outpath)} downloaded. Skipping...[GREEN]')
+                                echo(f'[GREEN]{str(outpath)} downloaded. Skipping...[GREEN]')
                                 continue
 
                         current_workers -= 1
