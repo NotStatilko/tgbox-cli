@@ -46,7 +46,7 @@ else:
     from os import getenv, _exit
     from os.path import expandvars
 
-    from .tools import (
+    from tools import ( # TODO
         Progress, sync_async_gen, exit_program,
         format_bytes, env_proxy_to_pysocks, color,
         filters_to_searchfilter, clear_console, format_dxbf
@@ -908,12 +908,16 @@ def box_sync(start_from_id, deep):
         fast_progress_callback = progress_callback,
         deep_progress_callback = progress_callback
     )
-    tgbox.sync(box_sync_coro)
+    try:
+        tgbox.sync(box_sync_coro)
+    except tgbox.errors.RemoteFileNotFound as e:
+        echo(f'[RED]{e}[RED]')
+    else:
+        if deep:
+            enlighten_manager.stop()
 
-    if deep:
-        enlighten_manager.stop()
+        echo('[GREEN]Syncing complete.[GREEN]')
 
-    echo('[GREEN]Syncing complete.[GREEN]')
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
 @cli.command()
