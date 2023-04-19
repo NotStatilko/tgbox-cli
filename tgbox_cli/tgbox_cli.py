@@ -46,7 +46,7 @@ else:
     from os import getenv, _exit
     from os.path import expandvars
 
-    from tools import ( # TODO
+    from .tools import (
         Progress, sync_async_gen, exit_program,
         format_bytes, env_proxy_to_pysocks, color,
         filters_to_searchfilter, clear_console, format_dxbf
