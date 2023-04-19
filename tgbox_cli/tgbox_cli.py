@@ -1418,7 +1418,7 @@ def file_search(filters, force_remote, non_interactive):
             yield format_dxbf(bfi)
     try:
         sf = filters_to_searchfilter(filters)
-    except ZeroDivisionError:#IndexError: # Incorrect filters format
+    except IndexError: # Incorrect filters format
         echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
         tgbox.sync(exit_program(dlb=dlb, drb=drb))
     except KeyError as e: # Unknown filters
