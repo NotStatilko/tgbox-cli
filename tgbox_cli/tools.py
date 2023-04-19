@@ -79,6 +79,7 @@ class Progress:
 
         # For update_2
         self.initialized = False
+        self.last_id = None
 
         self.BAR_FORMAT = '{desc} {percentage:3.0f}%|{bar}| [ETA {eta}]'
 
@@ -107,15 +108,21 @@ class Progress:
     def update_2(self, current, total):
         if not self.initialized:
             self.counter = self.manager.counter(
-                total=total, desc=self.desc,
+                total=total - current,
+                desc=self.desc,
                 unit='ID', color='gray',
                 bar_format=self.BAR_FORMAT
             )
-            for _ in range(current):
-                self.counter.update()
-            self.initialized = True
-        else:
+            #for _ in range(current):
             self.counter.update()
+
+            self.initialized = True
+            self.last_id = current
+        else:
+            for _ in range(current - self.last_id):
+                self.counter.update()
+
+            self.last_id = current
 
 def format_bytes(size):
     # That's not mine. Thanks to the
