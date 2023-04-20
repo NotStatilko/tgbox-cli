@@ -2024,7 +2024,7 @@ def cli_init():
                 '''(for /f %i in (\'tgbox-cli sk-gen\') '''
                 '''do set "TGBOX_CLI_SK=%i")\n'''
                 '''echo on # Enable CMD output back\n'''
-                '''chcp 65001 # Set CMD encoding to UTF-8'''
+                '''chcp 65001 || # Set CMD encoding to UTF-8'''
             )
         else:
             current_shell = getenv('SHELL')
