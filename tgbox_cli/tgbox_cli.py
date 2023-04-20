@@ -2019,8 +2019,13 @@ def cli_init():
         echo('[WHITE]CLI is already initialized.[WHITE]')
     else:
         if platform in ('win32', 'cygwin', 'cli'):
-            commands = 'echo off && (for /f %i in (\'tgbox-cli sk-gen\') '\
-                'do set "TGBOX_CLI_SK=%i") && echo on'
+            commands = (
+                '''echo off # Disable CMD output to hide SessionKey\n'''
+                '''(for /f %i in (\'tgbox-cli sk-gen\') '''
+                '''do set "TGBOX_CLI_SK=%i")\n'''
+                '''echo on # Enable CMD output back\n'''
+                '''chcp 65001 # Set CMD encoding to UTF-8'''
+            )
         else:
             current_shell = getenv('SHELL')
             if current_shell and 'bash' in current_shell:
