@@ -35,7 +35,6 @@ else:
     from datetime import datetime
     from pickle import loads, dumps
 
-    from sys import platform
     from base64 import urlsafe_b64encode
     from shutil import get_terminal_size
     from traceback import format_exception
@@ -2018,13 +2017,11 @@ def cli_init():
     if get_sk():
         echo('[WHITE]CLI is already initialized.[WHITE]')
     else:
-        if platform in ('win32', 'cygwin', 'cli'):
+        if system().lower() == 'windows':
             commands = (
-                '''echo off # Disable CMD output to hide SessionKey\n'''
                 '''(for /f %i in (\'tgbox-cli sk-gen\') '''
-                '''do set "TGBOX_CLI_SK=%i")\n'''
-                '''echo on # Enable CMD output back\n'''
-                '''chcp 65001 || # Set CMD encoding to UTF-8'''
+                '''do set "TGBOX_CLI_SK=%i") > NUL\n'''
+                '''chcp 65001 || # Change the default CMD encoding to UTF-8'''
             )
         else:
             current_shell = getenv('SHELL')
