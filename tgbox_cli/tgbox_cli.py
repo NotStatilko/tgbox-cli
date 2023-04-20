@@ -1434,8 +1434,8 @@ def file_search(filters, force_remote, non_interactive):
     else:
         sf_gen = bfi_gen(box.search_file(sf, cache_preview=False))
 
-        color = True if system().lower() == 'windows' else None
-        click.echo_via_pager(sf_gen, color=color)
+        colored = True if system().lower() == 'windows' else None
+        click.echo_via_pager(sf_gen, color=colored)
 
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
@@ -2170,8 +2170,8 @@ def readme(non_interactive):
     if non_interactive:
         echo(readme_text)
     else:
-        color = True if system().lower() == 'windows' else None
-        click.echo_via_pager(color(readme_text), color=color)
+        colored = True if system().lower() == 'windows' else None
+        click.echo_via_pager(color(readme_text), color=colored)
 
 # ========================================================= #
 
