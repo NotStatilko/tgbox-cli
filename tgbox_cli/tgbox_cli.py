@@ -880,7 +880,7 @@ def box_sync(start_from_id, deep):
     There is two modes of sync: the Fast and the Deep. The
     "Fast" mode will fetch data from the "Recent Actions"
     Telegram channel admin log. The updates here will stay
-    up to 48 hours, so that's the best option. In any other
+    up to 48 hours, so this is the best option. In any other
     case specify a --deep flag to enable the "Deep" sync.
 
     Deep sync will iterate over each file in Remote and
@@ -890,7 +890,15 @@ def box_sync(start_from_id, deep):
     the last file ID of your LocalBox as
     --start-from-id (-s) option here.
 
-    --start-from-id will be used only on deep sync.
+    \b
+    (!) Please note that to make a fast sync you *need*\b
+     |  to have access to the Channel's Admin Log. Ask
+     |  the RemoteBox owner to make you Admin with (at
+     |  least) zero rights or use a deep synchronization.
+     |
+    (?) Use tgbox-cli box-info to check your rights.
+
+    (!) --start-from-id will be used only on deep sync.
     """
     dlb, drb = _select_box()
 
@@ -1128,10 +1136,15 @@ def box_clone(
         box_path += tgbox.sync(drb.get_box_name())\
             if not box_filename else box_filename
 
-    tgbox.sync(drb.clone(
-        basekey=basekey, box_path=box_path,
-        progress_callback=Progress(enlighten_manager, 'Cloning...').update_2
-    ))
+    dlb = tgbox.sync(tgbox.api.local.clone_remotebox(
+        drb = drb,
+        basekey = basekey,
+        box_path = box_path,
+
+        progress_callback = Progress(
+            enlighten_manager, 'Cloning...').update_2
+        )
+    )
     enlighten_manager.stop()
 
     echo('\n[CYAN]Updating local data...[CYAN] ', nl=False)
@@ -1150,7 +1163,7 @@ def box_clone(
 
     write_state(state, state_key)
     echo('[GREEN]Successful![GREEN]')
-    tgbox.sync(exit_program(drb=drb))
+    tgbox.sync(exit_program(drb=drb, dlb=dlb))
 
 @cli.command()
 @click.argument('defaults',nargs=-1)
@@ -1188,9 +1201,6 @@ def box_info():
 
     box_id = f'[WHITE]id{drb.box_channel_id}[WHITE]'
 
-    participants = drb.box_channel.participants_count
-    participants = f'[BLUE]{participants}[BLUE]'
-
     lfid_local = tgbox.sync(dlb.get_last_file_id())
     lfid_remote = tgbox.sync(drb.get_last_file_id())
 
@@ -1214,25 +1224,56 @@ def box_info():
 
     box_path = f'[WHITE]{dlb.tgbox_db.db_path.name}[WHITE]'
 
-    box_date = datetime.fromtimestamp(dlb.box_cr_time).strftime('%d/%m/%Y')
-    date_created = f'[WHITE]{box_date}[WHITE]'
+    local_box_date = datetime.fromtimestamp(dlb.box_cr_time).strftime('%d/%m/%Y')
+    local_date_created = f'[WHITE]{local_box_date}[WHITE]'
+
+    remote_box_date = tgbox.sync(drb.tc.get_messages(drb.box_channel, ids=1))
+    remote_box_date = remote_box_date.date.strftime('%d/%m/%Y')
+    remote_date_created = f'[WHITE]{remote_box_date}[WHITE]'
+
+    rights_interested = {
+        'post_messages' : 'Upload files',
+        'delete_messages' : 'Remove files',
+        'edit_messages' : 'Edit files',
+        'invite_users' : 'Invite users',
+        'add_admins': 'Add admins'
+    }
+    if drb.box_channel.admin_rights:
+        rights = ' (+) [GREEN]Fast sync files[GREEN]\n'
+    else:
+        rights = ' (-) [RED]Fast sync files[RED]\n'
+
+    rights += ' (+) [GREEN]Download files[GREEN]\n'
+
+    for k,v in rights_interested.items():
+        if drb.box_channel.admin_rights and\
+            getattr(drb.box_channel.admin_rights, k):
+                right_status = '(+)' # User has such right
+                right = f'[GREEN]{v}[GREEN]'
+        else:
+            right_status = '(-)' # User hasn't such right
+            right = f'[RED]{v}[RED]'
+
+        rights += f' {right_status} {right}\n'
 
     echo(
         '''\n ====== Current Box (remote) ======\n\n'''
 
         f'''| Box name: {box_name}\n'''
         f'''| Public link: {public_link}\n'''
-        f'''| ID: {box_id}\n'''
+        f'''| ID: {box_id}\no\n'''
+        f'''| Date created: {remote_date_created}\n'''
         f'''| Last file ID: {lfid_remote}\n'''
-        f'''| Is restricted: {restricted}\n'''
+        f'''| Is restricted: {restricted}\no\n'''
+        f'''| Your rights: \n{rights}\n'''
 
-        '''\n ====== Current Box (local) =======\n\n'''
+        ''' ====== Current Box (local) =======\n\n'''
 
-        f'''| Box file: {box_path}\n'''
-        f'''| Date created: {date_created}\n'''
+        f'''| Box DB: {box_path}\n'''
+        f'''| Date created: {local_date_created}\n'''
         f'''| Last file ID: {lfid_local}\n'''
 
-        '''\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n'''
+        '''\n :::::::::::::::::::::::::::::::::\n\n'''
 
         f'''| Status: {status}\n'''
 
