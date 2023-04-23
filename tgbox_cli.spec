@@ -1,4 +1,4 @@
-from tgbox.constants import PYINSTALLER_DATA
+from tgbox.defaults import PYINSTALLER_DATA
 from pathlib import Path
 
 MAIN_SCRIPT = Path('tgbox_cli') / 'tgbox_cli.py'
