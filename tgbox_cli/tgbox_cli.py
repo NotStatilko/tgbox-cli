@@ -584,7 +584,7 @@ def box_make(box_name, box_salt, phrase, s, n, p, r, l):
     state = get_state(state_key)
 
     if not phrase and click.confirm('Generate passphrase for you?'):
-        phrase = tgbox.keys.Phrase.generate().phrase.decode()
+        phrase = tgbox.keys.Phrase.generate(6).phrase.decode()
         echo(f'\nYour Phrase is [MAGENTA]{phrase}[MAGENTA]')
 
         echo(
