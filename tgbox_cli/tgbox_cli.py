@@ -2333,7 +2333,7 @@ def sk_gen(size: int):
 @cli.command(hidden=True)
 def python():
     """Launch interactive Python console"""
-    interactive_console()
+    interactive_console(); _exit(0)
 
 # ========================================================= #
 
