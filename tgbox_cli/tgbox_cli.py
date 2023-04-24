@@ -40,6 +40,7 @@ else:
     from traceback import format_exception
 
     from subprocess import run as subprocess_run, PIPE
+    from code import interact as interactive_console
     from asyncio import gather, get_event_loop
 
     from os import getenv, _exit
@@ -285,7 +286,7 @@ class StructuredGroup(click.Group):
                 last_letter = k[0]
                 formatter.write_paragraph()
 
-            if v.name.lower() == 'readme':
+            if v.name.lower() == 'help':
                 colored_name = color(f'[GREEN]{v.name}[GREEN]')
             else:
                 colored_name = color(f'[WHITE]{v.name}[WHITE]')
@@ -1910,7 +1911,10 @@ def file_remove(filters, local_only, ask_before_remove):
         You can use both, the ++include and
         ++exclude (+i, +e) in one command.
     """
-    dlb, drb = _select_box()
+    if local_only:
+        dlb, drb = _select_box()
+    else:
+        dlb, _ = _select_box(ignore_remote=True)
     try:
         sf = filters_to_searchfilter(filters)
     except ZeroDivisionError:#IndexError: # Incorrect filters format
@@ -2028,6 +2032,122 @@ def file_forward(entity, id):
                 echo(f'[YELLOW]Can not find entity "{e}"[YELLOW]')
     else:
         echo('[RED]At least one entity should be specified[RED]')
+
+    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+
+@cli.command()
+@click.argument('filters', nargs=-1)
+@click.option(
+    '--attribute', '-a', required=True,
+    help='File attribute, e.g file_name=test.txt'
+)
+@click.option(
+    '--local-only','-l', is_flag=True,
+    help='If specified, will change attr only in LocalBox'
+)
+def file_attr_change(filters, attribute, local_only):
+    """Will change file path of Box files (search by filters)
+
+    \b
+    Available filters:\b
+        id integer: File’s ID
+        mime str: File mime type
+        \b
+        cattrs: File CAttrs
+                -----------
+                Can be used hexed PackedAttributes
+                or special CLI format alternatively:
+                cattrs="comment:test type:message"
+        \b
+        file_path str: File path
+        file_name str: File name
+        file_salt str: File salt
+        \b
+        min_id integer: File ID should be > min_id
+        max_id integer: File ID should be < max_id
+        \b
+        min_size integer: File Size should be > min_size
+        max_size integer: File Size should be < max_size
+        \b
+        min_time integer/float: Upload Time should be > min_time
+        max_time integer/float: Upload Time should be < max_time
+        \b
+        imported bool: Yield only imported files
+        re       bool: re_search for every bytes filter
+    \b
+    See tgbox.readthedocs.io/en/indev/
+        tgbox.html#tgbox.tools.SearchFilter
+    \b
+    You can also use special flags to specify
+    that filters is for include or exclude search.
+    \b
+    Example:\b
+        # Include is used by default
+        tgbox-cli file-change-attr min_id=3 max_id=100 -a file_path=/home/non/
+        \b
+        # Include flag (will ignore unmatched)
+        tgbox-cli file-change-attr +i file_name=.png -a file_path=/home/non/Pictures
+        \b
+        # Exclude flag (will ignore matched)
+        tgbox-cli file-change-attr +e file_name=.png -a file_path=/home/non/NonPictures
+        \b
+        # Attribute without value will reset it to default
+        tgbox-cli file-change-attr id=22 -a file_name=
+        \b
+        You can use both, the ++include and
+        ++exclude (+i, +e) in one command.
+    """
+    dlb, drb = _select_box()
+    try:
+        sf = filters_to_searchfilter(filters)
+    except ZeroDivisionError:#IndexError: # Incorrect filters format
+        echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
+        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    except KeyError as e: # Unknown filters
+        echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
+        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+
+    if not filters:
+        echo(
+            '''\n[RED]You didn\'t specified any search filter.\n   This '''
+            '''will [WHITE]change attrs for all files[WHITE] in your Box[RED]\n'''
+        )
+        if not click.confirm('Are you TOTALLY sure?'):
+            tgbox.sync(exit_program(dlb=dlb, drb=drb))
+
+    attr_key, attr_value = attribute.split('=',1)
+
+    if attr_key == 'cattrs':
+        try:
+            attr_value = tgbox.tools.PackedAttributes.unpack(
+                bytes.fromhex(attr_value)
+            );  assert attr_value
+        except (ValueError, AssertionError):
+            # Specified value isn't a hexed PackedAttributes
+            cattrs = {}
+            for items in attr_value.split():
+                items = items.split(':',1)
+                cattrs[items[0]] = items[1].encode()
+
+            attr_value = cattrs
+
+    if attr_key == 'cattrs':
+        changes = {attr_key: tgbox.tools.PackedAttributes.pack(**attr_value)}
+    else:
+        changes = {attr_key: attr_value.encode()}
+
+    to_change = dlb.search_file(sf, cache_preview=False)
+
+    for dlbf in sync_async_gen(to_change):
+        if local_only:
+            tgbox.sync(dlbf.update_metadata(changes=changes, dlb=dlb))
+        else:
+            drbf = tgbox.sync(drb.get_file(dlbf.id))
+            tgbox.sync(drbf.update_metadata(changes=changes, dlb=dlb))
+
+        echo(
+            f'''([WHITE]{dlbf.id}[WHITE]) {dlbf.file_name} '''
+            f'''<= [YELLOW]{attribute}[YELLOW]''')
 
     tgbox.sync(exit_program(dlb=dlb, drb=drb))
 
@@ -2178,28 +2298,14 @@ def logfile_send(entity):
 
 # ========================================================= #
 
-# = Hidden CLI tools commands ============================= #
-
-@cli.command(hidden=True)
-@click.option(
-    '--size', '-s', default=32,
-    help='SessionKey bytesize'
-)
-
-def sk_gen(size: int):
-    """Generate random urlsafe b64encoded SessionKey"""
-    echo(urlsafe_b64encode(tgbox.crypto.get_rnd_bytes(size)).decode())
-
-# ========================================================= #
-
 # = Documentation commands  =============================== #
 
-@cli.command(name='README')
+@cli.command(name='help')
 @click.option(
     '--non-interactive', '-n', is_flag=True,
     help='If specified, will echo to shell instead of pager'
 )
-def readme(non_interactive):
+def help_(non_interactive):
     """Write this command for extended Help!"""
 
     readme_path = Path(__file__).parent / 'data'
@@ -2210,6 +2316,24 @@ def readme(non_interactive):
     else:
         colored = True if system().lower() == 'windows' else None
         click.echo_via_pager(color(readme_text), color=colored)
+
+# ========================================================= #
+
+# = Hidden CLI tools commands ============================= #
+
+@cli.command(hidden=True)
+@click.option(
+    '--size', '-s', default=32,
+    help='SessionKey bytesize'
+)
+def sk_gen(size: int):
+    """Generate random urlsafe b64encoded SessionKey"""
+    echo(urlsafe_b64encode(tgbox.crypto.get_rnd_bytes(size)).decode())
+
+@cli.command(hidden=True)
+def python():
+    """Launch interactive Python console"""
+    interactive_console()
 
 # ========================================================= #
 
