@@ -15,6 +15,7 @@ from shutil import get_terminal_size
 
 from os import system, name as os_name
 from datetime import datetime, timedelta
+from pathlib import Path, PureWindowsPath
 
 
 clear_console = lambda: system('cls' if os_name in ('nt','dos') else 'clear')
@@ -113,7 +114,6 @@ class Progress:
                 unit='ID', color='gray',
                 bar_format=self.BAR_FORMAT
             )
-            #for _ in range(current):
             self.counter.update()
 
             self.initialized = True
@@ -283,7 +283,13 @@ def format_dxbf(
             file_path = '[RED][Unknown Folder][RED]'
 
     if not name_invalid:
-        path_cached = tgbox.defaults.DOWNLOAD_PATH / 'Files' / '@'
+        win_path = PureWindowsPath(file_path)
+        if win_path.drive: # It's a Windows path
+            file_path = str(Path(*win_path.parts))
+            path_cached = tgbox.defaults.DOWNLOAD_PATH / 'Files'
+        else:
+            path_cached = tgbox.defaults.DOWNLOAD_PATH / 'Files' / '@'
+
         path_cached = path_cached / file_path.strip('/') / dxbf.file_name
 
         if path_cached.exists():
