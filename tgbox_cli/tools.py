@@ -300,6 +300,9 @@ def format_dxbf(
         else:
             name = f'[WHITE]{name}[WHITE]'
 
+        if win_path.drive:
+            file_path = str(win_path)
+
     formatted = (
        f"""\nFile: {idsalt} {name}\n"""
        f"""Path: {splitpath(file_path, 6)}\n"""
