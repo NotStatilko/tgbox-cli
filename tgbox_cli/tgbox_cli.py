@@ -266,10 +266,7 @@ class StructuredGroup(click.Group):
         return self.commands
 
     def format_commands(self, ctx, formatter):
-        cmd_size = get_terminal_size().columns
-        cmd_size = cmd_size - 5 if cmd_size < 100 else 100
-
-        formatter.width = cmd_size
+        formatter.width = get_terminal_size().columns
 
         formatter.write_text('')
         formatter.write_heading('Commands')
@@ -1912,9 +1909,9 @@ def file_remove(filters, local_only, ask_before_remove):
         ++exclude (+i, +e) in one command.
     """
     if local_only:
-        dlb, drb = _select_box()
-    else:
         dlb, _ = _select_box(ignore_remote=True)
+    else:
+        dlb, drb = _select_box()
     try:
         sf = filters_to_searchfilter(filters)
     except ZeroDivisionError:#IndexError: # Incorrect filters format
@@ -2046,7 +2043,7 @@ def file_forward(entity, id):
     help='If specified, will change attr only in LocalBox'
 )
 def file_attr_change(filters, attribute, local_only):
-    """Will change file path of Box files (search by filters)
+    """Will change attribute of Box files (search by filters)
 
     \b
     Available filters:\b
@@ -2083,16 +2080,16 @@ def file_attr_change(filters, attribute, local_only):
     \b
     Example:\b
         # Include is used by default
-        tgbox-cli file-change-attr min_id=3 max_id=100 -a file_path=/home/non/
+        tgbox-cli file-attr-change min_id=3 max_id=100 -a file_path=/home/non/
         \b
         # Include flag (will ignore unmatched)
-        tgbox-cli file-change-attr +i file_name=.png -a file_path=/home/non/Pictures
+        tgbox-cli file-attr-change +i file_name=.png -a file_path=/home/non/Pictures
         \b
         # Exclude flag (will ignore matched)
-        tgbox-cli file-change-attr +e file_name=.png -a file_path=/home/non/NonPictures
+        tgbox-cli file-attr-change +e file_name=.png -a file_path=/home/non/NonPictures
         \b
         # Attribute without value will reset it to default
-        tgbox-cli file-change-attr id=22 -a file_name=
+        tgbox-cli file-attr-change id=22 -a file_name=
         \b
         You can use both, the ++include and
         ++exclude (+i, +e) in one command.
@@ -2329,6 +2326,15 @@ def help_(non_interactive):
 def sk_gen(size: int):
     """Generate random urlsafe b64encoded SessionKey"""
     echo(urlsafe_b64encode(tgbox.crypto.get_rnd_bytes(size)).decode())
+
+@cli.command(hidden=True)
+@click.option(
+    '--words', '-w', default=6,
+    help='Words amount in Phrase'
+)
+def phrase_gen(words: int):
+    """Generate random Phrase"""
+    echo(f'[MAGENTA]{tgbox.keys.Phrase.generate(words)}[MAGENTA]')
 
 @cli.command(hidden=True)
 def python():
