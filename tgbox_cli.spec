@@ -1,7 +1,7 @@
 from tgbox.constants import PYINSTALLER_DATA
 
 a = Analysis(
-    ['tgbox_cli.py'],
+    ['tgbox_cli/tgbox_cli.py'],
     pathex = [],
     binaries = [],
     datas = [],
