@@ -51,6 +51,8 @@ else:
         format_bytes, env_proxy_to_pysocks, color,
         filters_to_searchfilter, clear_console, format_dxbf
     )
+    from .version import VERSION
+
     from telethon.errors.rpcerrorlist import (
         UsernameNotOccupiedError, UsernameInvalidError
     )
@@ -59,7 +61,7 @@ else:
     # tools.color with a click.echo function
     echo = lambda t,**k: click.echo(color(t), **k)
 
-    __version__ = '1.0_' + tgbox.defaults.VERSION
+    __version__ = f'{VERSION}_{tgbox.defaults.VERSION}'
     tgbox.api.utils.TelegramClient.__version__ = __version__
 
     API_ID, API_HASH = getenv('TGBOX_CLI_API_ID'), getenv('TGBOX_CLI_API_HASH')
