@@ -47,6 +47,7 @@
     TGBOX-CLI supports the next environment variables:
         [BRIGHT_WHITE]http_proxy[BRIGHT_WHITE] (or [BRIGHT_WHITE]https_proxy[BRIGHT_WHITE]): setup Proxy (Google for format)
         [BRIGHT_WHITE]TGBOX_CLI_DEBUG[BRIGHT_WHITE]: any value will enable full error Traceback
+        [BRIGHT_WHITE]TGBOX_CLI_NOCOLOR[BRIGHT_WHITE]: any value will disable colored output
         [BRIGHT_WHITE]TGBOX_CLI_LOGFILE[BRIGHT_WHITE]: a full path to logging file
         [BRIGHT_WHITE]TGBOX_CLI_LOGLEVEL[BRIGHT_WHITE]: setup logging level (DEBUG/INFO/...etc)
         [BRIGHT_WHITE]TGBOX_CLI_SK[BRIGHT_WHITE]: SessionKey, will be installed on initialization
@@ -282,7 +283,8 @@
         most interesting is the last two, as you may want
         to [WHITE]change name or path[WHITE] of some file(s). This can
         be easily done via [BLUE]file-attr-change[BLUE] command:
-            [WHITE]tgbox-cli file-attr-change mime=image -a file_path=/home/non/Pictures[WHITE]
+            [WHITE]tgbox-cli file-attr-change mime=image -a\[WHITE]
+                [WHITE]file_path=/home/non/Pictures[WHITE]
 
         As you can see, selecting is done by [CYAN]filters[CYAN]. We
         specify attribute with the [GREEN]--attribute[GREEN] ([GREEN]-a[GREEN])
