@@ -46,20 +46,22 @@ else:
     from os import getenv, _exit
     from os.path import expandvars
 
-    from .tools import (
+    from tools import ( # TODO
         Progress, sync_async_gen, exit_program,
         format_bytes, env_proxy_to_pysocks, color,
         filters_to_searchfilter, clear_console, format_dxbf
     )
-    from .version import VERSION
+    from version import VERSION
 
     from telethon.errors.rpcerrorlist import (
         UsernameNotOccupiedError, UsernameInvalidError
     )
     from enlighten import get_manager as get_enlighten_manager
 
+    TGBOX_CLI_NOCOLOR = bool(getenv('TGBOX_CLI_NOCOLOR'))
+
     # tools.color with a click.echo function
-    echo = lambda t,**k: click.echo(color(t), **k)
+    echo = lambda t,**k: click.echo(color(t), **k, color=(not TGBOX_CLI_NOCOLOR))
 
     __version__ = f'{VERSION}_{tgbox.defaults.VERSION}'
     tgbox.api.utils.TelegramClient.__version__ = __version__
@@ -74,25 +76,17 @@ else:
     logging_level = getenv('TGBOX_CLI_LOGLEVEL')
     logging_level = logging_level if logging_level else 'WARNING'
 
+    cli_folders = {
+        'windows': Path(str(expandvars('%APPDATA%'))) / '.tgbox-cli',
+        '_other_os': Path.home() / '.tgbox-cli'
+    }
+    cli_folder = cli_folders.get(system().lower(), cli_folders['_other_os'])
+    cli_folder.mkdir(parents=True, exist_ok=True)
+
     logfile = getenv('TGBOX_CLI_LOGFILE')
 
     if not logfile:
-        current_system = system().lower()
-        if current_system == 'linux':
-            logfile = Path.home() / '.tgbox-cli'
-            logfile = logfile / f'log{__version__}.txt'
-
-        elif current_system == 'windows':
-            logfile = Path(str(expandvars('%APPDATA%'))) / '.tgbox-cli'
-            logfile = logfile / f'log{__version__}.txt'
-
-        elif current_system == 'darwin':
-            logfile = Path.home() / 'Library' / 'Logs' / '.tgbox-cli'
-            logfile = logfile / f'log{__version__}.txt'
-    else:
-        logfile = Path(logfile)
-
-    logfile.parent.mkdir(parents=True, exist_ok=True)
+        logfile = cli_folder / f'log{__version__}.txt'
 
     logging.basicConfig(
         format = (
@@ -107,7 +101,12 @@ else:
     # Progressbar manager
     enlighten_manager = get_enlighten_manager()
 
+# ACTIVE_BOX will store current pair of dlb & drb
+# to easily close it on program exit.
 ACTIVE_BOX = []
+
+class ExitProgram(click.Abort):
+    """Will be raised to exit CLI"""
 
 # = Functions for operating on temp CLI session =========== #
 
@@ -126,13 +125,13 @@ def check_sk(echo_error: bool=True):
                 '''[RED]You should run[RED] [WHITE]tgbox-cli '''
                 '''cli-init[WHITE] [RED]firstly.[RED]'''
             )
-        tgbox.sync(exit_program())
+        raise ExitProgram
     else:
         return True
 
 def get_state(state_key: str) -> dict:
     state_enc_key = sha256(state_key.encode()).digest()
-    state_file = Path('sess_' + sha256(state_enc_key).hexdigest())
+    state_file = cli_folder / sha256(state_enc_key).hexdigest()
 
     if not state_file.exists():
         return {}
@@ -143,7 +142,7 @@ def get_state(state_key: str) -> dict:
 
 def write_state(state: dict, state_key: str) -> None:
     state_enc_key = sha256(state_key.encode()).digest()
-    state_file = Path('sess_' + sha256(state_enc_key).hexdigest())
+    state_file = cli_folder / sha256(state_enc_key).hexdigest()
 
     with open(state_file,'wb') as f:
         f.write(tgbox.crypto.AESwState(state_enc_key).encrypt(dumps(state)))
@@ -168,7 +167,7 @@ def _select_box(ignore_remote: bool=False, raise_if_none: bool=False):
             '''[RED]You didn\'t connected box yet. Use[RED] '''
             '''[WHITE]box-open[WHITE] [RED]command.[RED]'''
         )
-        tgbox.sync(exit_program())
+        raise ExitProgram
     else:
         box_path = state['TGBOXES'][state['CURRENT_TGBOX']][0]
         basekey  = state['TGBOXES'][state['CURRENT_TGBOX']][1]
@@ -207,7 +206,7 @@ def _select_remotebox(number: int, prefix: str):
 
     if not erb:
         echo(f'[RED]RemoteBox by number={number} not found.[RED]')
-        tgbox.sync(exit_program())
+        raise ExitProgram
     else:
         return erb
 
@@ -241,7 +240,7 @@ def _select_account() -> 'tgbox.api.TelegramClient':
           '''[RED]You should run [RED][WHITE]tgbox-cli '''
           '''account-connect [WHITE][RED]firstly.[RED]'''
         )
-        tgbox.sync(exit_program())
+        raise ExitProgram
 
     if getenv('https_proxy'):
         proxy = env_proxy_to_pysocks(getenv('https_proxy'))
@@ -286,18 +285,109 @@ class StructuredGroup(click.Group):
                 formatter.write_paragraph()
 
             if v.name.lower() == 'help':
-                colored_name = color(f'[GREEN]{v.name}[GREEN]')
+                if TGBOX_CLI_NOCOLOR:
+                    name = v.name
+                else:
+                    name = color(f'[GREEN]{v.name}[GREEN]')
             else:
-                colored_name = color(f'[WHITE]{v.name}[WHITE]')
+                if TGBOX_CLI_NOCOLOR:
+                    name = v.name
+                else:
+                    name = color(f'[WHITE]{v.name}[WHITE]')
 
             formatter.write_text(
-                f'  o  {colored_name} :: {v.get_short_help_str().strip()}'
+                f'  o  {name} :: {v.get_short_help_str().strip()}'
             )
         formatter.write_text('\x1b[0m')
 
 @click.group(cls=StructuredGroup)
 def cli():
    pass
+
+# ========================================================= #
+
+# = CLI manage & setup commands =========================== #
+
+@cli.command()
+def cli_init():
+    """Get commands for initializing TGBOX-CLI"""
+    if get_sk():
+        echo('[WHITE]CLI is already initialized.[WHITE]')
+    else:
+        if system().lower() == 'windows':
+            commands = (
+                '''(for /f %i in (\'tgbox-cli sk-gen\') '''
+                '''do set "TGBOX_CLI_SK=%i") > NUL\n'''
+                '''chcp 65001 || # Change the default CMD encoding to UTF-8'''
+            )
+        else:
+            current_shell = getenv('SHELL')
+            if current_shell and 'bash' in current_shell:
+                autocomplete = 'eval "$(_TGBOX_CLI_COMPLETE=bash_source tgbox-cli)"'
+            elif current_shell and 'zsh' in current_shell:
+                autocomplete = 'eval "$(_TGBOX_CLI_COMPLETE=zsh_source tgbox-cli)"'
+            elif current_shell and 'fish' in current_shell:
+                autocomplete = 'eval (env _TGBOX_CLI_COMPLETE=fish_source tgbox-cli)'
+            else:
+                autocomplete = None
+
+            if autocomplete:
+                echo('\n[BLUE]# (Execute commands below if eval doesn\'t work)[BLUE]\n')
+
+                real_commands = (
+                    '''export TGBOX_CLI_SK="$(tgbox-cli sk-gen)"\n'''
+                    f'''{autocomplete}'''
+                )
+                echo(real_commands)
+
+                commands = 'eval "$(!!)" && clear'
+            else:
+                commands = 'export TGBOX_CLI_SK="$(tgbox-cli sk-gen)"'
+
+        echo(
+            '''\n[YELLOW]Welcome to the TGBOX-CLI![YELLOW]\n\n'''
+            '''Copy & Paste commands below to your shell:\n\n'''
+           f'''[WHITE]{commands}[WHITE]\n'''
+        )
+
+@cli.command()
+def cli_info():
+    """Get base information about TGBOX-CLI"""
+
+    ver = __version__.split('_')
+    try:
+        sp_result = subprocess_run(
+            args=[tgbox.defaults.FFMPEG, '-version'],
+            stdout=PIPE, stderr=None
+        )
+        ffmpeg_version = f"[GREEN]{sp_result.stdout.split(b' ',3)[2].decode()}[GREEN]"
+    except:
+        ffmpeg_version = '[RED]NOT FOUND[RED]'
+
+    if tgbox.crypto.FAST_ENCRYPTION:
+        fast_encryption = '[GREEN]YES[GREEN]'
+    else:
+        fast_encryption = '[RED]NO[RED]'
+
+    if tgbox.crypto.FAST_TELETHON:
+        fast_telethon = '[GREEN]YES[GREEN]'
+    else:
+        fast_telethon = '[RED]NO[RED]'
+
+    echo(
+        '''\n# Copyright [WHITE](c) Non [github.com/NotStatilko][WHITE], the MIT License\n'''
+        '''# Author Email: [WHITE]thenonproton@protonmail.com[WHITE]\n\n'''
+
+        f'''TGBOX-CLI Version: [YELLOW]{ver[0]}[YELLOW]\n'''
+        f'''TGBOX Version: [MAGENTA]{ver[1]}[MAGENTA]\n\n'''
+
+        f'''FFMPEG: {ffmpeg_version}\n'''
+        f'''FAST_ENCRYPTION: {fast_encryption}\n'''
+        f'''FAST_TELETHON: {fast_telethon}\n\n'''
+
+        f'''LOGLEVEL: [BLUE]{logging_level}[BLUE]\n'''
+        f'''LOGFILE: [BLUE]{logfile.name}[BLUE]\n'''
+    )
 
 # ========================================================= #
 
@@ -360,7 +450,7 @@ def account_connect(phone):
             if other_tc_id == tc_id:
                 tgbox.sync(tc.log_out())
                 echo('[RED]Account already added[RED]')
-                tgbox.sync(exit_program())
+                raise ExitProgram
 
         for d_session in disconnected_sessions:
             state['ACCOUNTS'].remove(d_session)
@@ -370,7 +460,7 @@ def account_connect(phone):
 
     write_state(state, state_key)
     echo('[GREEN]Successful![GREEN]')
-    tgbox.sync(exit_program())
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -388,7 +478,7 @@ def account_disconnect(number, log_out):
 
     if 'ACCOUNTS' not in state or not state['ACCOUNTS']:
         echo('[RED]You don\'t have any connected account.[RED]')
-        tgbox.sync(exit_program())
+        raise ExitProgram
 
     elif number < 1 or number > len(state['ACCOUNTS']):
         echo(
@@ -416,7 +506,7 @@ def account_disconnect(number, log_out):
         state['CURRENT_ACCOUNT'] = 0
         echo('[GREEN]Disconnected & switched to the account #1[GREEN]')
         write_state(state, state_key)
-        tgbox.sync(exit_program())
+        raise ExitProgram
 
 @cli.command()
 def account_list():
@@ -459,7 +549,7 @@ def account_list():
 
         write_state(state, state_key)
 
-    tgbox.sync(exit_program())
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -493,7 +583,7 @@ def account_switch(number):
         write_state(state, state_key)
         echo(f'[GREEN]You switched to account #{number}[GREEN]')
 
-    tgbox.sync(exit_program())
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -636,7 +726,7 @@ def box_make(box_name, box_salt, phrase, s, n, p, r, l):
     write_state(state, state_key)
     echo('[GREEN]Successful![GREEN]')
 
-    tgbox.sync(exit_program(dlb=dlb, drb=erb))
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -691,7 +781,7 @@ def box_open(box_path, phrase, s, n, p, r, l):
         dlb = tgbox.sync(tgbox.api.get_localbox(basekey, box_path))
     except tgbox.errors.IncorrectKey:
         echo('[RED]Incorrect passphrase![RED]')
-        tgbox.sync(exit_program())
+        raise ExitProgram
 
     echo('[GREEN]Successful![GREEN]')
 
@@ -704,14 +794,14 @@ def box_open(box_path, phrase, s, n, p, r, l):
         for _, other_basekey in state['TGBOXES']:
             if basekey.key == other_basekey:
                 echo('[RED]This Box is already opened[RED]')
-                tgbox.sync(exit_program(dlb=dlb))
+                raise ExitProgram
 
         state['TGBOXES'].append([box_path, basekey.key])
         state['CURRENT_TGBOX'] = len(state['TGBOXES']) - 1
 
     write_state(state, state_key)
     echo('[GREEN]Successful![GREEN]')
-    tgbox.sync(exit_program(dlb=dlb))
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -738,7 +828,7 @@ def box_close(number):
         else:
             state['CURRENT_TGBOX'] = 0
             echo('[GREEN]Disconnected & switched to the Box #1[GREEN]')
-            tgbox.sync(exit_program())
+            raise ExitProgram
 
         write_state(state, state_key)
 
@@ -775,7 +865,7 @@ def box_switch(number):
         write_state(state, state_key)
         echo(f'[GREEN]You switched to box #{number+1}[GREEN]')
 
-    tgbox.sync(exit_program())
+    raise ExitProgram
 
 @cli.command()
 def box_list():
@@ -792,7 +882,7 @@ def box_list():
         )
     else:
         echo('[YELLOW]You don\'t have any connected Box.[YELLOW]')
-        tgbox.sync(exit_program())
+        raise ExitProgram
 
     lost_boxes, count = [], 0
 
@@ -830,7 +920,7 @@ def box_list():
                 '''with [WHITE]box-switch[WHITE].'''
             )
     write_state(state, state_key)
-    tgbox.sync(exit_program())
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -859,7 +949,7 @@ def box_list_remote(prefix):
             count += 1
 
     echo('[YELLOW]Done.[YELLOW]')
-    tgbox.sync(exit_program())
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -925,7 +1015,7 @@ def box_sync(start_from_id, deep):
 
         echo('[GREEN]Syncing complete.[GREEN]')
 
-    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -949,7 +1039,7 @@ def box_replace_account(number):
             '''[RED]Invalid account number! See[RED] '''
             '''[WHITE]account-list[WHITE] [RED]command.[RED]'''
         )
-        tgbox.sync(exit_program(dlb=dlb))
+        raise ExitProgram
 
     session = state['ACCOUNTS'][number-1]
 
@@ -966,7 +1056,7 @@ def box_replace_account(number):
     tgbox.sync(dlb.replace_session(basekey, tc))
     echo('[GREEN]Session replaced successfully[GREEN]')
 
-    tgbox.sync(exit_program(dlb=dlb))
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -1017,7 +1107,7 @@ def box_request(number, phrase, s, n, p, r, l, prefix):
         '''\nSend this Key to the Box owner:\n'''
        f'''    [WHITE]{reqkey.encode()}[WHITE]\n'''
     )
-    tgbox.sync(exit_program(drb=erb))
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -1039,13 +1129,13 @@ def box_share(requestkey):
             '''will receive decryption key IN PLAIN\n[RED]'''
         )
         if not click.confirm('Are you TOTALLY sure?'):
-            tgbox.sync(exit_program(dlb=dlb))
+            raise ExitProgram
 
     echo(
         '''\nSend this Key to the Box requester:\n'''
        f'''    [WHITE]{sharekey.encode()}[WHITE]\n'''
     )
-    tgbox.sync(exit_program(dlb=dlb))
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -1156,14 +1246,14 @@ def box_clone(
         for _, other_basekey in state['TGBOXES']:
             if basekey.key == other_basekey:
                 echo('[RED]This Box is already opened[RED]')
-                tgbox.sync(exit_program(drb=drb))
+                raise ExitProgram
 
         state['TGBOXES'].append([box_path, basekey.key])
         state['CURRENT_TGBOX'] = len(state['TGBOXES']) - 1
 
     write_state(state, state_key)
     echo('[GREEN]Successful![GREEN]')
-    tgbox.sync(exit_program(drb=drb, dlb=dlb))
+    raise ExitProgram
 
 @cli.command()
 @click.argument('defaults',nargs=-1)
@@ -1188,7 +1278,7 @@ def box_default(defaults):
         except AttributeError:
             echo(f'[RED]Default {key} doesn\'t exist, skipping[RED]')
 
-    tgbox.sync(exit_program(dlb=dlb))
+    raise ExitProgram
 
 @cli.command()
 def box_info():
@@ -1279,7 +1369,7 @@ def box_info():
 
         '''\n =================================\n'''
     )
-    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    raise ExitProgram
 
 # ========================================================= #
 
@@ -1325,7 +1415,7 @@ def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
         except tgbox.errors.NotEnoughRights as e:
             echo(f'\n[RED]{e}[RED]')
             enlighten_manager.stop()
-            tgbox.sync(exit_program(dlb=dlb, drb=drb))
+            raise ExitProgram
 
     if path.is_dir():
         iter_over = path.rglob('*')
@@ -1386,8 +1476,7 @@ def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
     if to_upload: # If any files left
         _upload(to_upload)
 
-    enlighten_manager.stop()
-    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    raise ExitProgram
 
 @cli.command()
 @click.argument('filters',nargs=-1)
@@ -1460,10 +1549,10 @@ def file_search(filters, force_remote, non_interactive):
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
         echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
-        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+        raise ExitProgram
     except KeyError as e: # Unknown filters
         echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
-        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+        raise ExitProgram
 
     box = drb if force_remote else dlb
 
@@ -1475,9 +1564,10 @@ def file_search(filters, force_remote, non_interactive):
         sf_gen = bfi_gen(box.search_file(sf, cache_preview=False))
 
         colored = True if system().lower() == 'windows' else None
+        colored = False if TGBOX_CLI_NOCOLOR else colored
         click.echo_via_pager(sf_gen, color=colored)
 
-    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    raise ExitProgram
 
 @cli.command()
 @click.argument('filters', nargs=-1)
@@ -1584,10 +1674,10 @@ def file_download(
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
         echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
-        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+        raise ExitProgram
     except KeyError as e: # Unknown filters
         echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
-        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+        raise ExitProgram
 
     current_workers = max_workers
     current_bytes = max_bytes
@@ -1609,6 +1699,8 @@ def file_download(
 
                 file_name = file_name.lstrip('/')
                 file_name = file_name.lstrip('\\')
+
+                file_name = file_name if not preview else file_name + '.jpg'
 
                 if not out:
                     downloads = Path(dlbfi.defaults.DOWNLOAD_PATH)
@@ -1717,7 +1809,7 @@ def file_download(
         tgbox.sync(gather(*to_gather_files))
 
     enlighten_manager.stop()
-    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    raise ExitProgram
 
 @cli.command()
 def file_list_non_imported():
@@ -1758,7 +1850,7 @@ def file_list_non_imported():
             )
             echo(formatted)
     echo('')
-    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -1777,7 +1869,7 @@ def file_share(requestkey, id):
 
     if not dlbf:
         echo(f'[RED]There is no file in LocalBox by ID {id}[RED]')
-        tgbox.sync(exit_program(dlb=dlb))
+        raise ExitProgram
 
     requestkey = requestkey if not requestkey\
         else tgbox.keys.Key.decode(requestkey)
@@ -1790,12 +1882,12 @@ def file_share(requestkey, id):
             '''will receive decryption key IN PLAIN[RED]\n'''
         )
         if not click.confirm('Are you TOTALLY sure?'):
-            tgbox.sync(exit_program(dlb=dlb))
+            raise ExitProgram
     echo(
         '''\nSend this Key to the Box requester:\n'''
        f'''    [WHITE]{sharekey.encode()}[WHITE]\n'''
     )
-    tgbox.sync(exit_program(dlb=dlb))
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -1818,7 +1910,7 @@ def file_import(key, id, file_path):
 
     if not erbf:
         echo(f'[RED]There is no file in RemoteBox by ID {id}[RED]')
-        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+        raise ExitProgram
     try:
         key = tgbox.keys.Key.decode(key)
     except tgbox.errors.IncorrectKey:
@@ -1834,7 +1926,7 @@ def file_import(key, id, file_path):
 
         echo(format_dxbf(drbf))
 
-    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -1848,7 +1940,7 @@ def file_last_id(remote):
 
     sbox = 'Remote' if remote else 'Local'
     echo(f'ID of last uploaded to {sbox}Box file is [GREEN]{lfid}[GREEN]')
-    tgbox.sync(exit_program(drb=drb, dlb=dlb))
+    raise ExitProgram
 
 
 @cli.command()
@@ -1918,10 +2010,10 @@ def file_remove(filters, local_only, ask_before_remove):
         sf = filters_to_searchfilter(filters)
     except ZeroDivisionError:#IndexError: # Incorrect filters format
         echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
-        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+        raise ExitProgram
     except KeyError as e: # Unknown filters
         echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
-        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+        raise ExitProgram
 
     if not filters:
         echo(
@@ -1929,7 +2021,7 @@ def file_remove(filters, local_only, ask_before_remove):
             '''will [WHITE]REMOVE ALL FILES[WHITE] in your Box[RED]\n'''
         )
         if not click.confirm('Are you TOTALLY sure?'):
-            tgbox.sync(exit_program(dlb=dlb, drb=drb))
+            raise ExitProgram
 
     to_remove = dlb.search_file(sf, cache_preview=False)
 
@@ -1958,7 +2050,7 @@ def file_remove(filters, local_only, ask_before_remove):
                 elif choice.lower() in ('info','i'):
                     echo(format_dxbf(dlbf).rstrip())
                 elif choice.lower() in ('exit','e'):
-                    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+                    raise ExitProgram
                 else:
                     echo('[RED]Invalid choice, try again[RED]')
     else:
@@ -1968,29 +2060,75 @@ def file_remove(filters, local_only, ask_before_remove):
         tgbox.sync(dlb.delete_files(*to_remove, rb=(None if local_only else drb)))
         echo('[GREEN]Done.[GREEN]')
 
-    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    raise ExitProgram
 
 @cli.command()
-@click.option(
-    '--id', required=True, type=int,
-    help='File ID to forward'
-)
+@click.argument('filters', nargs=-1)
 @click.option(
     '--locate', '-l', is_flag=True,
     help='If specified, will open file path in file manager'
 )
-def file_open(id, locate):
+@click.option(
+    '--propagate', '-p', is_flag=True,
+    help='If specified, will open ALL matched files'
+)
+@click.option(
+    '--continuously', '-c', is_flag=True,
+    help='Do not interrupt --propagate with input-ask'
+)
+def file_open(filters, locate, propagate, continuously):
     """
-    Will try to open already downloaded
-    file in the default system app
+    Will try to search by filters and open the
+    already downloaded file in the default OS app
+
+    \b
+    Available filters:\b
+        id integer: File’s ID
+        mime str: File mime type
+        \b
+        cattrs: File CAttrs
+                -----------
+                Can be used hexed PackedAttributes
+                or special CLI format alternatively:
+                cattrs="comment:test type:message"
+        \b
+        file_path str: File path
+        file_name str: File name
+        file_salt str: File salt
+        \b
+        min_id integer: File ID should be > min_id
+        max_id integer: File ID should be < max_id
+        \b
+        min_size integer: File Size should be > min_size
+        max_size integer: File Size should be < max_size
+        \b
+        min_time integer/float: Upload Time should be > min_time
+        max_time integer/float: Upload Time should be < max_time
+        \b
+        imported bool: Yield only imported files
+        re       bool: re_search for every bytes filter
+    \b
+    See tgbox.readthedocs.io/en/indev/
+        tgbox.html#tgbox.tools.SearchFilter
+    \b
+    You can also use special flags to specify
+    that filters is for include (+i, ++include
+    [by default]) or exclude (+e, ++exclude) search.
     """
-    dlb, drb = _select_box()
+    dlb, _ = _select_box(ignore_remote=True)
 
-    dlbf = tgbox.sync(dlb.get_file(id))
+    try:
+        sf = filters_to_searchfilter(filters)
+    except IndexError: # Incorrect filters format
+        echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
+        raise ExitProgram
+    except KeyError as e: # Unknown filters
+        echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
+        raise ExitProgram
 
-    if not dlbf:
-        echo(f'[RED]File with ID={id} doesn\'t exist in LocalBox[RED]')
-    else:
+    to_open = dlb.search_file(sf)
+
+    for dlbf in sync_async_gen(to_open):
         tgbox.sync(dlbf.directory.lload(full=True))
 
         outpath = tgbox.defaults.DOWNLOAD_PATH / 'Files' / '@'
@@ -1999,7 +2137,16 @@ def file_open(id, locate):
 
         click.launch(outpath, locate=locate)
 
-    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+        if not propagate:
+            raise ExitProgram
+
+        if propagate and not continuously:
+            click.prompt(
+                text = '\n@ Press ENTER to open the next file >> ',
+                hide_input = True,
+                prompt_suffix = ''
+            )
+    raise ExitProgram
 
 @cli.command()
 @click.argument('entity', nargs=-1)
@@ -2023,7 +2170,7 @@ def file_forward(entity, id):
             drbf = tgbox.sync(drb.get_file(id))
             if not drbf:
                 echo(f'[RED]File with ID={id} doesn\'t exist in RemoteBox[RED]')
-                tgbox.sync(exit_program(dlb=dlb, drb=drb))
+                raise ExitProgram
             try:
                 tgbox.sync(drb.tc.forward_messages(e, drbf.message))
                 echo(f'[GREEN]ID={id} was forwarded to {e}[GREEN]')
@@ -2032,7 +2179,7 @@ def file_forward(entity, id):
     else:
         echo('[RED]At least one entity should be specified[RED]')
 
-    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    raise ExitProgram
 
 @cli.command()
 @click.argument('filters', nargs=-1)
@@ -2101,10 +2248,10 @@ def file_attr_change(filters, attribute, local_only):
         sf = filters_to_searchfilter(filters)
     except ZeroDivisionError:#IndexError: # Incorrect filters format
         echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
-        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+        raise ExitProgram
     except KeyError as e: # Unknown filters
         echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
-        tgbox.sync(exit_program(dlb=dlb, drb=drb))
+        raise ExitProgram
 
     if not filters:
         echo(
@@ -2112,7 +2259,7 @@ def file_attr_change(filters, attribute, local_only):
             '''will [WHITE]change attrs for all files[WHITE] in your Box[RED]\n'''
         )
         if not click.confirm('Are you TOTALLY sure?'):
-            tgbox.sync(exit_program(dlb=dlb, drb=drb))
+            raise ExitProgram
 
     attr_key, attr_value = attribute.split('=',1)
 
@@ -2148,7 +2295,7 @@ def file_attr_change(filters, attribute, local_only):
             f'''([WHITE]{dlbf.id}[WHITE]) {dlbf.file_name} '''
             f'''<= [YELLOW]{attribute}[YELLOW]''')
 
-    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    raise ExitProgram
 
 # ========================================================= #
 
@@ -2165,92 +2312,7 @@ def dir_list():
         tgbox.sync(dir.lload(full=True))
         echo(str(dir))
 
-    tgbox.sync(exit_program(dlb=dlb))
-
-# ========================================================= #
-
-# = CLI manage & setup commands =========================== #
-
-@cli.command()
-def cli_init():
-    """Get commands for initializing TGBOX-CLI"""
-    if get_sk():
-        echo('[WHITE]CLI is already initialized.[WHITE]')
-    else:
-        if system().lower() == 'windows':
-            commands = (
-                '''(for /f %i in (\'tgbox-cli sk-gen\') '''
-                '''do set "TGBOX_CLI_SK=%i") > NUL\n'''
-                '''chcp 65001 || # Change the default CMD encoding to UTF-8'''
-            )
-        else:
-            current_shell = getenv('SHELL')
-            if current_shell and 'bash' in current_shell:
-                autocomplete = 'eval "$(_TGBOX_CLI_COMPLETE=bash_source tgbox-cli)"'
-            elif current_shell and 'zsh' in current_shell:
-                autocomplete = 'eval "$(_TGBOX_CLI_COMPLETE=zsh_source tgbox-cli)"'
-            elif current_shell and 'fish' in current_shell:
-                autocomplete = 'eval (env _TGBOX_CLI_COMPLETE=fish_source tgbox-cli)'
-            else:
-                autocomplete = None
-
-            if autocomplete:
-                echo('\n[BLUE]# (Execute commands below if eval doesn\'t work)[BLUE]\n')
-
-                real_commands = (
-                    '''export TGBOX_CLI_SK="$(tgbox-cli sk-gen)"\n'''
-                    f'''{autocomplete}'''
-                )
-                echo(real_commands)
-
-                commands = 'eval "$(!!)" && clear'
-            else:
-                commands = 'export TGBOX_CLI_SK="$(tgbox-cli sk-gen)"'
-
-        echo(
-            '''\n[YELLOW]Welcome to the TGBOX-CLI![YELLOW]\n\n'''
-            '''Copy & Paste commands below to your shell:\n\n'''
-           f'''[WHITE]{commands}[WHITE]\n'''
-        )
-
-@cli.command()
-def cli_info():
-    """Get base information about TGBOX-CLI"""
-
-    ver = __version__.split('_')
-    try:
-        sp_result = subprocess_run(
-            args=[tgbox.defaults.FFMPEG, '-version'],
-            stdout=PIPE, stderr=None
-        )
-        ffmpeg_version = f"[GREEN]{sp_result.stdout.split(b' ',3)[2].decode()}[GREEN]"
-    except:
-        ffmpeg_version = '[RED]NOT FOUND[RED]'
-
-    if tgbox.crypto.FAST_ENCRYPTION:
-        fast_encryption = '[GREEN]YES[GREEN]'
-    else:
-        fast_encryption = '[RED]NO[RED]'
-
-    if tgbox.crypto.FAST_TELETHON:
-        fast_telethon = '[GREEN]YES[GREEN]'
-    else:
-        fast_telethon = '[RED]NO[RED]'
-
-    echo(
-        '''\n# Copyright [WHITE](c) Non [github.com/NotStatilko][WHITE], the MIT License\n'''
-        '''# Author Email: [WHITE]thenonproton@protonmail.com[WHITE]\n\n'''
-
-        f'''TGBOX-CLI Version: [YELLOW]{ver[0]}[YELLOW]\n'''
-        f'''TGBOX Version: [MAGENTA]{ver[1]}[MAGENTA]\n\n'''
-
-        f'''FFMPEG: {ffmpeg_version}\n'''
-        f'''FAST_ENCRYPTION: {fast_encryption}\n'''
-        f'''FAST_TELETHON: {fast_telethon}\n\n'''
-
-        f'''LOGLEVEL: [BLUE]{logging_level}[BLUE]\n'''
-        f'''LOGFILE: [BLUE]{logfile.name}[BLUE]\n'''
-    )
+    raise ExitProgram
 
 # ========================================================= #
 
@@ -2261,7 +2323,7 @@ def cli_info():
     '--locate', '-l', is_flag=True,
     help='If specified, will open file path in file manager'
 )
-def logfile_show(locate):
+def logfile_open(locate):
     """Open TGBOX-CLI log file with the default app"""
     click.launch(str(logfile), locate=locate)
 
@@ -2293,7 +2355,7 @@ def logfile_send(entity):
         tgbox.sync(drb.tc.send_file(e, logfile))
         echo(f'[WHITE]Logfile has been sent to[WHITE] [BLUE]{e}[BLUE]')
 
-    tgbox.sync(exit_program(dlb=dlb, drb=drb))
+    raise ExitProgram
 
 # ========================================================= #
 
@@ -2314,6 +2376,7 @@ def help_(non_interactive):
         echo(readme_text)
     else:
         colored = True if system().lower() == 'windows' else None
+        colored = False if TGBOX_CLI_NOCOLOR else colored
         click.echo_via_pager(color(readme_text), color=colored)
 
 # ========================================================= #
@@ -2341,7 +2404,8 @@ def phrase_gen(words: int):
 @cli.command(hidden=True)
 def python():
     """Launch interactive Python console"""
-    interactive_console(); _exit(0)
+    interactive_console(local=globals())
+    raise ExitProgram
 
 # ========================================================= #
 
@@ -2349,20 +2413,8 @@ def safe_tgbox_cli_startup():
     try:
         cli(standalone_mode=False)
     except Exception as e:
-        if getenv('TGBOX_CLI_DEBUG'):
-            e = ''.join(format_exception(
-                etype = None,
-                value = e,
-                tb = e.__traceback__
-            ))
         # Close Progressbar
         enlighten_manager.stop()
-
-        # Will echo only if error have message
-        if isinstance(e, str) or e.args:
-            echo(f'[RED]{e}[RED]')
-        echo('')
-
         try:
             # Try to close all connections on exception
             dlb, drb = _select_box(raise_if_none=True)
@@ -2373,7 +2425,20 @@ def safe_tgbox_cli_startup():
         except tgbox.errors.SessionUnregistered:
             pass # Session was disconnected
 
-        _exit(1)
+        if isinstance(e, click.Abort):
+            _exit(0)
+        else:
+            if getenv('TGBOX_CLI_DEBUG'):
+                e = ''.join(format_exception(
+                    etype = None,
+                    value = e,
+                    tb = e.__traceback__
+                ))
+            # Will echo only if error have message
+            if isinstance(e, str) or e.args:
+                echo(f'[RED]{e}[RED]')
+
+            echo(''); _exit(1)
 
 if __name__ == '__main__':
     safe_tgbox_cli_startup()
