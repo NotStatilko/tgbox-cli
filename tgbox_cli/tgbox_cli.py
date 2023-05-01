@@ -46,12 +46,12 @@ else:
     from os import getenv, _exit
     from os.path import expandvars
 
-    from tools import ( # TODO
+    from .tools import (
         Progress, sync_async_gen, exit_program,
         format_bytes, env_proxy_to_pysocks, color,
         filters_to_searchfilter, clear_console, format_dxbf
     )
-    from version import VERSION
+    from .version import VERSION
 
     from telethon.errors.rpcerrorlist import (
         UsernameNotOccupiedError, UsernameInvalidError
@@ -2133,7 +2133,7 @@ def file_open(filters, locate, propagate, continuously):
 
         outpath = tgbox.defaults.DOWNLOAD_PATH / 'Files' / '@'
         outpath = outpath / str(dlbf.directory).strip('/')
-        outpath = str(outpath / dlbf.file_name)
+        outpath = str(outpath.absolute() / dlbf.file_name)
 
         click.launch(outpath, locate=locate)
 
