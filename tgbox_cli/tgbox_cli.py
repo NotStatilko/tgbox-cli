@@ -828,9 +828,9 @@ def box_close(number):
         else:
             state['CURRENT_TGBOX'] = 0
             echo('[GREEN]Disconnected & switched to the Box #1[GREEN]')
-            raise ExitProgram
 
         write_state(state, state_key)
+        raise ExitProgram
 
 @cli.command()
 @click.option(
@@ -2077,7 +2077,7 @@ def file_remove(filters, local_only, ask_before_remove):
         dlb, drb = _select_box()
     try:
         sf = filters_to_searchfilter(filters)
-    except ZeroDivisionError:#IndexError: # Incorrect filters format
+    except IndexError: # Incorrect filters format
         echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
         raise ExitProgram
     except KeyError as e: # Unknown filters
@@ -2360,7 +2360,7 @@ def file_attr_change(filters, attribute, local_only):
     dlb, drb = _select_box()
     try:
         sf = filters_to_searchfilter(filters)
-    except ZeroDivisionError:#IndexError: # Incorrect filters format
+    except IndexError: # Incorrect filters format
         echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
         raise ExitProgram
     except KeyError as e: # Unknown filters
