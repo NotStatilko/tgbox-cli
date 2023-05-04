@@ -232,8 +232,8 @@
         switch this "states" with a [CYAN]special flag[CYAN] that starts with
         the two plus symbols -- [CYAN]++include[CYAN] ([CYAN]+i[CYAN]) and [CYAN]++exclude[CYAN] ([CYAN]+e[CYAN])
         |
-        A file should be matched by [WHITE]at least one[WHITE] [CYAN]filter[CYAN] to be
-        returned (works like [RED]OR[RED]), all other then ignored.
+        A file should be matched by [WHITE]all[WHITE] [CYAN]filters[CYAN] to be returned
+        (works like [RED]AND[RED]), after one mismatch file will be skipped.
         |
         This will return all audio files except the FLAC:
             [BRIGHT_WHITE]tgbox-cli file-search mime=audio ++exclude mime=x-flac[BRIGHT_WHITE]
