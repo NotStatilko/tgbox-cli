@@ -131,7 +131,7 @@ def check_sk(echo_error: bool=True):
 
 def get_state(state_key: str) -> dict:
     state_enc_key = sha256(state_key.encode()).digest()
-    state_file = cli_folder / sha256(state_enc_key).hexdigest()
+    state_file = cli_folder / f'sess_{sha256(state_enc_key).hexdigest()}'
 
     if not state_file.exists():
         return {}
@@ -142,7 +142,7 @@ def get_state(state_key: str) -> dict:
 
 def write_state(state: dict, state_key: str) -> None:
     state_enc_key = sha256(state_key.encode()).digest()
-    state_file = cli_folder / sha256(state_enc_key).hexdigest()
+    state_file = cli_folder / f'sess_{sha256(state_enc_key).hexdigest()}'
 
     with open(state_file,'wb') as f:
         f.write(tgbox.crypto.AESwState(state_enc_key).encrypt(dumps(state)))
@@ -1493,6 +1493,29 @@ def file_search(filters, force_remote, non_interactive):
 
     \b
     Available filters:\b
+        scope: Define a path as search scope
+               -----------------------------
+               The *scope* is an absolute directory in which
+               we will search your file by other filters. By
+               default, the tgbox.api.utils.search_generator
+               will search over the entire LocalBox. This can
+               be slow if you're have too many files.
+               \b
+               Example: let's imagine that You're a Linux user which
+               share it's Box with the Windows user. In this case,
+               Your LocalBox will contain a path parts on the
+               '/' (Linux) and 'C:\\' (Windows) roots. If You
+               know that some file was uploaded by Your friend,
+               then You can specify a scope='C:\\' to ignore
+               all files uploaded from the Linux machine. This
+               will significantly fasten the search process,
+               because almost all filters require to select
+               row from the LocalBox DB, decrypt Metadata and
+               compare its values with ones from SearchFilter.
+               \b
+               !: The scope will be ignored on RemoteBox search.
+               !: The min_id & max_id will be ignored if scope used.
+        \b
         id integer: File’s ID
         mime str: File mime type
         \b
@@ -1622,6 +1645,29 @@ def file_download(
 
     \b
     Available filters:\b
+        scope: Define a path as search scope
+               -----------------------------
+               The *scope* is an absolute directory in which
+               we will search your file by other filters. By
+               default, the tgbox.api.utils.search_generator
+               will search over the entire LocalBox. This can
+               be slow if you're have too many files.
+               \b
+               Example: let's imagine that You're a Linux user which
+               share it's Box with the Windows user. In this case,
+               Your LocalBox will contain a path parts on the
+               '/' (Linux) and 'C:\\' (Windows) roots. If You
+               know that some file was uploaded by Your friend,
+               then You can specify a scope='C:\\' to ignore
+               all files uploaded from the Linux machine. This
+               will significantly fasten the search process,
+               because almost all filters require to select
+               row from the LocalBox DB, decrypt Metadata and
+               compare its values with ones from SearchFilter.
+               \b
+               !: The scope will be ignored on RemoteBox search.
+               !: The min_id & max_id will be ignored if scope used.
+        \b
         id integer: File’s ID
         mime str: File mime type
         \b
@@ -1958,6 +2004,29 @@ def file_remove(filters, local_only, ask_before_remove):
 
     \b
     Available filters:\b
+        scope: Define a path as search scope
+               -----------------------------
+               The *scope* is an absolute directory in which
+               we will search your file by other filters. By
+               default, the tgbox.api.utils.search_generator
+               will search over the entire LocalBox. This can
+               be slow if you're have too many files.
+               \b
+               Example: let's imagine that You're a Linux user which
+               share it's Box with the Windows user. In this case,
+               Your LocalBox will contain a path parts on the
+               '/' (Linux) and 'C:\\' (Windows) roots. If You
+               know that some file was uploaded by Your friend,
+               then You can specify a scope='C:\\' to ignore
+               all files uploaded from the Linux machine. This
+               will significantly fasten the search process,
+               because almost all filters require to select
+               row from the LocalBox DB, decrypt Metadata and
+               compare its values with ones from SearchFilter.
+               \b
+               !: The scope will be ignored on RemoteBox search.
+               !: The min_id & max_id will be ignored if scope used.
+        \b
         id integer: File’s ID
         mime str: File mime type
         \b
@@ -2080,9 +2149,31 @@ def file_open(filters, locate, propagate, continuously):
     """
     Will try to search by filters and open the
     already downloaded file in the default OS app
-
     \b
     Available filters:\b
+        scope: Define a path as search scope
+               -----------------------------
+               The *scope* is an absolute directory in which
+               we will search your file by other filters. By
+               default, the tgbox.api.utils.search_generator
+               will search over the entire LocalBox. This can
+               be slow if you're have too many files.
+               \b
+               Example: let's imagine that You're a Linux user which
+               share it's Box with the Windows user. In this case,
+               Your LocalBox will contain a path parts on the
+               '/' (Linux) and 'C:\\' (Windows) roots. If You
+               know that some file was uploaded by Your friend,
+               then You can specify a scope='C:\\' to ignore
+               all files uploaded from the Linux machine. This
+               will significantly fasten the search process,
+               because almost all filters require to select
+               row from the LocalBox DB, decrypt Metadata and
+               compare its values with ones from SearchFilter.
+               \b
+               !: The scope will be ignored on RemoteBox search.
+               !: The min_id & max_id will be ignored if scope used.
+        \b
         id integer: File’s ID
         mime str: File mime type
         \b
@@ -2196,6 +2287,29 @@ def file_attr_change(filters, attribute, local_only):
 
     \b
     Available filters:\b
+        scope: Define a path as search scope
+               -----------------------------
+               The *scope* is an absolute directory in which
+               we will search your file by other filters. By
+               default, the tgbox.api.utils.search_generator
+               will search over the entire LocalBox. This can
+               be slow if you're have too many files.
+               \b
+               Example: let's imagine that You're a Linux user which
+               share it's Box with the Windows user. In this case,
+               Your LocalBox will contain a path parts on the
+               '/' (Linux) and 'C:\\' (Windows) roots. If You
+               know that some file was uploaded by Your friend,
+               then You can specify a scope='C:\\' to ignore
+               all files uploaded from the Linux machine. This
+               will significantly fasten the search process,
+               because almost all filters require to select
+               row from the LocalBox DB, decrypt Metadata and
+               compare its values with ones from SearchFilter.
+               \b
+               !: The scope will be ignored on RemoteBox search.
+               !: The min_id & max_id will be ignored if scope used.
+        \b
         id integer: File’s ID
         mime str: File mime type
         \b
