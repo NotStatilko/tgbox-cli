@@ -5,8 +5,7 @@ import logging
 
 from os import getenv
 from typing import Union
-
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 
 # _TGBOX_CLI_COMPLETE will be present in env variables
 # only on source code scan by the autocompletion. To
@@ -1753,13 +1752,11 @@ def file_download(
                     downloads = downloads / ('Previews' if preview else 'Files')
 
                     if hide_folder:
-                        file_path = str(dlbfi.defaults.DEF_UNK_FOLDER)
+                        file_path = dlbfi.defaults.DEF_UNK_FOLDER
                     else:
-                        file_path = str(dlbfi.file_path)
+                        file_path = dlbfi.file_path
 
-                    win_path = PureWindowsPath(file_path)
-                    if win_path.drive: # It's a Windows path
-                        file_path = str(Path(*win_path.parts))
+                    file_path = str(tgbox.tools.make_general_path(file_path))
 
                     if file_path.startswith('/'):
                         file_path = str(Path('@', file_path.lstrip('/')))
