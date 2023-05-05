@@ -331,7 +331,7 @@ def cli_init():
                 autocomplete = None
 
             if autocomplete:
-                echo('\n[BLUE]# (Execute commands below if eval doesn\'t work)[BLUE]\n')
+                echo('\n# [BLUE](Execute commands below if eval doesn\'t work)[BLUE]\n')
 
                 real_commands = (
                     '''export TGBOX_CLI_SK="$(tgbox-cli sk-gen)"\n'''
@@ -339,7 +339,7 @@ def cli_init():
                 )
                 echo(real_commands)
 
-                commands = 'eval "$(!!)" && clear'
+                commands = 'eval "$(!!)" || true && clear'
             else:
                 commands = 'export TGBOX_CLI_SK="$(tgbox-cli sk-gen)"'
 
@@ -540,7 +540,7 @@ def account_list():
                 echo(f'[WHITE]{count+1})[WHITE] [BLUE]{name}[BLUE] (id{info.id})')
             except AttributeError:
                 # If session was disconnected
-                echo(f'#[WHITE]{count+1}[WHITE] [RED]disconnected, so removed[RED]')
+                echo(f'[WHITE]{count+1})[WHITE] [RED]disconnected, so removed[RED]')
                 disconnected_sessions.append(session)
 
         for d_session in disconnected_sessions:
@@ -899,7 +899,7 @@ def box_list():
             )
             tgbox.sync(dlb.done())
         except FileNotFoundError:
-            echo(f'#[WHITE]{count+1}[WHITE] [RED]Moved, so removed.[RED]')
+            echo(f'[WHITE]{count+1})[WHITE] [RED]Moved, so removed.[RED]')
             lost_boxes.append([box_path, basekey])
 
         count += 1
@@ -913,9 +913,9 @@ def box_list():
             state.pop('CURRENT_TGBOX')
             echo('No more Boxes, use [WHITE]box-open[WHITE].')
         else:
-            state['CURRENT_TGBOX'] = -1
+            state['CURRENT_TGBOX'] = 0
             echo(
-                '''Switched to the last Box. Set other '''
+                '''Switched to the first Box. Set other '''
                 '''with [WHITE]box-switch[WHITE].'''
             )
     write_state(state, state_key)
@@ -2531,12 +2531,12 @@ def safe_tgbox_cli_startup():
             dlb, drb = _select_box(raise_if_none=True)
             if dlb: tgbox.sync(dlb.done())
             if drb: tgbox.sync(drb.done())
-        except ValueError:
+        except (ExitProgram, ValueError):
             pass # Box wasn't connected to TGBOX-CLI
         except tgbox.errors.SessionUnregistered:
             pass # Session was disconnected
 
-        if isinstance(e, click.Abort):
+        if isinstance(e, (ExitProgram, click.Abort)):
             _exit(0)
         else:
             if getenv('TGBOX_CLI_DEBUG'):
