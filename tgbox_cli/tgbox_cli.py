@@ -150,7 +150,7 @@ def write_state(state: dict, state_key: str) -> None:
 
 # = Functions for extracting Account/Box data from sesssion #
 
-def _select_box(ignore_remote: bool=False, raise_if_none: bool=False):
+def get_box(ignore_remote: bool=False, raise_if_none: bool=False):
     check_sk(echo_error=False)
 
     state_key = get_sk()
@@ -192,8 +192,8 @@ def _select_box(ignore_remote: bool=False, raise_if_none: bool=False):
 
         return ACTIVE_BOX[0], ACTIVE_BOX[1]
 
-def _select_remotebox(number: int, prefix: str):
-    tc, count, erb = _select_account(), 1, None
+def select_remotebox(number: int, prefix: str):
+    tc, count, erb = get_account(), 1, None
 
     for d in sync_async_gen(tc.iter_dialogs()):
         if prefix in d.title and d.is_channel:
@@ -209,7 +209,7 @@ def _select_remotebox(number: int, prefix: str):
     else:
         return erb
 
-def _select_account() -> 'tgbox.api.TelegramClient':
+def get_account() -> 'tgbox.api.TelegramClient':
     check_sk()
 
     state_key, tc = get_sk(), None
@@ -222,7 +222,7 @@ def _select_account() -> 'tgbox.api.TelegramClient':
             '''already connected Box.'''
         )
         if click.confirm('\nDo you want to use its account?'):
-            dlb, drb = _select_box()
+            dlb, drb = get_box()
             tc = drb._tc
             tgbox.sync(dlb.done())
 
@@ -592,7 +592,7 @@ def account_switch(number):
 def account_info(show_phone):
     """Show information about current account"""
 
-    tc = _select_account()
+    tc = get_account()
     me = tgbox.sync(tc.get_me())
 
     last_name = me.last_name if me.last_name else ''
@@ -667,7 +667,7 @@ def account_info(show_phone):
 def box_make(box_name, box_salt, phrase, s, n, p, r, l):
     """Create new TGBOX, the Remote and Local"""
 
-    tc = _select_account()
+    tc = get_account()
 
     state_key = get_sk()
     state = get_state(state_key)
@@ -729,9 +729,18 @@ def box_make(box_name, box_salt, phrase, s, n, p, r, l):
 
 @cli.command()
 @click.option(
-    '--box-path', '-b', required=True,
-    prompt=True, help='Path to the LocalBox database',
-    type=click.Path(writable=True, readable=True, path_type=Path)
+    '--box-path', '-b',
+
+    required = True,
+    prompt = True,
+
+    type = click.Path(
+        exists = True,
+        dir_okay = False,
+        readable = True,
+        path_type = Path
+    ),
+    help = 'Path to the LocalBox DB file',
 )
 @click.option(
     '--phrase', '-p', required=True,
@@ -774,6 +783,8 @@ def box_open(box_path, phrase, s, n, p, r, l):
         n=n, p=p, r=r, dklen=l
     )
     echo('[GREEN]Successful![GREEN]')
+
+    box_path = box_path.resolve()
 
     echo('[CYAN]Opening LocalBox...[CYAN] ', nl=False)
     try:
@@ -929,7 +940,7 @@ def box_list():
 def box_list_remote(prefix):
     """List all RemoteBoxes on account"""
 
-    tc, count = _select_account(), 0
+    tc, count = get_account(), 0
 
     echo('[YELLOW]Searching...[YELLOW]')
 
@@ -989,7 +1000,7 @@ def box_sync(start_from_id, deep):
 
     (!) --start-from-id will be used only on deep sync.
     """
-    dlb, drb = _select_box()
+    dlb, drb = get_box()
 
     if not deep:
         progress_callback = lambda i,a: echo(f'* [WHITE]ID{i}[WHITE]: [CYAN]{a}[CYAN]')
@@ -1031,7 +1042,7 @@ def box_replace_account(number):
     state_key = get_sk()
     state = get_state(state_key)
 
-    dlb, _ = _select_box(ignore_remote=True)
+    dlb, _ = get_box(ignore_remote=True)
 
     if number < 1 or number > len(state['ACCOUNTS']):
         echo(
@@ -1094,7 +1105,7 @@ def box_replace_account(number):
 )
 def box_request(number, phrase, s, n, p, r, l, prefix):
     """Command to receive RequestKey for other Box"""
-    erb = _select_remotebox(number, prefix)
+    erb = select_remotebox(number, prefix)
 
     basekey = tgbox.keys.make_basekey(
         phrase.encode(),
@@ -1115,7 +1126,7 @@ def box_request(number, phrase, s, n, p, r, l, prefix):
 )
 def box_share(requestkey):
     """Command to make ShareKey & to share Box"""
-    dlb, _ = _select_box(ignore_remote=True)
+    dlb, _ = get_box(ignore_remote=True)
 
     requestkey = requestkey if not requestkey\
         else tgbox.keys.Key.decode(requestkey)
@@ -1191,7 +1202,7 @@ def box_clone(
     """
     state_key = get_sk()
     state = get_state(state_key)
-    erb = _select_remotebox(box_number, prefix)
+    erb = select_remotebox(box_number, prefix)
 
     try:
         key = tgbox.keys.Key.decode(key)
@@ -1267,7 +1278,7 @@ def box_default(defaults):
         # Change download path from DownloadsTGBOX to Downloads
         tgbox-cli box-default DOWNLOAD_PATH=Downloads
     """
-    dlb, _ = _select_box(ignore_remote=True)
+    dlb, _ = get_box(ignore_remote=True)
 
     for default in defaults:
         try:
@@ -1283,7 +1294,7 @@ def box_default(defaults):
 def box_info():
     """Show information about current Box"""
 
-    dlb, drb = _select_box()
+    dlb, drb = get_box()
 
     box_name = tgbox.sync(drb.get_box_name())
     box_name = f'[WHITE]{box_name}[WHITE]'
@@ -1402,7 +1413,7 @@ def box_info():
 )
 def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
     """Will upload specified path to the Box"""
-    dlb, drb = _select_box()
+    dlb, drb = get_box()
 
     current_workers = max_workers
     current_bytes = max_bytes
@@ -1560,9 +1571,9 @@ def file_search(filters, force_remote, non_interactive):
         ++exclude (+i, +e) in one command.
     """
     if force_remote:
-        dlb, drb = _select_box()
+        dlb, drb = get_box()
     else:
-        dlb, drb = _select_box(ignore_remote=True)
+        dlb, drb = get_box(ignore_remote=True)
 
     def bfi_gen(search_file_gen):
         for bfi in sync_async_gen(search_file_gen):
@@ -1712,9 +1723,9 @@ def file_download(
         ++exclude (+i, +e) in one command.
     """
     if preview and not force_remote:
-        dlb, drb = _select_box(ignore_remote=True)
+        dlb, drb = get_box(ignore_remote=True)
     else:
-        dlb, drb = _select_box()
+        dlb, drb = get_box()
     try:
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
@@ -1865,7 +1876,7 @@ def file_list_non_imported():
     it with file-import to decrypt and save
     forwarded RemoteBoxFile to your LocalBox.
     """
-    dlb, drb = _select_box()
+    dlb, drb = get_box()
 
     iter_over = drb.files(
         return_imported_as_erbf=True,
@@ -1907,7 +1918,7 @@ def file_list_non_imported():
 def file_share(requestkey, id):
     """Use this command to get a ShareKey to your file"""
 
-    dlb, _ = _select_box(ignore_remote=True)
+    dlb, _ = get_box(ignore_remote=True)
     dlbf = tgbox.sync(dlb.get_file(id=id))
 
     if not dlbf:
@@ -1947,7 +1958,7 @@ def file_share(requestkey, id):
 )
 def file_import(key, id, file_path):
     """Will import RemoteBoxFile to your LocalBox"""
-    dlb, drb = _select_box()
+    dlb, drb = get_box()
     erbf = tgbox.sync(drb.get_file(
         id, return_imported_as_erbf=True))
 
@@ -1978,7 +1989,7 @@ def file_import(key, id, file_path):
 )
 def file_last_id(remote):
     """Will return ID of last uploaded to Box file"""
-    dlb, drb = _select_box(ignore_remote=False if remote else True)
+    dlb, drb = get_box(ignore_remote=False if remote else True)
     lfid = tgbox.sync((drb if remote else dlb).get_last_file_id())
 
     sbox = 'Remote' if remote else 'Local'
@@ -2069,9 +2080,9 @@ def file_remove(filters, local_only, ask_before_remove):
         ++exclude (+i, +e) in one command.
     """
     if local_only:
-        dlb, _ = _select_box(ignore_remote=True)
+        dlb, _ = get_box(ignore_remote=True)
     else:
-        dlb, drb = _select_box()
+        dlb, drb = get_box()
     try:
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
@@ -2203,7 +2214,7 @@ def file_open(filters, locate, propagate, continuously):
     that filters is for include (+i, ++include
     [by default]) or exclude (+e, ++exclude) search.
     """
-    dlb, _ = _select_box(ignore_remote=True)
+    dlb, _ = get_box(ignore_remote=True)
 
     try:
         sf = filters_to_searchfilter(filters)
@@ -2251,7 +2262,7 @@ def file_forward(entity, id):
         tgbox-cli file-forward @username --id=161
         tgbox-cli file-forward me @channel --id=22
     """
-    dlb, drb = _select_box()
+    dlb, drb = get_box()
 
     if entity:
         for e in entity:
@@ -2354,7 +2365,7 @@ def file_attr_change(filters, attribute, local_only):
         You can use both, the ++include and
         ++exclude (+i, +e) in one command.
     """
-    dlb, drb = _select_box()
+    dlb, drb = get_box()
     try:
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
@@ -2416,7 +2427,7 @@ def file_attr_change(filters, attribute, local_only):
 def dir_list():
     """List all directories in LocalBox"""
 
-    dlb, _ = _select_box(ignore_remote=True)
+    dlb, _ = get_box(ignore_remote=True)
     dirs = dlb.contents(ignore_files=True)
 
     for dir in sync_async_gen(dirs):
@@ -2460,7 +2471,7 @@ def logfile_send(entity):
     Example:\b
         tgbox-cli logfile-send @username
     """
-    dlb, drb = _select_box()
+    dlb, drb = get_box()
 
     for e in entity:
         tgbox.sync(drb.tc.send_file(e, logfile))
@@ -2528,7 +2539,7 @@ def safe_tgbox_cli_startup():
         enlighten_manager.stop()
         try:
             # Try to close all connections on exception
-            dlb, drb = _select_box(raise_if_none=True)
+            dlb, drb = get_box(raise_if_none=True)
             if dlb: tgbox.sync(dlb.done())
             if drb: tgbox.sync(drb.done())
         except (ExitProgram, ValueError):
