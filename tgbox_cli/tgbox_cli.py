@@ -2560,7 +2560,6 @@ def safe_tgbox_cli_startup():
             _exit(0)
         else:
             traceback = ''.join(format_exception(
-                etype = None,
                 value = e,
                 tb = e.__traceback__
             ))
