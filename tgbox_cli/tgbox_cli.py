@@ -26,6 +26,7 @@ if getenv('_TGBOX_CLI_COMPLETE'):
     tgbox.defaults.Scrypt.DKLEN = 0
 else:
     import tgbox
+    import logging
 
     from time import sleep
     from hashlib import sha256
@@ -57,6 +58,7 @@ else:
     )
     from enlighten import get_manager as get_enlighten_manager
 
+
     TGBOX_CLI_NOCOLOR = bool(getenv('TGBOX_CLI_NOCOLOR'))
 
     # tools.color with a click.echo function
@@ -72,8 +74,6 @@ else:
         # You can get your own at my.telegram.org. Thanks.
         API_ID, API_HASH = 2210681, '33755adb5ba3c296ccf0dd5220143841'
 
-    logging_level = getenv('TGBOX_CLI_LOGLEVEL')
-    logging_level = logging_level if logging_level else 'WARNING'
 
     cli_folders = {
         'windows': Path(str(expandvars('%APPDATA%'))) / '.tgbox-cli',
@@ -82,6 +82,12 @@ else:
     cli_folder = cli_folders.get(system().lower(), cli_folders['_other_os'])
     cli_folder.mkdir(parents=True, exist_ok=True)
 
+
+    logger = logging.getLogger(__name__)
+
+    logging_level = getenv('TGBOX_CLI_LOGLEVEL')
+    logging_level = logging_level if logging_level else 'WARNING'
+
     logfile = getenv('TGBOX_CLI_LOGFILE')
 
     if not logfile:
@@ -89,13 +95,16 @@ else:
 
     logging.basicConfig(
         format = (
-            ''':%(asctime)s: %(levelname)s:%(name)s~'''
+            '''[%(asctime)s] %(levelname)s:%(name)s~'''
             '''%(funcName)s{%(lineno)s} ::: %(message)s'''
         ),
-        level = logging.getLevelName(logging_level),
-        datefmt = '%Y-%m-%d ^ %H:%M:%S',
+        level = logging.WARNING,
+        datefmt = '%Y-%m-%d, %H:%M:%S',
         filename = logfile,
         filemode = 'a'
+    )
+    logging.getLogger('tgbox').setLevel(
+        logging.getLevelName(logging_level)
     )
     # Progressbar manager
     enlighten_manager = get_enlighten_manager()
@@ -151,7 +160,7 @@ def write_state(state: dict, state_key: str) -> None:
 # = Functions for extracting Account/Box data from sesssion #
 
 def get_box(ignore_remote: bool=False, raise_if_none: bool=False):
-    check_sk(echo_error=False)
+    check_sk(echo_error=(not raise_if_none))
 
     state_key = get_sk()
     state = get_state(state_key)
@@ -161,7 +170,7 @@ def get_box(ignore_remote: bool=False, raise_if_none: bool=False):
 
     if 'TGBOXES' not in state:
         if raise_if_none:
-            raise ValueError
+            raise ExitProgram
         echo(
             '''[RED]You didn\'t connected box yet. Use[RED] '''
             '''[WHITE]box-open[WHITE] [RED]command.[RED]'''
@@ -2542,22 +2551,28 @@ def safe_tgbox_cli_startup():
             dlb, drb = get_box(raise_if_none=True)
             if dlb: tgbox.sync(dlb.done())
             if drb: tgbox.sync(drb.done())
-        except (ExitProgram, ValueError):
-            pass # Box wasn't connected to TGBOX-CLI
+        except ExitProgram:
+            pass # Box wasn't connected to TGBOX-CLI (raise_if_none)
         except tgbox.errors.SessionUnregistered:
             pass # Session was disconnected
 
         if isinstance(e, (ExitProgram, click.Abort)):
             _exit(0)
         else:
+            traceback = ''.join(format_exception(
+                etype = None,
+                value = e,
+                tb = e.__traceback__
+            ))
+            # This will ignore some click exceptions that we really
+            # don't need to log like click.exceptions.UsageError
+            if not issubclass(type(e), click.exceptions.ClickException):
+                logger.error(traceback)
+
             if getenv('TGBOX_CLI_DEBUG'):
-                e = ''.join(format_exception(
-                    etype = None,
-                    value = e,
-                    tb = e.__traceback__
-                ))
-            # Will echo only if error have message
-            if isinstance(e, str) or e.args:
+                echo(f'[RED]{traceback}[RED]')
+
+            elif e.args: # Will echo only if error have message
                 echo(f'[RED]{e}[RED]')
 
             echo(''); _exit(1)
