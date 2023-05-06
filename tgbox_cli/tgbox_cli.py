@@ -1474,7 +1474,7 @@ def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
         current_bytes -= pf.filesize
         current_workers -= 1
 
-        if not all((current_workers, current_bytes)):
+        if not all((current_workers > 0, current_bytes > 0)):
             _upload(to_upload)
 
             current_workers = max_workers - 1
@@ -1742,7 +1742,7 @@ def file_download(
     while True:
         try:
             to_gather_files = []
-            while all((current_workers, current_bytes)):
+            while all((current_workers > 0, current_bytes > 0)):
                 dlbfi = tgbox.sync(tgbox.tools.anext(to_download))
 
                 preview_bytes = None
