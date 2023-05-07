@@ -1875,7 +1875,11 @@ def file_download(
     raise ExitProgram
 
 @cli.command()
-def file_list_non_imported():
+@click.option(
+    '--start-from-id','-s', default=0,
+    help='Will start searching from this ID (lower than)'
+)
+def file_list_non_imported(start_from_id):
     """Will list files not imported to your
     DecryptedLocalBox from other RemoteBox
 
@@ -1888,11 +1892,13 @@ def file_list_non_imported():
     dlb, drb = get_box()
 
     iter_over = drb.files(
-        return_imported_as_erbf=True,
-        min_id=tgbox.sync(dlb.get_last_file_id())
+        offset_id = start_from_id,
+        return_imported_as_erbf = True
     )
+    echo('[YELLOW]\nSearching, press CTRL+C to stop...[YELLOW]')
+
     for xrbf in sync_async_gen(iter_over):
-        if isinstance(xrbf, tgbox.api.EncryptedRemoteBoxFile):
+        if type(xrbf) is tgbox.api.EncryptedRemoteBoxFile:
             time = datetime.fromtimestamp(xrbf.upload_time)
             time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN]"
 
