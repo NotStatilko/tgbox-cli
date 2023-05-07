@@ -180,7 +180,8 @@
         [YELLOW]than a thousands of small[YELLOW] because we're working around the
         Telegram messenger, and [WHITE]not[WHITE] over the real file server. You
         may end up with a Box that will be really hard to work on
-        if your channel will contain i.e 100,000 files or even more.
+        if your channel will contain i.e 100,000 files or even more (
+        there is even limit on messages, 1M! This is not a challenge :).
         |
         [YELLOW]If you have a really big amount of small files[YELLOW], --
         [YELLOW]consider to ZIP them firstly[YELLOW], then upload.
@@ -237,6 +238,35 @@
         |
         This will return all audio files except the FLAC:
             [BRIGHT_WHITE]tgbox-cli file-search mime=audio ++exclude mime=x-flac[BRIGHT_WHITE]
+
+        The [WHITE]most powerful[WHITE] [CYAN]filter[CYAN] is the one named [CYAN]scope[CYAN]. The TGBOX built
+        in a way that to search for files we need to iterate [WHITE]over whole[WHITE]
+        local Box, decrypt file's attributes and compare them with your
+        [CYAN]filters[CYAN]. While this isn't a problem for small Box, the ones who
+        have a monster-size ([WHITE]many small uploads[WHITE]) containers may end up
+        in waiting for minute (or [WHITE]longer[WHITE]) to complete search process.
+        |
+        The TGBOX [WHITE]effectually[WHITE] storing abstract directories that code
+        makes from every unique file path of every file you uploaded;
+        so we can make a [WHITE]quick fetch[WHITE] of all files in specified
+        directory. That's what the "[CYAN]scope[CYAN]" do.
+        |
+        Let's imagine that you have a [WHITE]*many*[WHITE] files in your Box. You
+        want to find a nice track by name "[WHITE]Spit[WHITE]" of amazing singer,
+        [WHITE]Poppy[WHITE]. You totally know that it has the word "[WHITE]Poppy[WHITE]" in
+        name and also you sure that it's somewhere in the
+        [WHITE]/home/user/Music/[WHITE] directory (has this file path).
+        |
+        You can make the next request to the [BLUE]file-search[BLUE] command:
+            [BRIGHT_WHITE]tgbox-cli file-search file_name=Spit scope=/home/user/Music[BRIGHT_WHITE]
+
+        This will search for files which file path is [WHITE]/home/user/Music[WHITE],
+        thus, [WHITE]will omit[WHITE] all other directories that you don't want. All
+        sub-directories of [WHITE]/home/user/Music[WHITE] will be [WHITE]also searched on[WHITE].
+
+        Except the [CYAN]scope[CYAN], you can perform fast search by specifying
+        [CYAN]min_id[CYAN], [CYAN]max_id[CYAN], or [CYAN]id[CYAN] filters. [WHITE]You can duplicate[WHITE] [CYAN]filters[CYAN]:
+            [BRIGHT_WHITE]tgbox-cli file-search id=35 id=46[BRIGHT_WHITE]
 
         [YELLOW]See[YELLOW] [BRIGHT_WHITE]tgbox-cli file-search --help[BRIGHT_WHITE] [YELLOW]for all supported filters.[YELLOW]
 
