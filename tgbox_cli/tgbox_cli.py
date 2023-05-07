@@ -227,7 +227,7 @@ def get_account() -> 'tgbox.api.TelegramClient':
     if 'ACCOUNTS' not in state and 'CURRENT_TGBOX' in state:
         echo(
             '''\nYou [RED]didn\'t connected[RED] account with '''
-            '''[WHITE]account-connect, [WHITE]however, you '''
+            '''[WHITE]account-connect, [WHITE]\n    however, you '''
             '''already connected Box.'''
         )
         if click.confirm('\nDo you want to use its account?'):
@@ -2549,8 +2549,14 @@ def safe_tgbox_cli_startup():
         try:
             # Try to close all connections on exception
             dlb, drb = get_box(raise_if_none=True)
-            if dlb: tgbox.sync(dlb.done())
-            if drb: tgbox.sync(drb.done())
+            try:
+                if dlb:
+                    tgbox.sync(dlb.done())
+            except ValueError:
+                pass # No active connection
+
+            if drb:
+                tgbox.sync(drb.done())
         except ExitProgram:
             pass # Box wasn't connected to TGBOX-CLI (raise_if_none)
         except tgbox.errors.SessionUnregistered:
