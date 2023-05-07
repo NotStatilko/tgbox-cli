@@ -2113,9 +2113,7 @@ def file_remove(filters, local_only, ask_before_remove):
 
     if ask_before_remove:
         for dlbf in sync_async_gen(to_remove):
-            tgbox.sync(dlbf.directory.lload(full=True))
-
-            file_path = str(Path(str(dlbf.directory)) / dlbf.file_name)
+            file_path = str(Path(dlbf.file_path) / dlbf.file_name)
             echo(f'@ [RED]Removing[RED] [WHITE]Box[WHITE]({file_path})')
 
             while True:
@@ -2142,9 +2140,13 @@ def file_remove(filters, local_only, ask_before_remove):
     else:
         echo('\n[YELLOW]Searching for LocalBox files[YELLOW]...')
         to_remove = [dlbf for dlbf in sync_async_gen(to_remove)]
-        echo(f'[WHITE]Removing[WHITE] [RED]{len(to_remove)}[RED] [WHITE]files[WHITE]...')
-        tgbox.sync(dlb.delete_files(*to_remove, rb=(None if local_only else drb)))
-        echo('[GREEN]Done.[GREEN]')
+
+        if not to_remove:
+            echo('[YELLOW]No files to remove was found.[YELLOW]')
+        else:
+            echo(f'[WHITE]Removing[WHITE] [RED]{len(to_remove)}[RED] [WHITE]files[WHITE]...')
+            tgbox.sync(dlb.delete_files(*to_remove, rb=(None if local_only else drb)))
+            echo('[GREEN]Done.[GREEN]')
 
     raise ExitProgram
 
