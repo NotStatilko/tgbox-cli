@@ -2508,15 +2508,15 @@ def logfile_send(entity):
 def help_(non_interactive):
     """Write this command for extended Help!"""
 
-    readme_path = Path(__file__).parent / 'data'
-    readme_text = open(readme_path / 'README.txt').read()
+    help_path = Path(__file__).parent / 'data'
+    help_text = open(help_path / 'help.txt').read()
 
     if non_interactive:
-        echo(readme_text)
+        echo(help_text)
     else:
         colored = True if system().lower() == 'windows' else None
         colored = False if TGBOX_CLI_NOCOLOR else colored
-        click.echo_via_pager(color(readme_text), color=colored)
+        click.echo_via_pager(color(help_text), color=colored)
 
 # ========================================================= #
 
