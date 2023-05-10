@@ -1422,9 +1422,9 @@ def box_info():
     help='Max amount of files uploaded at the same time, default=10',
 )
 @click.option(
-    '--max-bytes', default=1000000000,
-    type=click.IntRange(1000000, 10000000000),
-    help='Max amount of bytes uploaded at the same time, default=1000000000',
+    '--max-bytes', default=500000000,
+    type=click.IntRange(1000000, 1000000000),
+    help='Max amount of bytes uploaded at the same time, default=500000000',
 )
 def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
     """Will upload specified path to the Box"""
@@ -1657,9 +1657,9 @@ def file_search(filters, force_remote, non_interactive):
     help='Max amount of files downloaded at the same time, default=10',
 )
 @click.option(
-    '--max-bytes', default=1000000000,
-    type=click.IntRange(1000000, 10000000000),
-    help='Max amount of bytes downloaded at the same time, default=1000000000',
+    '--max-bytes', default=500000000,
+    type=click.IntRange(1000000, 1000000000),
+    help='Max amount of bytes downloaded at the same time, default=500000000',
 )
 def file_download(
         filters, preview, show, locate,
