@@ -4,11 +4,16 @@ from pathlib import Path
 MAIN_SCRIPT = Path('tgbox_cli') / 'tgbox_cli.py'
 SCRIPT_LOGO = Path('tgbox_cli') / 'data' / 'logo.ico'
 
+pyinstaller_datas = [('tgbox_cli/data/*', 'tgbox_cli/data/')]
+
+for k,v in PYINSTALLER_DATA.items():
+    pyinstaller_datas.append((k, v, 'DATA'))
+
 a = Analysis(
     [str(MAIN_SCRIPT)],
     pathex = [],
     binaries = [],
-    datas = [],
+    datas = pyinstaller_datas,
     hiddenimports = [],
     hookspath = [],
     hooksconfig = {},
@@ -19,9 +24,6 @@ a = Analysis(
     cipher = None,
     noarchive = False
 )
-for k,v in PYINSTALLER_DATA.items():
-    a.datas += [(k, v, 'DATA')]
-
 pyz = PYZ(
     a.pure, a.zipped_data,
     cipher = None
