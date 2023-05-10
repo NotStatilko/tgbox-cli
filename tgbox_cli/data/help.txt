@@ -253,7 +253,7 @@
         |
         Let's imagine that you have a [WHITE]*many*[WHITE] files in your Box. You
         want to find a nice track by name "[WHITE]Spit[WHITE]" of amazing singer,
-        [WHITE]Poppy[WHITE]. You totally know that it has the word "[WHITE]Poppy[WHITE]" in
+        [WHITE]Poppy[WHITE]. You totally know that it has the word "[WHITE]Spit[WHITE]" in
         name and also you sure that it's somewhere in the
         [WHITE]/home/user/Music/[WHITE] directory (has this file path).
         |
