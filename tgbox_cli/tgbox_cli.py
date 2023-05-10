@@ -7,6 +7,7 @@ from os import getenv
 from typing import Union
 from pathlib import Path
 
+
 # _TGBOX_CLI_COMPLETE will be present in env variables
 # only on source code scan by the autocompletion. To
 # make a scan process faster we drop useless imports
@@ -25,6 +26,13 @@ if getenv('_TGBOX_CLI_COMPLETE'):
     tgbox.defaults.Scrypt.R = 0
     tgbox.defaults.Scrypt.DKLEN = 0
 else:
+    try:
+        # Will be presented if run
+        # from the PyInstaller EXE
+        from sys import _MEIPASS
+    except ImportError:
+        _MEIPASS = None
+
     import tgbox
     import logging
 
@@ -46,12 +54,15 @@ else:
     from os import getenv, _exit
     from os.path import expandvars
 
-    from .tools import (
-        Progress, sync_async_gen, exit_program,
-        format_bytes, env_proxy_to_pysocks, color,
-        filters_to_searchfilter, clear_console, format_dxbf
-    )
-    from .version import VERSION
+    if _MEIPASS:
+        # PyInstaller builds has some problems in
+        # importing modules started with dots, so
+        # here we will make an import from package
+        from tgbox_cli.tools import *
+        from tgbox_cli.version import *
+    else:
+        from .tools import *
+        from .version import *
 
     from telethon.errors.rpcerrorlist import (
         UsernameNotOccupiedError, UsernameInvalidError
