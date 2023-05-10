@@ -13,12 +13,12 @@ from urllib3.util import parse_url
 from base64 import urlsafe_b64encode
 from shutil import get_terminal_size
 
-from os import system, name as os_name
 from datetime import datetime, timedelta
 from pathlib import Path, PureWindowsPath
+from os import system as os_system, name as os_name
 
 
-clear_console = lambda: system('cls' if os_name in ('nt','dos') else 'clear')
+clear_console = lambda: os_system('cls' if os_name in ('nt','dos') else 'clear')
 
 AVAILABLE_COLORS = [
     'red','cyan','blue','green',
