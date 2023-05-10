@@ -422,8 +422,13 @@ def account_connect(phone):
     tgbox.sync(tc.send_code())
 
     code = click.prompt('Received code', type=int)
-    password = click.prompt('Password', hide_input=True)
 
+    password = click.prompt(
+        text = 'Password',
+        hide_input = True,
+        default = '',
+        show_default = False
+    )
     echo('[CYAN]Trying to sign-in...[CYAN] ', nl=False)
     tgbox.sync(tc.log_in(code=code, password=password))
 
@@ -480,7 +485,7 @@ def account_connect(phone):
     help='Will log out from account if specified'
 )
 def account_disconnect(number, log_out):
-    """Will disconnect selected account"""
+    """Will disconnect selected account from TGBOX-CLI"""
     state_key = get_sk()
     state = get_state(state_key)
 
@@ -513,8 +518,9 @@ def account_disconnect(number, log_out):
     else:
         state['CURRENT_ACCOUNT'] = 0
         echo('[GREEN]Disconnected & switched to the account #1[GREEN]')
-        write_state(state, state_key)
-        raise ExitProgram
+
+    write_state(state, state_key)
+    raise ExitProgram
 
 @cli.command()
 def account_list():
