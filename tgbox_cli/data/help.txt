@@ -78,6 +78,8 @@
     Some [BLUE]commands[BLUE] will require you to specify [GREEN]options[GREEN],
     some will prompt you if you don't specify them.
 
+    [BRIGHT_BLACK]! Press CTRL+C to stop any command and return to shell.[BRIGHT_BLACK]
+
     [WHITE]QUICK INTRO[WHITE]
         [MAGENTA]|||||| Pure Start ||||||[MAGENTA]
 
