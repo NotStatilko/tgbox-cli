@@ -1,19 +1,23 @@
-from tgbox.defaults import PYINSTALLER_DATA
 from pathlib import Path
+from tgbox.defaults import PYINSTALLER_DATA
 
-MAIN_SCRIPT = Path('tgbox_cli') / 'tgbox_cli.py'
-SCRIPT_LOGO = Path('tgbox_cli') / 'data' / 'logo.ico'
+TGBOX_CLI_FOLDER = Path('tgbox_cli')
+DATA_FOLDER = TGBOX_CLI_FOLDER / 'data'
 
-pyinstaller_datas = [('tgbox_cli/data/*', 'tgbox_cli/data/')]
+SCRIPT_LOGO = DATA_FOLDER / 'logo.ico'
+MAIN_SCRIPT = TGBOX_CLI_FOLDER / 'tgbox_cli.py'
 
-for k,v in PYINSTALLER_DATA.items():
-    pyinstaller_datas.append((k, v, 'DATA'))
+TGBOX_CLI_DATA: dict = {
+    str(Path('data', i.name)): str(i)
+    for i in DATA_FOLDER.glob('*')
+}
+PYINSTALLER_DATA.update(TGBOX_CLI_DATA)
 
 a = Analysis(
     [str(MAIN_SCRIPT)],
     pathex = [],
     binaries = [],
-    datas = pyinstaller_datas,
+    datas = [],
     hiddenimports = [],
     hookspath = [],
     hooksconfig = {},
@@ -24,6 +28,9 @@ a = Analysis(
     cipher = None,
     noarchive = False
 )
+for k,v in PYINSTALLER_DATA.items():
+    a.datas += [(k, v, 'DATA')]
+
 pyz = PYZ(
     a.pure, a.zipped_data,
     cipher = None
