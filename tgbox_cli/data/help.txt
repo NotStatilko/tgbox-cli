@@ -534,6 +534,59 @@
 
         [BRIGHT_BLACK]PRO TIP: Combine it with the grep![BRIGHT_BLACK]
 
+        [MAGENTA]|||||| Hidden Commands ||||||[MAGENTA]
+
+        The TGBOX-CLI has a little of hidden commands. For example,
+        there is [BLUE]sk-gen[BLUE], which generates [WHITE]SessionKey[WHITE] used to save
+        state of current CLI session. The [BLUE]sk-gen[BLUE] is presented on the
+        list of commands in the [BLUE]cli-init[BLUE]. There is also [BLUE]phrase-gen[BLUE],
+        which generates a number of [GREEN]--words[GREEN] that can be used as
+        Box phrase (-> [WHITE]make_basekey[WHITE] -> [WHITE]BaseKey[WHITE]).
+
+        The most interesting (for developers :) one is the [BLUE]python[BLUE]
+        command. It can start an [WHITE]Interactive Python Interpreter[WHITE] with
+        the TGBOX-CLI [WHITE]globals()[WHITE]. You can use this command to make
+        a direct access to the [WHITE]DecryptedLocalBox[WHITE] or [WHITE]DecryptedRemoteBox[WHITE]
+        objects (the [WHITE]get_box()[WHITE] function) and [WHITE]manually[WHITE] do things to TGBOX.
+        |
+        The [BLUE]python[BLUE] command also allow users to [WHITE]execute some scripts[WHITE]
+        written for the TGBOX-CLI. With [GREEN]--execute[GREEN] option you can
+        specify a path to a Python file. [RED]NEVER EXECUTE SCRIPTS THAT[RED]
+        [RED]YOU PERSONALLY DON'T UNDERSTAND OR DON'T TRUST[RED].
+
+        Make a [WHITE]script.py[WHITE] file and fill it with this code:
+
+        [BRIGHT_BLACK]# ====================================== #[BRIGHT_BLACK]
+        [BRIGHT_BLACK]# Calculate a total bytesize of your Box #[BRIGHT_BLACK]
+
+        dlb, _ = get_box(ignore_remote=[RED]True[RED])
+
+        total_bytes = [BRIGHT_RED]0[BRIGHT_RED]
+        [RED]for[RED] dlbf [RED]in[RED] sync_async_gen(dlb.files()):
+            total_bytes += dlbf.size
+
+        [MAGENTA]print[MAGENTA](format_bytes(total_bytes))
+
+        [BRIGHT_BLACK]# ====================================== #[BRIGHT_BLACK]
+
+        Then, execute a [BLUE]python[BLUE] command as follows:
+            [BRIGHT_WHITE]tgbox-cli python --execute script.py[BRIGHT_WHITE]
+
+        Firstly, the python command with [GREEN]--execute[GREEN] specified will
+        [YELLOW]warn[YELLOW] you. Again, [YELLOW]NEVER[YELLOW] run code you [YELLOW]DON'T[YELLOW] trust. Secondly,
+        the TGBOX-CLI will save the code from file in the constant-
+        function [WHITE]EXEC_SCRIPT[WHITE]. To run it, write [WHITE]EXEC_SCRIPT()[WHITE].
+
+        The code above will [WHITE]calculate a total size of your Box[WHITE]
+        [WHITE]in bytes[WHITE], then format it and print to your terminal.
+
+        You can [WHITE]disable[WHITE] Interactive Interpreter and run code directly:
+            [BRIGHT_WHITE]tgbox-cli python --execute script.py --non-interactive[BRIGHT_WHITE]
+
+        I believe this can make a TGBOX-CLI more flexible. [BRIGHT_CYAN]With great[BRIGHT_CYAN]
+        [BRIGHT_CYAN]power comes great responsibility[BRIGHT_CYAN]. [WHITE]Never[WHITE] hurt peoples that
+        don't know what they do. Peoples, [WHITE]know[WHITE] what you do.
+
 [WHITE]THE END & THANKS[WHITE]
     This is it! A finish of this README text! I hope [WHITE]this[WHITE] will
     give you some useful understanding of this CLI app usage
