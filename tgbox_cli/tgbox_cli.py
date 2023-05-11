@@ -1335,16 +1335,16 @@ def box_info():
 
     box_id = f'[WHITE]id{drb.box_channel_id}[WHITE]'
 
-    lfid_local = tgbox.sync(dlb.get_last_file_id())
-    lfid_remote = tgbox.sync(drb.get_last_file_id())
+    total_local = tgbox.sync(dlb.get_files_total())
+    total_remote = tgbox.sync(drb.get_files_total())
 
-    if lfid_local != lfid_remote:
-        status = f'[RED]Out of sync! ({lfid_local}L/{lfid_remote}R)[RED]'
+    if total_local != total_remote:
+        status = f'[RED]Out of sync! ({total_local}L/{total_remote}R)[RED]'
     else:
         status = '[GREEN]Seems synchronized[GREEN]'
 
-    lfid_local = f'[WHITE]{lfid_local}[WHITE]'
-    lfid_remote = f'[WHITE]{lfid_remote}[WHITE]'
+    total_local = f'[WHITE]{total_local}[WHITE]'
+    total_remote = f'[WHITE]{total_remote}[WHITE]'
 
     if drb.box_channel.username:
         public_link = f'[WHITE]@{drb.box_channel.username}[WHITE]'
@@ -1397,7 +1397,7 @@ def box_info():
         f'''| Public link: {public_link}\n'''
         f'''| ID: {box_id}\no\n'''
         f'''| Date created: {remote_date_created}\n'''
-        f'''| Last file ID: {lfid_remote}\n'''
+        f'''| Files total: {total_remote}\n'''
         f'''| Is restricted: {restricted}\no\n'''
         f'''| Your rights: \n{rights}\n'''
 
@@ -1405,7 +1405,7 @@ def box_info():
 
         f'''| Box DB: {box_path}\n'''
         f'''| Date created: {local_date_created}\n'''
-        f'''| Last file ID: {lfid_local}\n'''
+        f'''| Files total: {total_local}\n'''
 
         '''\n :::::::::::::::::::::::::::::::::\n\n'''
 
