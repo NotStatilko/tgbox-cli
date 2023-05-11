@@ -69,7 +69,7 @@ else:
     )
     from enlighten import get_manager as get_enlighten_manager
 
-
+    TGBOX_CLI_SHOW_PASSWORD = bool(getenv('TGBOX_CLI_SHOW_PASSWORD'))
     TGBOX_CLI_NOCOLOR = bool(getenv('TGBOX_CLI_NOCOLOR'))
 
     # tools.color with a click.echo function
@@ -436,7 +436,7 @@ def account_connect(phone):
 
     password = click.prompt(
         text = 'Password',
-        hide_input = True,
+        hide_input = (not TGBOX_CLI_SHOW_PASSWORD),
         default = '',
         show_default = False
     )
@@ -715,8 +715,14 @@ def box_make(box_name, box_salt, phrase, s, n, p, r, l):
             if phrase != 0: # Init value
                 echo('[RED]Phrase mismatch! Try again[RED]\n')
 
-            phrase = click.prompt('Phrase', hide_input=True)
-            phrase_repeat = click.prompt('Repeat phrase', hide_input=True)
+            phrase = click.prompt(
+                text = 'Phrase',
+                hide_input = (not TGBOX_CLI_SHOW_PASSWORD)
+            )
+            phrase_repeat = click.prompt(
+                text = 'Repeat phrase',
+                hide_input = (not TGBOX_CLI_SHOW_PASSWORD)
+            )
 
     echo('[CYAN]Making BaseKey...[CYAN] ', nl=False)
 
@@ -770,7 +776,7 @@ def box_make(box_name, box_salt, phrase, s, n, p, r, l):
 )
 @click.option(
     '--phrase', '-p', required=True,
-    prompt=True, hide_input=True,
+    prompt=True, hide_input=(not TGBOX_CLI_SHOW_PASSWORD),
     help='Passphrase of encrypted Box.'
 )
 @click.option(
@@ -1100,7 +1106,7 @@ def box_replace_account(number):
     help='Number of RemoteBox, use box-list-remote command'
 )
 @click.option(
-    '--phrase', '-p', required=True, hide_input=True,
+    '--phrase', '-p', required=True, hide_input=(not TGBOX_CLI_SHOW_PASSWORD),
     help='To request Box you need to specify phrase to it',
     prompt='Phrase to your future cloned Box'
 )
@@ -1196,7 +1202,7 @@ def box_share(requestkey):
 @click.option(
     '--phrase', '-p', prompt='Phrase to your cloned Box',
     help='To clone Box you need to specify phrase to it',
-    hide_input=True, required=True
+    hide_input=(not TGBOX_CLI_SHOW_PASSWORD), required=True
 )
 @click.option(
     '--salt', '-s', 's',
@@ -2276,7 +2282,7 @@ def file_open(filters, locate, propagate, continuously):
         if propagate and not continuously:
             click.prompt(
                 text = '\n@ Press ENTER to open the next file >> ',
-                hide_input = True,
+                hide_input = (not TGBOX_CLI_SHOW_PASSWORD),
                 prompt_suffix = ''
             )
     raise ExitProgram
