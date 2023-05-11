@@ -2632,8 +2632,16 @@ def phrase_gen(words: int):
     echo(f'[MAGENTA]{tgbox.keys.Phrase.generate(words)}[MAGENTA]')
 
 @cli.command(hidden=True)
-def python():
+@click.option(
+    '--enable-logging', is_flag=True,
+    help='Will enable logging for Python session'
+)
+def python(enable_logging):
     """Launch interactive Python console"""
+
+    if not enable_logging:
+        logging.disable()
+
     interactive_console(local=globals())
     raise ExitProgram
 
