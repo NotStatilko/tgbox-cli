@@ -7,6 +7,11 @@ from os import getenv
 from typing import Union
 from pathlib import Path
 
+import warnings
+
+# Disable unwanted in CLI UserWarning
+warnings.simplefilter('ignore', category=UserWarning)
+
 
 # It's here only because we need it in autocompletion mode and CLI
 TGBOX_CLI_SHOW_PASSWORD = bool(getenv('TGBOX_CLI_SHOW_PASSWORD'))
