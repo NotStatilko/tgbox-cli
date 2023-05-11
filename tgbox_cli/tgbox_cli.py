@@ -2638,13 +2638,50 @@ def phrase_gen(words: int):
     '--enable-logging', is_flag=True,
     help='Will enable logging for Python session'
 )
-def python(enable_logging):
+@click.option(
+    '--execute', help='Path to Python script to execute'
+)
+@click.option(
+    '--non-interactive', is_flag=True,
+    help='Will disable interactive console'
+)
+def python(enable_logging, execute, non_interactive):
     """Launch interactive Python console"""
 
     if not enable_logging:
         logging.disable()
 
-    interactive_console(local=globals())
+    global EXEC_SCRIPT
+
+    if execute:
+        EXEC_SCRIPT = lambda: exec(open(execute).read())
+    else:
+        EXEC_SCRIPT = lambda: None
+
+    if execute:
+        echo(
+            '''\n    [RED]You are specified some Python script with the --execute option.\n'''
+            '''    Third-party scripts can be useful for some actions that out of\n'''
+            '''    TGBOX-CLI abilities, however, they can do MANY BAD THINGS to your\n'''
+            '''    Telegram account [i.e STEAL IT] (or even to your System [i.e \n'''
+            '''    REMOVE ALL FILES]) if written by ATTACKER. NEVER execute scripts\n'''
+            '''    you DON\'T UNDERSTAND or DON\'T TRUST. NEVER! NEVER! NEVER![RED]\n'''
+        )
+        confirm = None
+        while confirm != 'YES':
+            prompt = (
+                '''Type [GREEN]YES[GREEN] [or [RED]NO[RED]'''
+                '''] if you understand this and want to proceed'''
+            )
+            confirm = click.prompt(color(prompt))
+            if confirm in ('NO', 'no', 'n'):
+                raise ExitProgram
+
+    if non_interactive:
+        EXEC_SCRIPT()
+    else:
+        interactive_console(local=globals())
+
     raise ExitProgram
 
 # ========================================================= #
