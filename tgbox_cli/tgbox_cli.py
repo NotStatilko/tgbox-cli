@@ -1498,9 +1498,6 @@ def file_upload(path, file_path, cattrs, thumb, max_workers, max_bytes):
                 cattrs = parsed_cattrs,
                 make_preview = thumb
             ))
-        except tgbox.errors.InvalidFile:
-            echo(f'[YELLOW]{current_path} is empty. Skipping.[YELLOW]')
-            continue
         except tgbox.errors.FingerprintExists:
             echo(f'[YELLOW]{current_path} already uploaded. Skipping.[YELLOW]')
             continue
