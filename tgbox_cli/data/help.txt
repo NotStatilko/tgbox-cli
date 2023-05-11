@@ -46,13 +46,15 @@
 
     TGBOX-CLI supports the next environment variables:
         [BRIGHT_WHITE]http_proxy[BRIGHT_WHITE] (or [BRIGHT_WHITE]https_proxy[BRIGHT_WHITE]): setup Proxy (Google for format)
+        [BRIGHT_WHITE]TGBOX_CLI_SHOW_PASSWORD[BRIGHT_WHITE]: any value will disable hidden input
         [BRIGHT_WHITE]TGBOX_CLI_DEBUG[BRIGHT_WHITE]: any value will enable full error Traceback
         [BRIGHT_WHITE]TGBOX_CLI_NOCOLOR[BRIGHT_WHITE]: any value will disable colored output
         [BRIGHT_WHITE]TGBOX_CLI_LOGFILE[BRIGHT_WHITE]: a full path to logging file
         [BRIGHT_WHITE]TGBOX_CLI_LOGLEVEL[BRIGHT_WHITE]: setup logging level (DEBUG/INFO/...etc)
         [BRIGHT_WHITE]TGBOX_CLI_SK[BRIGHT_WHITE]: SessionKey, will be installed on initialization
 
-    [BRIGHT_BLACK]! Ordinary users will may only need the first var to setup Proxy.[BRIGHT_BLACK]
+    [BRIGHT_BLACK]! Ordinary users may only need the first var to setup Proxy[BRIGHT_BLACK]
+    [BRIGHT_BLACK]  and TGBOX_CLI_SHOW_PASSWORD to make input visible[BRIGHT_BLACK]
 
 [WHITE]COMMANDS & USAGE[WHITE]
     [BRIGHT_BLACK]! Write a [BRIGHT_BLACK][WHITE]tgbox-cli.exe[WHITE] [BRIGHT_BLACK]if you have .EXE file[BRIGHT_BLACK]
