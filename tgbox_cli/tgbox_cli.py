@@ -8,6 +8,9 @@ from typing import Union
 from pathlib import Path
 
 
+# It's here only because we need it in autocompletion mode and CLI
+TGBOX_CLI_SHOW_PASSWORD = bool(getenv('TGBOX_CLI_SHOW_PASSWORD'))
+
 # _TGBOX_CLI_COMPLETE will be present in env variables
 # only on source code scan by the autocompletion. To
 # make a scan process faster we drop useless imports
@@ -69,7 +72,6 @@ else:
     )
     from enlighten import get_manager as get_enlighten_manager
 
-    TGBOX_CLI_SHOW_PASSWORD = bool(getenv('TGBOX_CLI_SHOW_PASSWORD'))
     TGBOX_CLI_NOCOLOR = bool(getenv('TGBOX_CLI_NOCOLOR'))
 
     # tools.color with a click.echo function
