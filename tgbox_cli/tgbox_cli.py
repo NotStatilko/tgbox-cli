@@ -1009,7 +1009,11 @@ def box_list_remote(prefix):
     '--deep','-d', default=False, is_flag=True,
     help='Use a deep Box syncing instead of fast'
 )
-def box_sync(start_from_id, deep):
+@click.option(
+    '--timeout','-t', default=15,
+    help='Sleep timeout per every 1000 file'
+)
+def box_sync(start_from_id, deep, timeout):
     """Will synchronize your current LocalBox with RemoteBox
 
     After this operation, all info about your LocalFiles that are
@@ -1052,7 +1056,8 @@ def box_sync(start_from_id, deep):
         deep = deep,
         start_from = start_from_id,
         fast_progress_callback = progress_callback,
-        deep_progress_callback = progress_callback
+        deep_progress_callback = progress_callback,
+        timeout = timeout
     )
     try:
         tgbox.sync(box_sync_coro)
