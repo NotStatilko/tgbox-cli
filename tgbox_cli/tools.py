@@ -82,10 +82,11 @@ class Progress:
         self.initialized = False
         self.last_id = None
 
-        self.BAR_FORMAT = '{desc} {percentage:3.0f}%|{bar}| [ETA {eta}]'
 
     def update(self, _, total):
         if not self.total_blocks:
+            BAR = '{desc} | {percentage:3.0f}% |{bar}| [ETA {eta}]'
+
             self.total_blocks = total / 524288
 
             if int(self.total_blocks) != self.total_blocks:
@@ -102,17 +103,19 @@ class Progress:
             self.counter = self.manager.counter(
                 total=self.total_blocks, desc=desc,
                 unit='x 512KB', color='gray',
-                bar_format=self.BAR_FORMAT
+                bar_format=BAR
             )
         self.counter.update()
 
     def update_2(self, current, total):
         if not self.initialized:
+            BAR = '{desc} | {percentage:3.0f}% |{bar}| ({count}/{total}) [ETA {eta}]'
+
             self.counter = self.manager.counter(
                 total=total - current,
                 desc=self.desc,
                 unit='ID', color='gray',
-                bar_format=self.BAR_FORMAT
+                bar_format=BAR
             )
             self.counter.update()
 
