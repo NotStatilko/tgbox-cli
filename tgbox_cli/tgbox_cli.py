@@ -1667,7 +1667,7 @@ def file_search(filters, force_remote, non_interactive):
 )
 @click.option(
     '--out','-o',
-    help='Download path. ./BoxDownloads by default',
+    help='Download path. ./DownloadsTGBOX by default',
     type=click.Path(writable=True, path_type=Path)
 )
 @click.option(
@@ -1784,15 +1784,15 @@ def file_download(
         try:
             to_gather_files = []
             while all((current_workers > 0, current_bytes > 0)):
-                dlbfi = tgbox.sync(tgbox.tools.anext(to_download))
+                dlbf = tgbox.sync(tgbox.tools.anext(to_download))
 
                 preview_bytes = None
 
                 if hide_name:
                     file_name = tgbox.tools.prbg(16).hex()
-                    file_name += Path(dlbfi.file_name).suffix
+                    file_name += Path(dlbf.file_name).suffix
                 else:
-                    file_name = dlbfi.file_name
+                    file_name = dlbf.file_name
 
                 file_name = file_name.lstrip('/')
                 file_name = file_name.lstrip('\\')
@@ -1800,32 +1800,24 @@ def file_download(
                 file_name = file_name if not preview else file_name + '.jpg'
 
                 if not out:
-                    downloads = Path(dlbfi.defaults.DOWNLOAD_PATH)
+                    downloads = Path(dlbf.defaults.DOWNLOAD_PATH)
                     downloads = downloads / ('Previews' if preview else 'Files')
-
-                    if hide_folder:
-                        file_path = dlbfi.defaults.DEF_UNK_FOLDER
-                    else:
-                        file_path = dlbfi.file_path
-
-                    file_path = str(tgbox.tools.make_general_path(file_path))
-
-                    if file_path.startswith('/'):
-                        file_path = str(Path('@', file_path.lstrip('/')))
-
-                    elif file_path.startswith('\\'):
-                        file_path = str(Path('@', file_path.lstrip('\\')))
-
-                    outpath = Path(downloads, file_path, file_name)
                 else:
-                    outpath = out / file_name
+                    downloads = out
+
+                downloads.mkdir(parents=True, exist_ok=True)
+
+                file_path = tgbox.tools.make_safe_file_path(dlbf.file_path)
+
+                outfile = downloads / file_path / file_name
+                outfile.parent.mkdir(exist_ok=True, parents=True)
 
                 if preview and not force_remote:
-                    preview_bytes = dlbfi.preview
+                    preview_bytes = dlbf.preview
 
                 elif preview and force_remote:
-                    drbfi = tgbox.sync(drb.get_file(dlbfi.id))
-                    preview_bytes = drbfi.preview
+                    drbf = tgbox.sync(drb.get_file(dlbf.id))
+                    preview_bytes = drbf.preview
 
                 if preview_bytes is not None:
                     if preview_bytes == b'':
@@ -1838,40 +1830,37 @@ def file_download(
                             )
                         continue
 
-                    outpath.parent.mkdir(parents=True, exist_ok=True)
-
-                    with open(outpath, 'wb') as f:
+                    with open(outfile,'wb') as f:
                         f.write(preview_bytes)
 
                     if show or locate:
-                        click.launch(str(outpath), locate)
+                        click.launch(str(outfile), locate)
 
                     echo(
                         f'''[WHITE]{file_name}[WHITE] preview downloaded '''
-                        f'''to [WHITE]{str(outpath.parent)}[WHITE]''')
+                        f'''to [WHITE]{str(downloads)}[WHITE]''')
                 else:
-                    drbfi = tgbox.sync(drb.get_file(dlbfi.id))
+                    drbf = tgbox.sync(drb.get_file(dlbf.id))
 
-                    if not drbfi:
+                    if not drbf:
                         echo(
-                            f'''[YELLOW]There is no file with ID={dlbfi.id} in '''
+                            f'''[YELLOW]There is no file with ID={dlbf.id} in '''
                              '''RemoteBox. Skipping.[YELLOW]''')
                     else:
-                        if not redownload and outpath.exists() and\
-                            outpath.stat().st_size == dlbfi.size:
-                                echo(f'[GREEN]{str(outpath)} downloaded. Skipping...[GREEN]')
+                        if not redownload and outfile.exists() and\
+                            outfile.stat().st_size == dlbf.size:
+                                echo(f'[GREEN]{str(outfile)} downloaded. Skipping...[GREEN]')
                                 continue
 
                         current_workers -= 1
-                        current_bytes -= drbfi.file_size
+                        current_bytes -= drbf.file_size
 
-                        outpath.parent.mkdir(parents=True, exist_ok=True)
-                        outpath = open(outpath, 'wb')
+                        outpath = open(outfile, 'wb')
 
                         p_file_name = '<Filename hidden>' if hide_name\
-                            else drbfi.file_name
+                            else drbf.file_name
 
-                        download_coroutine = drbfi.download(
+                        download_coroutine = drbf.download(
                             outfile = outpath,
                             progress_callback = Progress(
                                 enlighten_manager, p_file_name).update,
@@ -1889,7 +1878,7 @@ def file_download(
                             loop = get_event_loop()
 
                             to_gather_files.append(loop.run_in_executor(
-                                None, lambda: _launch(outpath.name, locate, dlbfi.size))
+                                None, lambda: _launch(outpath.name, locate, dlbf.size))
                             )
             if to_gather_files:
                 tgbox.sync(gather(*to_gather_files))
@@ -2277,11 +2266,11 @@ def file_open(filters, locate, propagate, continuously):
     to_open = dlb.search_file(sf)
 
     for dlbf in sync_async_gen(to_open):
-        tgbox.sync(dlbf.directory.lload(full=True))
+        outpath = tgbox.defaults.DOWNLOAD_PATH / 'Files'
+        file_path = tgbox.tools.make_safe_file_path(dlbf.file_path)
 
-        outpath = tgbox.defaults.DOWNLOAD_PATH / 'Files' / '@'
-        outpath = outpath / str(dlbf.directory).strip('/')
-        outpath = str(outpath.absolute() / dlbf.file_name)
+        outpath = (outpath / file_path).absolute()
+        outpath = str(outpath / dlbf.file_name)
 
         click.launch(outpath, locate=locate)
 

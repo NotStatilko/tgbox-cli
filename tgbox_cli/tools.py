@@ -243,13 +243,10 @@ def format_dxbf(
 
     idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
 
-    name_invalid = None
     try:
         name = click.format_filename(dxbf.file_name)
-        name_invalid = False
     except UnicodeDecodeError:
         name = '[RED][Unable to display][RED]'
-        name_invalid = True
 
     size = f'[GREEN]{format_bytes(dxbf.size)}[GREEN]'
 
@@ -275,25 +272,22 @@ def format_dxbf(
     else:
         cattrs = None
 
+    file_path_valid = True
     if dxbf.file_path:
         file_path = str(dxbf.file_path)
     else:
         if hasattr(dxbf, 'directory'):
             tgbox.sync(dxbf.directory.lload(full=True))
             file_path = str(dxbf.directory)
-
         else:
             file_path = '[RED][Unknown Folder][RED]'
+            file_path_valid = False
 
-    if not name_invalid:
-        win_path = PureWindowsPath(file_path)
-        if win_path.drive: # It's a Windows path
-            file_path = str(Path(*win_path.parts))
-            path_cached = tgbox.defaults.DOWNLOAD_PATH / 'Files'
-        else:
-            path_cached = tgbox.defaults.DOWNLOAD_PATH / 'Files' / '@'
+    if file_path_valid:
+        safe_file_path = tgbox.tools.make_safe_file_path(file_path)
 
-        path_cached = path_cached / file_path.strip('/') / dxbf.file_name
+        path_cached = tgbox.defaults.DOWNLOAD_PATH / 'Files'
+        path_cached = path_cached / safe_file_path / dxbf.file_name
 
         if path_cached.exists():
             if path_cached.stat().st_size == dxbf.size:
@@ -302,9 +296,6 @@ def format_dxbf(
                 name = f'[YELLOW]{name}[YELLOW]'
         else:
             name = f'[WHITE]{name}[WHITE]'
-
-        if win_path.drive:
-            file_path = str(win_path)
 
     formatted = (
        f"""\nFile: {idsalt} {name}\n"""
