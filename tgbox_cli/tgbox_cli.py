@@ -1995,12 +1995,18 @@ def file_share(requestkey, id):
 def file_import(key, id, file_path):
     """Will import RemoteBoxFile to your LocalBox"""
     dlb, drb = get_box()
+
     erbf = tgbox.sync(drb.get_file(
         id, return_imported_as_erbf=True))
 
     if not erbf:
         echo(f'[RED]There is no file in RemoteBox by ID {id}[RED]')
         raise ExitProgram
+
+    if isinstance(erbf, tgbox.api.remote.DecryptedRemoteBoxFile):
+        echo(f'[RED]File ID{id} is already decrypted. Do you mistyped ID?[RED]')
+        raise ExitProgram
+
     try:
         key = tgbox.keys.Key.decode(key)
     except tgbox.errors.IncorrectKey:
