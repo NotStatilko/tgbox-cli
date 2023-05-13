@@ -1212,9 +1212,7 @@ def box_share(requestkey):
     '--key', '-k', help='ShareKey/ImportKey received from Box owner.'
 )
 @click.option(
-    '--phrase', '-p', prompt='Phrase to your cloned Box',
-    help='To clone Box you need to specify phrase to it',
-    hide_input=(not TGBOX_CLI_SHOW_PASSWORD), required=True
+    '--phrase', '-p', help='To clone Box you need to specify phrase to it'
 )
 @click.option(
     '--salt', '-s', 's',
@@ -1246,12 +1244,28 @@ def box_clone(
     """
     state_key = get_sk()
     state = get_state(state_key)
+
     erb = select_remotebox(box_number, prefix)
 
     try:
         key = tgbox.keys.Key.decode(key)
     except tgbox.errors.IncorrectKey:
         pass
+
+    if not phrase:
+        phrase, phrase_repeat = 0, 1
+        while phrase != phrase_repeat:
+            if phrase != 0: # Init value
+                echo('[RED]Phrase mismatch! Try again[RED]\n')
+
+            phrase = click.prompt(
+                text = 'Phrase to your cloned Box',
+                hide_input = (not TGBOX_CLI_SHOW_PASSWORD)
+            )
+            phrase_repeat = click.prompt(
+                text = 'Please repeat your phrase',
+                hide_input = (not TGBOX_CLI_SHOW_PASSWORD)
+            )
 
     echo('\n[CYAN]Making BaseKey...[CYAN] ', nl=False)
 
@@ -1362,7 +1376,7 @@ def box_info(bytesize_total):
 
             echo_text = (
                 f'''Total [WHITE]Box[WHITE] size is {total_formatted} ['''
-                f'''{current_file}/[GREEN]{total_files}[GREEN]]\r'''
+                f'''{current_file}/[GREEN]{total_files}[GREEN]]      \r'''
             )
             echo(echo_text, nl=False)
 
