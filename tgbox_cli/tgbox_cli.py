@@ -238,7 +238,7 @@ def cli(ctx):
                 self.drb # Make sure DRB is initialized
                 self._account = self._account()
 
-            if not self._account.is_connected():
+            if self._account and not self._account.is_connected():
                 tgbox.sync(self._account.connect())
 
             return self._account
