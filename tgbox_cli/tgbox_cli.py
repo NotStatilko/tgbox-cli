@@ -2740,7 +2740,7 @@ def safe_tgbox_cli_startup():
     try:
         cli(standalone_mode=False)
     except Exception as e:
-        if isinstance(e, click.Abort):
+        if isinstance(e, (click.Abort, CheckCTXFailed)):
             exit(0)
 
         traceback = ''.join(format_exception(
