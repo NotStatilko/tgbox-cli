@@ -1,9 +1,7 @@
 import click
 import tgbox
 
-from sys import exit
 from typing import Union
-
 from copy import deepcopy
 from itertools import cycle
 
@@ -14,11 +12,12 @@ from base64 import urlsafe_b64encode
 from shutil import get_terminal_size
 
 from datetime import datetime, timedelta
-from pathlib import Path, PureWindowsPath
-from os import system as os_system, name as os_name
+from platform import system as platform_sys
 
+from pathlib import Path
+from os.path import expandvars
+from os import system as os_system
 
-clear_console = lambda: os_system('cls' if os_name in ('nt','dos') else 'clear')
 
 AVAILABLE_COLORS = [
     'red','cyan','blue','green',
@@ -50,13 +49,6 @@ def color(text: Union[str, bytes]) -> Union[str, bytes]:
             text = text.replace(f'[{color_}]', current, 1)
 
     return text
-
-async def exit_program(*, dlb=None, drb=None):
-    if dlb:
-        await dlb.done()
-    if drb:
-        await drb.done()
-    exit(0)
 
 class Progress:
     """
@@ -126,6 +118,14 @@ class Progress:
                 self.counter.update()
 
             self.last_id = current
+
+def clear_console():
+    if platform_sys().lower() == 'windows':
+        clear_command = 'cls'
+    else:
+        clear_command = 'clear'
+
+    os_system(clear_command)
 
 def format_bytes(size):
     # That's not mine. Thanks to the
@@ -226,6 +226,20 @@ def env_proxy_to_pysocks(env_proxy: str) -> tuple:
         username,
         password
     )
+
+def get_cli_folder() -> Path:
+    """
+    This function will return a Path to platform-
+    specific .tgbox-cli data/cache folder.
+    """
+    cli_folders = {
+        'windows': Path(str(expandvars('%APPDATA%'))) / '.tgbox-cli',
+        '_other_os': Path.home() / '.tgbox-cli'
+    }
+    cli_folder = cli_folders.get(platform_sys().lower(), cli_folders['_other_os'])
+    cli_folder.mkdir(parents=True, exist_ok=True)
+
+    return cli_folder
 
 def format_dxbf(
         dxbf: Union['tgbox.api.DecryptedRemoteBoxFile',
