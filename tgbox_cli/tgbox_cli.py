@@ -313,7 +313,10 @@ def cli(ctx):
 
     def on_exit(ctx_):
         if ctx_.obj.dlb:
-            tgbox.sync(ctx_.obj.dlb.done())
+            try:
+                tgbox.sync(ctx_.obj.dlb.done())
+            except ValueError:
+                pass # No active connection
 
         if isinstance(ctx_.obj._drb, tgbox.api.DecryptedRemoteBox):
             try:
@@ -759,7 +762,7 @@ def box_make(ctx, box_name, box_salt, phrase, s, n, p, r, l):
     echo('[GREEN]Successful![GREEN]')
 
     echo('[CYAN]Making LocalBox...[CYAN] ', nl=False)
-    tgbox.sync(tgbox.api.make_localbox(erb, basekey))
+    dlb = tgbox.sync(tgbox.api.make_localbox(erb, basekey))
     echo('[GREEN]Successful![GREEN]')
 
     echo('[CYAN]Updating local data...[CYAN] ', nl=False)
@@ -768,6 +771,10 @@ def box_make(ctx, box_name, box_salt, phrase, s, n, p, r, l):
     ctx.obj.session['CURRENT_BOX'] = len(ctx.obj.session['BOX_LIST']) - 1
 
     ctx.obj.session.commit()
+
+    tgbox.sync(erb.done())
+    tgbox.sync(dlb.done())
+
     echo('[GREEN]Successful![GREEN]')
 
 @cli.command()
@@ -830,7 +837,7 @@ def box_open(ctx, box_path, phrase, s, n, p, r, l):
 
     echo('[CYAN]Opening LocalBox...[CYAN] ', nl=False)
     try:
-        tgbox.sync(tgbox.api.get_localbox(basekey, box_path))
+        dlb = tgbox.sync(tgbox.api.get_localbox(basekey, box_path))
     except tgbox.errors.IncorrectKey:
         echo('[RED]Incorrect passphrase![RED]')
     else:
@@ -847,6 +854,8 @@ def box_open(ctx, box_path, phrase, s, n, p, r, l):
 
             ctx.obj.session.commit()
             echo('[GREEN]Successful![GREEN]')
+
+        tgbox.sync(dlb.close())
 
 @cli.command()
 @click.option(
@@ -1418,6 +1427,52 @@ def box_info(ctx, bytesize_total):
 
             '''\n =================================\n'''
         )
+
+@cli.command()
+@click.pass_context
+def box_delete(ctx):
+    """Completely remove your Box with all files in it"""
+
+    check_ctx(ctx, dlb=True, drb=True)
+
+    dlb_box_name = Path(ctx.obj.dlb.tgbox_db.db_path).name
+    drb_box_name = tgbox.sync(ctx.obj.drb.get_box_name())
+
+    files_total = tgbox.sync(ctx.obj.drb.get_files_total())
+
+    warning_message = (
+        '''    [RED]WARNING! You are trying to COMPLETELY REMOVE your\n'''
+       f'''    CURRENT SELECTED Box with {files_total} FILES IN IT. After this\n'''
+        '''    operation, you WILL NOT BE ABLE to recover or download\n'''
+        '''    your files IN ANY WAY. If you wish to remove (for some\n'''
+       f'''    strange case) only LocalBox then remove the "{dlb_box_name}"\n'''
+        '''    file on your Computer. This command will remove the Local &\n'''
+        '''    Remote BOTH. Proceed only if you TOTALLY understand this![RED]'''
+    )
+    echo('\n' + warning_message)
+
+    echo(f'\n@ Please enter [RED]{drb_box_name}[RED] to destroy your Box or press CTRL+C to abort')
+    user_input = click.prompt('\nBox name')
+
+    if user_input == drb_box_name:
+        echo('You typed Box name [RED]correctly[RED].\n')
+
+        if click.confirm('The last question: are you sure?'):
+            echo('\n[CYAN]Closing you LocalBox...[CYAN] ', nl=False)
+            ctx.invoke(box_close, number=ctx.obj.session['CURRENT_BOX']+1)
+
+            echo('[CYAN]Completely removing your LocalBox...[CYAN] ', nl=False)
+            tgbox.sync(ctx.obj.dlb.delete())
+            echo('[GREEN]Successful![GREEN]')
+
+            echo('[CYAN]Completely removing your RemoteBox...[CYAN] ', nl=False)
+            tgbox.sync(ctx.obj.drb.delete())
+            echo('[GREEN]Successful![GREEN]')
+        else:
+            echo('\nYou [RED]didn\'t agreed[RED]. [YELLOW]Aborting[YELLOW].')
+
+    else:
+        echo(f'\nYou typed [WHITE]{user_input}[WHITE], which is incorrect. [YELLOW]Aborting.[YELLOW]')
 
 # ========================================================= #
 
