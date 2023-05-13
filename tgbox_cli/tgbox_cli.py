@@ -1345,22 +1345,24 @@ def box_info(bytesize_total):
     dlb, drb = get_box()
 
     if bytesize_total:
-        total, lfid = 0, tgbox.sync(dlb.get_last_file_id())
+        total_bytes, current_file_count = 0, 0
+        total_files = tgbox.sync(dlb.get_files_total())
 
         echo('')
         for dlbf in sync_async_gen(dlb.files()):
-            total += dlbf.size
+            total_bytes += dlbf.size
+            current_file_count += 1
 
-            total_formatted = f'[BLUE]{format_bytes(total)}[BLUE]'
+            total_formatted = f'[BLUE]{format_bytes(total_bytes)}[BLUE]'
 
-            if dlbf.id == lfid:
-                current_id = f'[GREEN]{dlbf.id}[GREEN]'
+            if current_file_count == total_files:
+                current_file = f'[GREEN]{current_file_count}[GREEN]'
             else:
-                current_id = f'[YELLOW]{dlbf.id}[YELLOW]'
+                current_file = f'[YELLOW]{current_file_count}[YELLOW]'
 
             echo_text = (
                 f'''Total [WHITE]Box[WHITE] size is {total_formatted} ['''
-                f'''{current_id}/[GREEN]{lfid}[GREEN]]\r'''
+                f'''{current_file}/[GREEN]{total_files}[GREEN]]\r'''
             )
             echo(echo_text, nl=False)
 
