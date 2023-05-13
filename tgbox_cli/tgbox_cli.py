@@ -855,7 +855,7 @@ def box_open(ctx, box_path, phrase, s, n, p, r, l):
             ctx.obj.session.commit()
             echo('[GREEN]Successful![GREEN]')
 
-        tgbox.sync(dlb.close())
+        tgbox.sync(dlb.done())
 
 @cli.command()
 @click.option(
