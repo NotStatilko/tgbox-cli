@@ -736,7 +736,7 @@ def box_make(box_name, box_salt, phrase, s, n, p, r, l):
     box_salt = bytes.fromhex(box_salt) if box_salt else None
 
     basekey = tgbox.keys.make_basekey(
-        phrase.encode(),
+        phrase.strip().encode(),
         salt=bytes.fromhex(s),
         n=n, p=p, r=r, dklen=l
     )
@@ -817,7 +817,7 @@ def box_open(box_path, phrase, s, n, p, r, l):
     echo('[CYAN]Making BaseKey...[CYAN] ', nl=False)
 
     basekey = tgbox.keys.make_basekey(
-        phrase.encode(),
+        phrase.strip().encode(),
         salt=bytes.fromhex(s),
         n=n, p=p, r=r, dklen=l
     )
@@ -1152,7 +1152,7 @@ def box_request(number, phrase, s, n, p, r, l, prefix):
     erb = select_remotebox(number, prefix)
 
     basekey = tgbox.keys.make_basekey(
-        phrase.encode(),
+        phrase.strip().encode(),
         salt=bytes.fromhex(s),
         n=n, p=p, r=r, dklen=l
     )
@@ -1256,7 +1256,7 @@ def box_clone(
     echo('\n[CYAN]Making BaseKey...[CYAN] ', nl=False)
 
     basekey = tgbox.keys.make_basekey(
-        phrase.encode(),
+        phrase.strip().encode(),
         salt=bytes.fromhex(s),
         n=n, p=p, r=r, dklen=l
     )
@@ -1335,10 +1335,36 @@ def box_default(defaults):
     raise ExitProgram
 
 @cli.command()
-def box_info():
+@click.option(
+    '--bytesize-total', is_flag=True,
+    help='Will compute a total size of all uploaded to Box files'
+)
+def box_info(bytesize_total):
     """Show information about current Box"""
 
     dlb, drb = get_box()
+
+    if bytesize_total:
+        total, lfid = 0, tgbox.sync(dlb.get_last_file_id())
+
+        echo('')
+        for dlbf in sync_async_gen(dlb.files()):
+            total += dlbf.size
+
+            total_formatted = f'[BLUE]{format_bytes(total)}[BLUE]'
+
+            if dlbf.id == lfid:
+                current_id = f'[GREEN]{dlbf.id}[GREEN]'
+            else:
+                current_id = f'[YELLOW]{dlbf.id}[YELLOW]'
+
+            echo_text = (
+                f'''Total [WHITE]Box[WHITE] size is {total_formatted} ['''
+                f'''{current_id}/[GREEN]{lfid}[GREEN]]\r'''
+            )
+            echo(echo_text, nl=False)
+
+        echo('\n'); raise ExitProgram
 
     box_name = tgbox.sync(drb.get_box_name())
     box_name = f'[WHITE]{box_name}[WHITE]'
