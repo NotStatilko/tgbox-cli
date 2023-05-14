@@ -1062,8 +1062,8 @@ def box_sync(ctx, start_from_id, deep, timeout):
     help='Number of connected account. We will take session from it.'
 )
 @click.pass_context
-def box_replace_account(ctx, number):
-    """Will replace Telegram account of your current Box
+def box_account_change(ctx, number):
+    """Will change Telegram account of your current Box
 
     This can be useful if you disconnected your TGBOX in
     Telegram settings (Privacy & Security > Devices) or
