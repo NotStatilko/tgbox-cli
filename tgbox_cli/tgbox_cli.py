@@ -2440,8 +2440,8 @@ def file_forward(ctx, filters, entity):
     help='If specified, will change attr only in LocalBox'
 )
 @click.pass_context
-def file_attr_change(ctx, filters, attribute, local_only):
-    """Will change attribute of Box files (search by filters)
+def file_attr_edit(ctx, filters, attribute, local_only):
+    """Will change attribute value of Box files (search by filters)
 
     \b
     Available filters:\b
@@ -2501,16 +2501,16 @@ def file_attr_change(ctx, filters, attribute, local_only):
     \b
     Example:\b
         # Include is used by default
-        tgbox-cli file-attr-change min_id=3 max_id=100 -a file_path=/home/non/
+        tgbox-cli file-attr-edit min_id=3 max_id=100 -a file_path=/home/non/
         \b
         # Include flag (will ignore unmatched)
-        tgbox-cli file-attr-change +i file_name=.png -a file_path=/home/non/Pictures
+        tgbox-cli file-attr-edit +i file_name=.png -a file_path=/home/non/Pictures
         \b
         # Exclude flag (will ignore matched)
-        tgbox-cli file-attr-change +e file_name=.png -a file_path=/home/non/NonPictures
+        tgbox-cli file-attr-edit +e file_name=.png -a file_path=/home/non/NonPictures
         \b
         # Attribute without value will reset it to default
-        tgbox-cli file-attr-change id=22 -a file_name=
+        tgbox-cli file-attr-edit id=22 -a file_name=
         \b
         You can use both, the ++include and
         ++exclude (+i, +e) in one command.
