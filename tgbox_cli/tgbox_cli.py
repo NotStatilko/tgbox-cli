@@ -2436,7 +2436,7 @@ def file_forward(ctx, filters, entity):
         for dlbf in sync_async_gen(to_forward):
             drbf = tgbox.sync(ctx.obj.drb.get_file(dlbf.id))
             try:
-                tgbox.sync(ctx.account.forward_messages(entity, drbf.message))
+                tgbox.sync(ctx.obj.account.forward_messages(entity, drbf.message))
                 echo(f'[GREEN]ID{drbf.id}: {drbf.file_name}: was forwarded to {entity}[GREEN]')
             except (UsernameNotOccupiedError, UsernameInvalidError, ValueError):
                 echo(f'[YELLOW]Can not find entity "{entity}"[YELLOW]')
