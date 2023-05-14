@@ -767,7 +767,9 @@ def box_make(ctx, box_name, box_salt, phrase, s, n, p, r, l):
 
     echo('[CYAN]Updating local data...[CYAN] ', nl=False)
 
-    ctx.obj.session['BOX_LIST'].append([box_name, basekey.key])
+    box_path = str(Path(box_name).absolute())
+
+    ctx.obj.session['BOX_LIST'].append([box_path, basekey.key])
     ctx.obj.session['CURRENT_BOX'] = len(ctx.obj.session['BOX_LIST']) - 1
 
     ctx.obj.session.commit()
@@ -1278,6 +1280,8 @@ def box_clone(
             echo('[RED]This Box is already opened[RED]')
             break
     else:
+        box_path = str(Path(box_path).absolute())
+
         ctx.obj.session['BOX_LIST'].append([box_path, basekey.key])
         ctx.obj.session['CURRENT_BOX'] = len(ctx.obj.session['BOX_LIST']) - 1
 
