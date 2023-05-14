@@ -316,8 +316,8 @@
         [WHITE]mime[WHITE], [WHITE]file_name[WHITE], [WHITE]file_path[WHITE], ... etc. Probably the
         most interesting is the last two, as you may want
         to [WHITE]change name or path[WHITE] of some file(s). This can
-        be easily done via [BLUE]file-attr-change[BLUE] command:
-            [BRIGHT_WHITE]tgbox-cli file-attr-change mime=image -a\[BRIGHT_WHITE]
+        be easily done via [BLUE]file-attr-edit[BLUE] command:
+            [BRIGHT_WHITE]tgbox-cli file-attr-edit mime=image -a\[BRIGHT_WHITE]
                 [BRIGHT_WHITE]file_path=/home/non/Pictures[BRIGHT_WHITE]
 
         As you can see, selecting is done by [CYAN]filters[CYAN]. We
@@ -347,7 +347,7 @@
         done [WHITE]outside of TGBOX-CLI[WHITE], by the [WHITE]Telegram app[WHITE];
         [BRIGHT_BLACK]|[BRIGHT_BLACK]
         [WHITE]Step two[WHITE] [BRIGHT_BLACK](after Alice added Bob to her RemoteBox)[BRIGHT_BLACK]:
-        [CYAN]Bob[CYAN] will need to use a [BLUE]box-list-remote[BLUE] command to
+        [CYAN]Bob[CYAN] will need to use a [BLUE]box-list[BLUE] with [GREEN]--remote[GREEN] to
         list & find [RED]Alice[RED]'s shiny Box. This command will
         return numbered [WHITE]list of all RemoteBoxes[WHITE] found on
         account. [CYAN]Bob[CYAN] [WHITE]will need to take a number[WHITE] of the
@@ -423,9 +423,9 @@
         [BRIGHT_BLACK]|[BRIGHT_BLACK]
         [WHITE]Step two[WHITE]: [CYAN]Bob[CYAN] will need to forward received from [RED]Alice[RED] file
         to his RemoteBox (within Telegram), then use the TGBOX-CLI
-        command [BLUE]file-list-non-imported[BLUE] to list encrypted file of [RED]A[RED];
+        command [BLUE]file-search[BLUE] with [GREEN]--non-imported[GREEN] to list file of [RED]A[RED];
         [BRIGHT_BLACK]|[BRIGHT_BLACK]
-        [WHITE]Step three[WHITE]: the [BLUE]file-list-non-imported[BLUE] will list file
+        [WHITE]Step three[WHITE]: the [BLUE]file-search[BLUE] [GREEN]--non-imported[GREEN] will list file
         with the already created [WHITE]RequestKey[WHITE]. [CYAN]Bob[CYAN] will need
         to copy it and send to [RED]Alice[RED];
         [BRIGHT_BLACK]|[BRIGHT_BLACK]
@@ -556,18 +556,21 @@
 
         Make a [WHITE]script.py[WHITE] file and fill it with this code:
 
-        [BRIGHT_BLACK]# ====================================== #[BRIGHT_BLACK]
-        [BRIGHT_BLACK]# Calculate a total bytesize of your Box #[BRIGHT_BLACK]
+        [BRIGHT_BLACK]# ======================================== #[BRIGHT_BLACK]
+        [BRIGHT_BLACK]# box-info --bytesize-total implementation #[BRIGHT_BLACK]
 
-        dlb, _ = get_box(ignore_remote=[RED]True[RED])
-
+        dlb = Objects.dlb [BRIGHT_BLACK]# python command has built-in link to[BRIGHT_BLACK]
+                          [BRIGHT_BLACK]# the click.get_current_context().obj[BRIGHT_BLACK]
         total_bytes = [BRIGHT_RED]0[BRIGHT_RED]
         [RED]for[RED] dlbf [RED]in[RED] sync_async_gen(dlb.files()):
             total_bytes += dlbf.size
 
         [MAGENTA]print[MAGENTA](format_bytes(total_bytes))
 
-        [BRIGHT_BLACK]# ====================================== #[BRIGHT_BLACK]
+        [BRIGHT_BLACK]# The 'python' command has all functions of TGBOX-CLI,[BRIGHT_BLACK]
+        [BRIGHT_BLACK]# i.e, format_bytes func here is from tgbox_cli.tools[BRIGHT_BLACK]
+
+        [BRIGHT_BLACK]# ======================================== #[BRIGHT_BLACK]
 
         Then, execute a [BLUE]python[BLUE] command as follows:
             [BRIGHT_WHITE]tgbox-cli python --execute script.py[BRIGHT_WHITE]
