@@ -624,12 +624,12 @@ def account_switch(ctx, number):
             f'''[RED]There is no account #{number}. Use [RED]'''
              '''[WHITE]account-list[WHITE] [RED]command.[RED]'''
         )
-    elif number == ctx.obj.session['CURRENT_ACCOUNT']:
+    elif number-1 == ctx.obj.session['CURRENT_ACCOUNT']:
         echo(
             f'''[YELLOW]You already on this account. See other with[YELLOW] '''
              '''[WHITE]account-list[WHITE] [YELLOW]command.[YELLOW]''')
     else:
-        ctx.obj.session['CURRENT_ACCOUNT'] = number
+        ctx.obj.session['CURRENT_ACCOUNT'] = number - 1
         ctx.obj.session.commit()
 
         echo(f'[GREEN]You switched to account #{number}[GREEN]')
@@ -2088,7 +2088,7 @@ def file_last_id(ctx, remote):
         lfid = tgbox.sync(ctx.obj.dlb.get_last_file_id())
 
     sbox = 'Remote' if remote else 'Local'
-    echo(f'ID of last uploaded to {sbox}Box file is [GREEN]{lfid}[GREEN]')
+    echo(f'ID of last uploaded to [WHITE]{sbox}Box[WHITE] file is [GREEN]{lfid}[GREEN]')
 
 @cli.command()
 @click.argument('filters', nargs=-1)
