@@ -910,81 +910,81 @@ def box_switch(ctx, number):
         echo(f'[GREEN]You switched to box #{number}[GREEN]')
 
 @cli.command()
-@click.pass_context
-def box_list(ctx):
-    """List all connected boxes"""
-
-    check_ctx(ctx, dlb=True)
-
-    echo(
-        '''\n[WHITE]You\'re using Box[WHITE] '''
-       f'''[RED]#{str(ctx.obj.session['CURRENT_BOX']+1)}[RED]\n'''
-    )
-    lost_boxes, count = [], 0
-
-    for box_path, basekey in ctx.obj.session['BOX_LIST']:
-        try:
-            dlb = tgbox.sync(tgbox.api.get_localbox(
-                tgbox.keys.BaseKey(basekey), box_path)
-            )
-            name = Path(box_path).name
-            salt = urlsafe_b64encode(dlb.box_salt).decode()
-
-            echo(
-                f'''[WHITE]{count+1})[WHITE] [BLUE]{name}[BLUE]'''
-                f'''@[BRIGHT_BLACK]{salt}[BRIGHT_BLACK]'''
-            )
-            tgbox.sync(dlb.done())
-        except FileNotFoundError:
-            echo(f'[WHITE]{count+1})[WHITE] [RED]Moved, so removed.[RED]')
-            lost_boxes.append([box_path, basekey])
-
-        count += 1
-
-    for lbox in lost_boxes:
-        ctx.obj.session['BOX_LIST'].remove(lbox)
-
-    if lost_boxes:
-        if not ctx.obj.session['BOX_LIST']:
-            ctx.obj.session['CURRENT_BOX'] = None
-            echo('No more Boxes, use [WHITE]box-open[WHITE].')
-        else:
-            ctx.obj.session['CURRENT_BOX'] = 0
-            echo(
-                '''Switched to the first Box. Set other '''
-                '''with [WHITE]box-switch[WHITE].'''
-            )
-    ctx.obj.session.commit()
-
-@cli.command()
+@click.option(
+    '--remote', '-r', is_flag=True,
+    help='If specified, will search for Remote Boxes on Account'
+)
 @click.option(
     '--prefix', '-p', default=tgbox.defaults.REMOTEBOX_PREFIX,
-    help='Telegram channels with this prefix will be searched'
+    help='Channels with this prefix will be searched (only if --remote)'
 )
 @click.pass_context
-def box_list_remote(ctx, prefix):
-    """List all RemoteBoxes on account"""
+def box_list(ctx, remote, prefix):
+    """List all connected Boxes"""
 
-    check_ctx(ctx, account=True)
-    count = 0
+    if remote:
+        check_ctx(ctx, account=True)
 
-    echo('[YELLOW]Searching...[YELLOW]')
+        count = 0
 
-    for chat in sync_async_gen(ctx.obj.account.iter_dialogs()):
-        if prefix in chat.title and chat.is_channel:
-            erb = tgbox.api.EncryptedRemoteBox(chat, ctx.obj.account)
+        echo('[YELLOW]Searching...[YELLOW]')
+        for chat in sync_async_gen(ctx.obj.account.iter_dialogs()):
+            if prefix in chat.title and chat.is_channel:
+                erb = tgbox.api.EncryptedRemoteBox(chat, ctx.obj.account)
 
-            erb_name = tgbox.sync(erb.get_box_name())
-            erb_salt = tgbox.sync(erb.get_box_salt())
-            erb_salt = urlsafe_b64encode(erb_salt).decode()
+                erb_name = tgbox.sync(erb.get_box_name())
+                erb_salt = tgbox.sync(erb.get_box_salt())
+                erb_salt = urlsafe_b64encode(erb_salt).decode()
 
-            echo(
-                f'''[WHITE]{count+1}[WHITE]) [BLUE]{erb_name}[BLUE]'''
-                f'''@[BRIGHT_BLACK]{erb_salt}[BRIGHT_BLACK]'''
-            )
+                echo(
+                    f'''[WHITE]{count+1}[WHITE]) [BLUE]{erb_name}[BLUE]'''
+                    f'''@[BRIGHT_BLACK]{erb_salt}[BRIGHT_BLACK]'''
+                )
+                count += 1
+
+        echo('[YELLOW]Done.[YELLOW]')
+    else:
+        check_ctx(ctx, dlb=True)
+
+        echo(
+            '''\n[WHITE]You\'re using Box[WHITE] '''
+           f'''[RED]#{str(ctx.obj.session['CURRENT_BOX']+1)}[RED]\n'''
+        )
+        lost_boxes, count = [], 0
+
+        for box_path, basekey in ctx.obj.session['BOX_LIST']:
+            try:
+                dlb = tgbox.sync(tgbox.api.get_localbox(
+                    tgbox.keys.BaseKey(basekey), box_path)
+                )
+                name = Path(box_path).name
+                salt = urlsafe_b64encode(dlb.box_salt).decode()
+
+                echo(
+                    f'''[WHITE]{count+1})[WHITE] [BLUE]{name}[BLUE]'''
+                    f'''@[BRIGHT_BLACK]{salt}[BRIGHT_BLACK]'''
+                )
+                tgbox.sync(dlb.done())
+            except FileNotFoundError:
+                echo(f'[WHITE]{count+1})[WHITE] [RED]Moved, so removed.[RED]')
+                lost_boxes.append([box_path, basekey])
+
             count += 1
 
-    echo('[YELLOW]Done.[YELLOW]')
+        for lbox in lost_boxes:
+            ctx.obj.session['BOX_LIST'].remove(lbox)
+
+        if lost_boxes:
+            if not ctx.obj.session['BOX_LIST']:
+                ctx.obj.session['CURRENT_BOX'] = None
+                echo('No more Boxes, use [WHITE]box-open[WHITE].')
+            else:
+                ctx.obj.session['CURRENT_BOX'] = 0
+                echo(
+                    '''Switched to the first Box. Set other '''
+                    '''with [WHITE]box-switch[WHITE].'''
+                )
+        ctx.obj.session.commit()
 
 @cli.command()
 @click.option(
