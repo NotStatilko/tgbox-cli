@@ -950,7 +950,7 @@ def box_list(ctx, remote, prefix):
 
         echo('[YELLOW]Done.[YELLOW]')
     else:
-        check_ctx(ctx, dlb=True)
+        check_ctx(ctx, session=True)
 
         echo(
             '''\n[WHITE]You\'re using Box[WHITE] '''
