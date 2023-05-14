@@ -1592,8 +1592,12 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
     '--non-interactive', is_flag=True,
     help='If specified, will echo to shell instead of pager'
 )
+@click.option(
+    '--non-imported', is_flag=True,
+    help='If specified, will search for non-imported files only'
+)
 @click.pass_context
-def file_search(ctx, filters, force_remote, non_interactive):
+def file_search(ctx, filters, force_remote, non_interactive, non_imported):
     """Will list files by filters
 
     \b
@@ -1665,7 +1669,7 @@ def file_search(ctx, filters, force_remote, non_interactive):
         You can use both, the ++include and
         ++exclude (+i, +e) in one command.
     """
-    if force_remote:
+    if force_remote or non_imported:
         check_ctx(ctx, dlb=True, drb=True)
     else:
         check_ctx(ctx, dlb=True)
@@ -1680,18 +1684,49 @@ def file_search(ctx, filters, force_remote, non_interactive):
             for bfi in sync_async_gen(search_file_gen):
                 yield format_dxbf(bfi)
 
-        box = ctx.obj.drb if force_remote else ctx.obj.dlb
+        if non_imported:
+            iter_over = ctx.obj.drb.search_file(
+                sf, reverse=False,
+                cache_preview=False,
+                return_imported_as_erbf=True
+            )
+            echo('[YELLOW]\nSearching, press CTRL+C to stop...[YELLOW]')
 
-        if non_interactive:
-            for dxbfs in bfi_gen(box.search_file(sf, cache_preview=False)):
-                echo(dxbfs, nl=False)
+            for xrbf in sync_async_gen(iter_over):
+                if type(xrbf) is tgbox.api.EncryptedRemoteBoxFile:
+                    time = datetime.fromtimestamp(xrbf.upload_time)
+                    time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN]"
+
+                    salt = urlsafe_b64encode(xrbf.file_salt).decode()
+                    idsalt = f'[[BRIGHT_RED]{str(xrbf.id)}[BRIGHT_RED]:'
+                    idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
+
+                    size = f'[GREEN]{format_bytes(xrbf.file_size)}[GREEN]'
+                    name = '[RED][N/A: No FileKey available][RED]'
+
+                    req_key = xrbf.get_requestkey(ctx.obj.dlb._mainkey).encode()
+                    req_key = f'[WHITE]{req_key}[WHITE]'
+
+                    formatted = (
+                       f"""\nFile: {idsalt} {name}\n"""
+                       f"""Size, Time: {size}({xrbf.file_size}), {time}\n"""
+                       f"""RequestKey: {req_key}"""
+                    )
+                    echo(formatted)
             echo('')
         else:
-            sf_gen = bfi_gen(box.search_file(sf, cache_preview=False))
+            box = ctx.obj.drb if force_remote else ctx.obj.dlb
 
-            colored = True if system().lower() == 'windows' else None
-            colored = False if TGBOX_CLI_NOCOLOR else colored
-            click.echo_via_pager(sf_gen, color=colored)
+            if non_interactive:
+                for dxbfs in bfi_gen(box.search_file(sf, cache_preview=False)):
+                    echo(dxbfs, nl=False)
+                echo('')
+            else:
+                sf_gen = bfi_gen(box.search_file(sf, cache_preview=False))
+
+                colored = True if system().lower() == 'windows' else None
+                colored = False if TGBOX_CLI_NOCOLOR else colored
+                click.echo_via_pager(sf_gen, color=colored)
 
 @cli.command()
 @click.argument('filters', nargs=-1)
@@ -1942,53 +1977,6 @@ def file_download(
             tgbox.sync(gather(*to_gather_files))
 
         enlighten_manager.stop()
-
-@cli.command()
-@click.option(
-    '--start-from-id','-s', default=0,
-    help='Will start searching from this ID (lower than)'
-)
-@click.pass_context
-def file_list_non_imported(ctx, start_from_id):
-    """Will list files not imported to your
-    DecryptedLocalBox from other RemoteBox
-
-    Will also show a RequestKey. Send it to the
-    file owner. He will use a file-share command
-    and will send you a ShareKey. You can use
-    it with file-import to decrypt and save
-    forwarded RemoteBoxFile to your LocalBox.
-    """
-    check_ctx(ctx, dlb=True, drb=True)
-
-    iter_over = ctx.obj.drb.files(
-        offset_id = start_from_id,
-        return_imported_as_erbf = True
-    )
-    echo('[YELLOW]\nSearching, press CTRL+C to stop...[YELLOW]')
-
-    for xrbf in sync_async_gen(iter_over):
-        if type(xrbf) is tgbox.api.EncryptedRemoteBoxFile:
-            time = datetime.fromtimestamp(xrbf.upload_time)
-            time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN]"
-
-            salt = urlsafe_b64encode(xrbf.file_salt).decode()
-            idsalt = f'[[BRIGHT_RED]{str(xrbf.id)}[BRIGHT_RED]:'
-            idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
-
-            size = f'[GREEN]{format_bytes(xrbf.file_size)}[GREEN]'
-            name = '[RED][N/A: No FileKey available][RED]'
-
-            req_key = xrbf.get_requestkey(ctx.obj.dlb._mainkey).encode()
-            req_key = f'[WHITE]{req_key}[WHITE]'
-
-            formatted = (
-               f"""\nFile: {idsalt} {name}\n"""
-               f"""Size, Time: {size}({xrbf.file_size}), {time}\n"""
-               f"""RequestKey: {req_key}"""
-            )
-            echo(formatted)
-    echo('')
 
 @cli.command()
 @click.option(
