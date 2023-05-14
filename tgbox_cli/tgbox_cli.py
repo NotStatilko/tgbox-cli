@@ -276,13 +276,17 @@ def cli(ctx):
         box_path = ctx.obj.session['BOX_LIST'][ctx.obj.session['CURRENT_BOX']][0]
         basekey  = ctx.obj.session['BOX_LIST'][ctx.obj.session['CURRENT_BOX']][1]
 
-        dlb = tgbox.sync(tgbox.api.get_localbox(
-            tgbox.keys.BaseKey(basekey), box_path)
-        )
-        drb = tgbox.api.get_remotebox(dlb)
+        if not Path(box_path).exists():
+            ctx.obj.dlb = None
+            ctx.obj._drb = None
+        else:
+            dlb = tgbox.sync(tgbox.api.get_localbox(
+                tgbox.keys.BaseKey(basekey), box_path)
+            )
+            drb = tgbox.api.get_remotebox(dlb)
 
-        ctx.obj.dlb = dlb
-        ctx.obj._drb = drb
+            ctx.obj.dlb = dlb
+            ctx.obj._drb = drb
 
     # ========================================================= #
 
