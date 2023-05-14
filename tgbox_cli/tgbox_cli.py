@@ -1218,6 +1218,7 @@ def box_share(ctx, requestkey):
     '--scrypt-dklen', '-L', 'l', help='Scrypt key length',
     default=int(tgbox.defaults.Scrypt.DKLEN)
 )
+@click.pass_context
 def box_clone(
         ctx, box_path, box_filename,
         box_number, prefix, key,
@@ -1259,7 +1260,7 @@ def box_clone(
         box_path += tgbox.sync(drb.get_box_name())\
             if not box_filename else box_filename
 
-    tgbox.sync(tgbox.api.local.clone_remotebox(
+    dlb = tgbox.sync(tgbox.api.local.clone_remotebox(
         drb = drb,
         basekey = basekey,
         box_path = box_path,
@@ -1282,6 +1283,9 @@ def box_clone(
 
         ctx.obj.session.commit()
         echo('[GREEN]Successful![GREEN]')
+
+    tgbox.sync(dlb.done())
+    tgbox.sync(drb.done())
 
 @cli.command()
 @click.argument('defaults',nargs=-1)
