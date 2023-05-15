@@ -2631,10 +2631,10 @@ def logfile_send(ctx, entity):
     Example:\b
         tgbox-cli logfile-send @username
     """
-    check_ctx(ctx, drb=True)
+    check_ctx(ctx, account=True)
 
     for e in entity:
-        tgbox.sync(ctx.obj.drb.tc.send_file(e, logfile))
+        tgbox.sync(ctx.obj.account.send_file(e, logfile))
         echo(f'[WHITE]Logfile has been sent to[WHITE] [BLUE]{e}[BLUE]')
 
 # ========================================================= #
