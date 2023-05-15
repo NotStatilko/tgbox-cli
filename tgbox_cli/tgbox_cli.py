@@ -7,7 +7,7 @@ from pathlib import Path
 
 import warnings
 
-# Disable unwanted in CLI UserWarning/RuntimeWarning
+# Disable annoying (in CLI) UserWarning/RuntimeWarning
 warnings.simplefilter('ignore', category=UserWarning)
 warnings.simplefilter('ignore', category=RuntimeWarning)
 
@@ -2567,16 +2567,34 @@ def file_attr_edit(ctx, filters, attribute, local_only):
 
         to_change = ctx.obj.dlb.search_file(sf, cache_preview=False)
 
+        dxbf_to_update = []
+
+        UPDATE_WHEN = 200 if not local_only else 100
+        TIMEOUT = 15 if not local_only else 0
+
         for dlbf in sync_async_gen(to_change):
             if local_only:
-                tgbox.sync(dlbf.update_metadata(changes=changes, dlb=ctx.obj.dlb))
+                dxbf_to_update.append(dlbf.update_metadata(
+                    changes=changes, dlb=ctx.obj.dlb))
             else:
-                drbf = tgbox.sync(ctx.obj.drb.get_file(dlbf.id))
-                tgbox.sync(drbf.update_metadata(changes=changes, dlb=ctx.obj.dlb))
+                async def _update_drbf(dlbf_id):
+                    drbf = await ctx.obj.drb.get_file(dlbf_id)
+                    await drbf.update_metadata(changes=changes, dlb=ctx.obj.dlb)
+
+                dxbf_to_update.append(_update_drbf(dlbf.id))
+
+            if len(dxbf_to_update) == UPDATE_WHEN:
+                tgbox.sync(gather(*dxbf_to_update))
+                dxbf_to_update.clear()
+                sleep(TIMEOUT)
 
             echo(
                 f'''([WHITE]{dlbf.id}[WHITE]) {dlbf.file_name} '''
                 f'''<= [YELLOW]{attribute}[YELLOW]''')
+
+        if dxbf_to_update:
+            tgbox.sync(gather(*dxbf_to_update))
+            dxbf_to_update.clear()
 
 # ========================================================= #
 
