@@ -505,7 +505,7 @@
         There is some commands to manage Logging file: [BLUE]logfile-open[BLUE]
         will open Log file with the default system's text editor
         app, [BLUE]logfile-size[BLUE] will print the total size of Log file,
-        the [BLUE]logfile-clear[BLUE] will clear it, and [BLUE]logfile-send[BLUE] will
+        the [BLUE]logfile-wipe[BLUE] will clear it, and [BLUE]logfile-send[BLUE] will
         allow you to send logfile to [WHITE]any[WHITE] Telegram chat. Log file
         [WHITE]will never store any sensitive data[WHITE] (feel free to check
         it). Also, size of Log file [WHITE]may rise over time[WHITE]. Use

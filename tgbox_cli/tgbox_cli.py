@@ -741,7 +741,7 @@ def account_info(ctx, show_phone):
 )
 @click.pass_context
 def box_make(ctx, box_name, box_salt, phrase, s, n, p, r, l):
-    """Create new TGBOX, the Remote and Local"""
+    """Create the new Box, the Remote and Local"""
 
     check_ctx(ctx, account=True)
 
@@ -2650,7 +2650,7 @@ def logfile_open(locate):
     click.launch(str(logfile), locate=locate)
 
 @cli.command()
-def logfile_clear():
+def logfile_wipe():
     """Clear TGBOX-CLI log file"""
     open(logfile,'w').close()
     echo('[GREEN]Done.[GREEN]')
