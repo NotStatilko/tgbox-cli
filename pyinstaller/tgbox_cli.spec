@@ -1,7 +1,12 @@
 from pathlib import Path
+from platform import system
+
 from tgbox.defaults import PYINSTALLER_DATA
 
-TGBOX_CLI_FOLDER = Path('tgbox_cli')
+if Path.cwd().name != 'pyinstaller':
+    raise RuntimeError('You should build App inside the "pyinstaller" folder.')
+
+TGBOX_CLI_FOLDER = Path.cwd().parent / 'tgbox_cli'
 DATA_FOLDER = TGBOX_CLI_FOLDER / 'data'
 
 SCRIPT_LOGO = DATA_FOLDER / 'logo.ico'
@@ -12,6 +17,11 @@ TGBOX_CLI_DATA: dict = {
     for i in DATA_FOLDER.glob('*')
 }
 PYINSTALLER_DATA.update(TGBOX_CLI_DATA)
+
+if system() == 'windows':
+    # Enlighten may require ANSICON DLLs (32/64) on the Windows machine
+    PYINSTALLER_DATA['ansicon/ANSI32.dll'] = 'depends/ansicon/ANSI32.dll'
+    PYINSTALLER_DATA['ansicon/ANSI64.dll'] = 'depends/ansicon/ANSI64.dll'
 
 a = Analysis(
     [str(MAIN_SCRIPT)],
@@ -32,7 +42,8 @@ for k,v in PYINSTALLER_DATA.items():
     a.datas += [(k, v, 'DATA')]
 
 pyz = PYZ(
-    a.pure, a.zipped_data,
+    a.pure,
+    a.zipped_data,
     cipher = None
 )
 exe = EXE(
