@@ -95,7 +95,7 @@
         when you will close your command line.
 
         [RED]We encrypt your Box keys and some other sensitive[RED]
-        [RED]information used within session with a TGBOX_SK key. It[RED]
+        [RED]information used in session with TGBOX_CLI_SK key. It[RED]
         [RED]is stored in the environment variables, so ANY program[RED]
         [RED]you will run in initialized CMD may recieve a FULL[RED]
         [RED]access to all your keys. To prevent this, always use[RED]
