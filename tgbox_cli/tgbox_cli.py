@@ -165,6 +165,11 @@ class StructuredGroup(click.Group):
         return self.commands
 
     def format_commands(self, ctx, formatter):
+        if session_key := getenv('TGBOX_CLI_SK'):
+            session = Session(session_key)
+        else:
+            session = None
+
         formatter.width = get_terminal_size().columns
 
         formatter.write_text('')
@@ -179,21 +184,39 @@ class StructuredGroup(click.Group):
                 last_letter = k[0]
                 formatter.write_paragraph()
 
-            if v.name.lower() == 'help':
-                if TGBOX_CLI_NOCOLOR:
-                    name = v.name
-                else:
-                    name = color(f'[GREEN]{v.name}[GREEN]')
-            else:
-                if TGBOX_CLI_NOCOLOR:
-                    name = v.name
-                else:
-                    name = color(f'[WHITE]{v.name}[WHITE]')
+            if v.name == 'help':
+                COLOR = '[GREEN]'
 
-            formatter.write_text(
-                f'  o  {name} :: {v.get_short_help_str().strip()}'
+            elif v.name == 'cli-init' and not session:
+                COLOR = '[YELLOW]'
+
+            elif session and v.name in ('box-make', 'box-clone', 'box-list'):
+                conditions = (
+                    session['CURRENT_ACCOUNT'] is not None,
+                    session['CURRENT_BOX'] is None
+                )
+                COLOR = '[YELLOW]' if all(conditions) else '[WHITE]'
+
+            elif session and v.name in ('box-open', 'account-connect'):
+                conditions = (
+                    session['CURRENT_BOX'] is None,
+                    session['CURRENT_ACCOUNT'] is None,
+                )
+                COLOR = '[YELLOW]' if all(conditions) else '[WHITE]'
+            else:
+                COLOR = '[WHITE]'
+
+            DOT = 'O' if COLOR != '[WHITE]' else 'o'
+            COLOR = '' if TGBOX_CLI_NOCOLOR else COLOR
+
+            text = color(
+                f'''  {DOT}  {COLOR}{v.name}{COLOR} :: '''
+                f'''{v.get_short_help_str().strip()}'''
             )
-        formatter.write_text('\x1b[0m')
+            formatter.write_text(text)
+
+        if not TGBOX_CLI_NOCOLOR:
+            formatter.write_text('\x1b[0m')
 
 @click.group(cls=StructuredGroup)
 @click.pass_context
@@ -456,7 +479,7 @@ def cli_info():
 )
 @click.pass_context
 def account_connect(ctx, phone):
-    """Connect to Telegram"""
+    """Connect your Telegram account"""
     check_ctx(ctx, session=True)
 
     tc = tgbox.api.TelegramClient(
@@ -530,7 +553,7 @@ def account_connect(ctx, phone):
 )
 @click.pass_context
 def account_disconnect(ctx, number, log_out):
-    """Will disconnect selected account from TGBOX-CLI"""
+    """Disconnect selected Account from Session"""
 
     check_ctx(ctx, session=True)
 
@@ -610,7 +633,7 @@ def account_list(ctx):
 )
 @click.pass_context
 def account_switch(ctx, number):
-    """This will set your CURRENT_ACCOUNT to selected"""
+    """Set as main your another connected Account"""
 
     check_ctx(ctx, session=True)
 
@@ -870,7 +893,7 @@ def box_open(ctx, box_path, phrase, s, n, p, r, l):
 )
 @click.pass_context
 def box_close(ctx, number):
-    """Will disconnect selected LocalBox"""
+    """Disconnect selected LocalBox from Session"""
 
     check_ctx(ctx, dlb=True)
 
@@ -895,7 +918,7 @@ def box_close(ctx, number):
 )
 @click.pass_context
 def box_switch(ctx, number):
-    """This will set your CURRENT_BOX to selected"""
+    """Set as main your another connected Box"""
 
     check_ctx(ctx, dlb=True)
 
@@ -926,7 +949,7 @@ def box_switch(ctx, number):
 )
 @click.pass_context
 def box_list(ctx, remote, prefix):
-    """List all connected Boxes"""
+    """List all Boxes (--remote for Remote)"""
 
     if remote:
         check_ctx(ctx, account=True)
@@ -1007,7 +1030,7 @@ def box_list(ctx, remote, prefix):
 )
 @click.pass_context
 def box_sync(ctx, start_from_id, deep, timeout):
-    """Will synchronize your current LocalBox with RemoteBox
+    """Synchronize your current LocalBox with RemoteBox
 
     After this operation, all info about your LocalFiles that are
     not in RemoteBox will be deleted from LocalBox. Files that
@@ -1069,7 +1092,7 @@ def box_sync(ctx, start_from_id, deep, timeout):
 )
 @click.pass_context
 def box_account_change(ctx, number):
-    """Will change Telegram account of your current Box
+    """Change Telegram account of your current Box
 
     This can be useful if you disconnected your TGBOX in
     Telegram settings (Privacy & Security > Devices) or
@@ -1230,7 +1253,7 @@ def box_clone(
         box_number, prefix, key,
         phrase, s, n, p, r, l):
     """
-    Will clone RemoteBox to LocalBox by your passphrase
+    Clone RemoteBox to LocalBox by your passphrase
     """
     erb = select_remotebox(box_number, prefix)
 
@@ -1518,7 +1541,7 @@ def box_delete(ctx):
 )
 @click.pass_context
 def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
-    """Will upload specified path to the Box"""
+    """Upload specified path (file/dir) to the Box"""
 
     check_ctx(ctx, dlb=True, drb=True)
 
@@ -1610,7 +1633,7 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
 )
 @click.pass_context
 def file_search(ctx, filters, force_remote, non_interactive, non_imported):
-    """Will list files by filters
+    """List files by selected filters
 
     \b
     Available filters:\b
@@ -1790,7 +1813,7 @@ def file_download(
         hide_name, hide_folder, out,
         force_remote, redownload,
         max_workers, max_bytes):
-    """Will download files by filters
+    """Download files by selected filters
 
     \b
     Available filters:\b
@@ -2042,7 +2065,7 @@ def file_share(ctx, requestkey, id):
 )
 @click.pass_context
 def file_import(ctx, key, id, file_path):
-    """Will import RemoteBoxFile to your LocalBox"""
+    """Import RemoteBox file to your LocalBox"""
 
     check_ctx(ctx, dlb=True, drb=True)
 
@@ -2078,7 +2101,7 @@ def file_import(ctx, key, id, file_path):
 )
 @click.pass_context
 def file_last_id(ctx, remote):
-    """Will return ID of last uploaded to Box file"""
+    """Return ID of last uploaded to Box file"""
 
     check_ctx(ctx, dlb=True, drb=remote)
 
@@ -2102,7 +2125,7 @@ def file_last_id(ctx, remote):
 )
 @click.pass_context
 def file_remove(ctx, filters, local_only, ask_before_remove):
-    """Will remove files by filters
+    """Remove files by selected filters
 
     \b
     Available filters:\b
@@ -2253,8 +2276,8 @@ def file_remove(ctx, filters, local_only, ask_before_remove):
 @click.pass_context
 def file_open(ctx, filters, locate, propagate, continuously):
     """
-    Will try to search by filters and open the
-    already downloaded file in the default OS app
+    Search by filters and try to open already
+    downloaded file in the default OS app
     \b
     Available filters:\b
         scope: Define a path as search scope
@@ -2351,7 +2374,7 @@ def file_open(ctx, filters, locate, propagate, continuously):
 @click.pass_context
 def file_forward(ctx, filters, entity):
     """
-    Will forward file to specified entity
+    Forward files by filters to specified entity
 
     \b
     Available filters:\b
@@ -2453,7 +2476,7 @@ def file_forward(ctx, filters, entity):
 )
 @click.pass_context
 def file_attr_edit(ctx, filters, attribute, local_only):
-    """Will change attribute value of Box files (search by filters)
+    """Change attribute value of Box files (search by filters)
 
     \b
     Available filters:\b
@@ -2628,13 +2651,13 @@ def logfile_open(locate):
 
 @cli.command()
 def logfile_clear():
-    """Will clear TGBOX-CLI log file"""
+    """Clear TGBOX-CLI log file"""
     open(logfile,'w').close()
     echo('[GREEN]Done.[GREEN]')
 
 @cli.command()
 def logfile_size():
-    """Will return size of TGBOX-CLI log file"""
+    """Return size of TGBOX-CLI log file"""
     size = format_bytes(logfile.stat().st_size)
     echo(f'[WHITE]{str(logfile)}[WHITE]: {size}')
 
