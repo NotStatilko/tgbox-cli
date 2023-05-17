@@ -148,7 +148,7 @@
         to specify a strong encryption password[RED], because your
         LocalBox will store a [RED]Telegram session[RED] and file info. The
         key generation process wil require you to give a [RED]1GB of RAM[RED]
-        for a couple of seconds. You can adjust amount or make it
+        for a couple of seconds. You can decrease amount or make it
         even bigger with the [BLUE]box-make[BLUE] command [GREEN]options[GREEN]. Setting
         [YELLOW]lower amounts of MB per generation will make bruteforcing[YELLOW]
         [YELLOW]a more easy deal[YELLOW], change it only if you're understand
@@ -208,7 +208,7 @@
         by the [GREEN]--max-bytes[GREEN] option, and the total amount by
         the [GREEN]--max-workers[GREEN]. Algorithm is simple: we will
         iterate over files (if directory specified) and
-        adjust the [GREEN]--max-bytes[GREEN] by file size, then
+        decrement the [GREEN]--max-bytes[GREEN] by file size, then
         decrement by one the [GREEN]--max-workers[GREEN]. Upload list
         will expand until [GREEN]--max-workers[GREEN] or [GREEN]--max-bytes[GREEN]
         values > 0, otherwise launch [BLUE]file-upload[BLUE] process.
