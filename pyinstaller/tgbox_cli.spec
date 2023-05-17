@@ -18,7 +18,7 @@ TGBOX_CLI_DATA: dict = {
 }
 PYINSTALLER_DATA.update(TGBOX_CLI_DATA)
 
-if system() == 'windows':
+if system().lower() == 'windows':
     # Enlighten may require ANSICON DLLs (32/64) on the Windows machine
     PYINSTALLER_DATA['ansicon/ANSI32.dll'] = 'depends/ansicon/ANSI32.dll'
     PYINSTALLER_DATA['ansicon/ANSI64.dll'] = 'depends/ansicon/ANSI64.dll'
