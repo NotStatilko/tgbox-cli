@@ -399,7 +399,7 @@
         with one from LocalBox. Typically we [WHITE]don't[WHITE]
         need a full synchronization, because it can be
         [WHITE]really[WHITE] slow and useless. We can track a state of
-        our LocalBox and RemoteBox with the [BLUE]box-info[BLUE]
+        our LocalBox and RemoteBox with the [BLUE]file-last-id[BLUE]
         command. If your remote is ahead, use a
         [GREEN]--start-from-id[GREEN] on [BLUE]box-sync[BLUE] and specify it as
         last file ID in your LocalBox. This will
@@ -604,7 +604,7 @@
     list of projects  TGBOX use on the GitHub
     page: [BLUE]github.com/NonProjects/tgbox[BLUE]
 
-    Thanks for every people who inspire me,
+    Thanks to every people who inspire me,
     and *BIG* thanks to the [WHITE]HEROES[WHITE] from the
     [YELLOW]UKRAINIAN[YELLOW] [BLUE]ARMY[BLUE]. I [WHITE]don't[WHITE] think this
     project will be possible without
