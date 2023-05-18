@@ -1092,7 +1092,7 @@ def box_sync(ctx, start_from_id, deep, timeout):
 )
 @click.pass_context
 def box_account_change(ctx, number):
-    """Change Telegram account of your current Box
+    """Change account of your current Box
 
     This can be useful if you disconnected your TGBOX in
     Telegram settings (Privacy & Security > Devices) or
