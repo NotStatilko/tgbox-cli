@@ -431,7 +431,7 @@ def cli_init(ctx):
 
 @cli.command()
 def cli_info():
-    """Get base information about TGBOX-CLI"""
+    """Get information about the TGBOX-CLI build"""
 
     ver = __version__.split('_')
     try:
