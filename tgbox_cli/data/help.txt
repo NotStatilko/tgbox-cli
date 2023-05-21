@@ -1,4 +1,4 @@
-[BLUE]TGBOX-CLI README[BLUE]
+[YELLOW]TGBOX-CLI README[YELLOW]
     Hi and Welcome to the short TGBOX-CLI README! This file
     intended to help you to get info about this program.
 
