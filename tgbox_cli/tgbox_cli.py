@@ -235,7 +235,6 @@ def cli(ctx):
             self._account = None
             self.session = None
 
-            self._proxy = None
             self.__drb_initialized = False
 
         def __repr__(self):
@@ -245,11 +244,6 @@ def cli(ctx):
         def drb(self):
             if self._drb and not self.__drb_initialized:
                 self._drb = tgbox.sync(self._drb)
-
-                if self._proxy:
-                    self._drb.tc.set_proxy(self._proxy)
-                    tgbox.sync(self._drb.tc.connect())
-
                 self.__drb_initialized = True
 
             return self._drb
@@ -268,15 +262,15 @@ def cli(ctx):
 
     ctx.obj = Objects()
 
-    # = Setting Proxy ======================================== #
+    # = Getting Proxy ======================================== #
 
     if getenv('https_proxy'):
-        ctx.obj._proxy = env_proxy_to_pysocks(getenv('https_proxy'))
+        proxy = env_proxy_to_pysocks(getenv('https_proxy'))
 
     elif getenv('http_proxy'):
-        ctx.obj._proxy = env_proxy_to_pysocks(getenv('http_proxy'))
+        proxy = env_proxy_to_pysocks(getenv('http_proxy'))
     else:
-        ctx.obj._proxy = None
+        proxy = None
 
     # ========================================================= #
 
@@ -306,7 +300,7 @@ def cli(ctx):
             dlb = tgbox.sync(tgbox.api.get_localbox(
                 tgbox.keys.BaseKey(basekey), box_path)
             )
-            drb = tgbox.api.get_remotebox(dlb)
+            drb = tgbox.api.get_remotebox(dlb, proxy=proxy)
 
             ctx.obj.dlb = dlb
             ctx.obj._drb = drb
@@ -332,7 +326,8 @@ def cli(ctx):
         ctx.obj._account = tgbox.api.TelegramClient(
             session=tg_session,
             api_id=API_ID,
-            api_hash=API_HASH)
+            api_hash=API_HASH,
+            proxy=proxy)
     else:
         ctx.obj._account = None
 
