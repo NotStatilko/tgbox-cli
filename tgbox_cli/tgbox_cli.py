@@ -1557,6 +1557,17 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
         tgbox.sync(gather(*to_upload))
         to_upload.clear()
 
+    async def _push_wrapper(push_coro, current_path):
+        # prepare_file will only check that
+        # filesize is < than max allowed,
+        # however, user can be without
+        # premium, so check on push_file
+        # will raise LimitExceeded.
+        try:
+            await push_coro
+        except tgbox.errors.LimitExceeded as e:
+            echo(f'[YELLOW]{current_path}: {e} Skipping..[YELLOW]')
+
     if path.is_dir():
         iter_over = path.rglob('*')
     else:
@@ -1597,6 +1608,9 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
         except tgbox.errors.FingerprintExists:
             echo(f'[YELLOW]{current_path} is already uploaded. Skipping..[YELLOW]')
             continue
+        except tgbox.errors.LimitExceeded as e:
+            echo(f'[YELLOW]{current_path}: {e} Skipping..[YELLOW]')
+            continue
 
         current_bytes -= pf.filesize
         current_workers -= 1
@@ -1612,8 +1626,10 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
             current_workers = max_workers - 1
             current_bytes = max_bytes - pf.filesize
 
-        to_upload.append(ctx.obj.drb.push_file(pf, Progress(
-            enlighten_manager, current_path.name).update))
+        push = ctx.obj.drb.push_file(pf, Progress(
+            enlighten_manager, current_path.name).update)
+
+        to_upload.append(_push_wrapper(push, current_path))
 
     if to_upload: # If any files left
         try:
