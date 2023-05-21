@@ -247,8 +247,8 @@ def cli(ctx):
                 self._drb = tgbox.sync(self._drb)
 
                 if self._proxy:
-                    self._drb.set_proxy(self._proxy)
-                    tgbox.sync(self._drb.connect())
+                    self._drb.tc.set_proxy(self._proxy)
+                    tgbox.sync(self._drb.tc.connect())
 
                 self.__drb_initialized = True
 
@@ -520,7 +520,7 @@ def account_connect(ctx, phone):
                 api_id=API_ID,
                 api_hash=API_HASH
             )
-            other_tc = tgbox.sync(other_tc.connect())
+            tgbox.sync(other_tc.connect())
             try:
                 other_tc_id = tgbox.sync(other_tc.get_me()).id
             except AttributeError:
@@ -625,6 +625,7 @@ def account_list(ctx):
             ctx.obj.session['ACCOUNT_LIST'].remove(d_session)
 
         ctx.obj.session.commit()
+        echo('')
 
 @cli.command()
 @click.option(
