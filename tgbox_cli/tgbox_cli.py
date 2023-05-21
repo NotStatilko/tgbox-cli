@@ -975,45 +975,50 @@ def box_list(ctx, remote, prefix):
     else:
         check_ctx(ctx, session=True)
 
-        echo(
-            '''\n[WHITE]You\'re using Box[WHITE] '''
-           f'''[RED]#{str(ctx.obj.session['CURRENT_BOX']+1)}[RED]\n'''
-        )
-        lost_boxes, count = [], 0
+        if ctx.obj.session['CURRENT_BOX'] is None:
+            echo(
+                '''[RED]You didn\'t opened any box yet. Use[RED] '''
+                '''[WHITE]box-open[WHITE] [RED]command firstly.[RED]''')
+        else:
+            echo(
+                '''\n[WHITE]You\'re using Box[WHITE] '''
+               f'''[RED]#{str(ctx.obj.session['CURRENT_BOX']+1)}[RED]\n'''
+            )
+            lost_boxes, count = [], 0
 
-        for box_path, basekey in ctx.obj.session['BOX_LIST']:
-            try:
-                dlb = tgbox.sync(tgbox.api.get_localbox(
-                    tgbox.keys.BaseKey(basekey), box_path)
-                )
-                name = Path(box_path).name
-                salt = urlsafe_b64encode(dlb.box_salt).decode()
+            for box_path, basekey in ctx.obj.session['BOX_LIST']:
+                try:
+                    dlb = tgbox.sync(tgbox.api.get_localbox(
+                        tgbox.keys.BaseKey(basekey), box_path)
+                    )
+                    name = Path(box_path).name
+                    salt = urlsafe_b64encode(dlb.box_salt).decode()
 
-                echo(
-                    f'''[WHITE]{count+1})[WHITE] [BLUE]{name}[BLUE]'''
-                    f'''@[BRIGHT_BLACK]{salt}[BRIGHT_BLACK]'''
-                )
-                tgbox.sync(dlb.done())
-            except FileNotFoundError:
-                echo(f'[WHITE]{count+1})[WHITE] [RED]Moved, so removed.[RED]')
-                lost_boxes.append([box_path, basekey])
+                    echo(
+                        f'''[WHITE]{count+1})[WHITE] [BLUE]{name}[BLUE]'''
+                        f'''@[BRIGHT_BLACK]{salt}[BRIGHT_BLACK]'''
+                    )
+                    tgbox.sync(dlb.done())
+                except FileNotFoundError:
+                    echo(f'[WHITE]{count+1})[WHITE] [RED]Moved, so removed.[RED]')
+                    lost_boxes.append([box_path, basekey])
 
-            count += 1
+                count += 1
 
-        for lbox in lost_boxes:
-            ctx.obj.session['BOX_LIST'].remove(lbox)
+            for lbox in lost_boxes:
+                ctx.obj.session['BOX_LIST'].remove(lbox)
 
-        if lost_boxes:
-            if not ctx.obj.session['BOX_LIST']:
-                ctx.obj.session['CURRENT_BOX'] = None
-                echo('No more Boxes, use [WHITE]box-open[WHITE].')
-            else:
-                ctx.obj.session['CURRENT_BOX'] = 0
-                echo(
-                    '''Switched to the first Box. Set other '''
-                    '''with [WHITE]box-switch[WHITE].'''
-                )
-        ctx.obj.session.commit()
+            if lost_boxes:
+                if not ctx.obj.session['BOX_LIST']:
+                    ctx.obj.session['CURRENT_BOX'] = None
+                    echo('No more Boxes, use [WHITE]box-open[WHITE].')
+                else:
+                    ctx.obj.session['CURRENT_BOX'] = 0
+                    echo(
+                        '''Switched to the first Box. Set other '''
+                        '''with [WHITE]box-switch[WHITE].'''
+                    )
+            ctx.obj.session.commit()
 
 @cli.command()
 @click.option(
