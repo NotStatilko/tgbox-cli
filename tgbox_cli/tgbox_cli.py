@@ -1020,6 +1020,7 @@ def box_list(ctx, remote, prefix):
                         '''with [WHITE]box-switch[WHITE].'''
                     )
             ctx.obj.session.commit()
+            echo('')
 
 @cli.command()
 @click.option(
