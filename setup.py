@@ -37,7 +37,7 @@ setup(
         'Cloud', 'Non-official'
     ],
     classifiers = [
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: End Users/Desktop',
         'Topic :: Security :: Cryptography',
