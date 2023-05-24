@@ -134,7 +134,7 @@
 
         This will omit "Box name" prompt. Many [GREEN]options[GREEN] can be
         [WHITE]long[WHITE] (with a [WHITE]two[WHITE] dashes [GREEN]--[GREEN]) and [WHITE]short[WHITE] ([WHITE]one[WHITE] dash [GREEN]-[GREEN]) at
-        the same time. With a [GREEN]--help[GREEN] on [GREEN]box-make[GREEN] we can see that
+        the same time. With a [GREEN]--help[GREEN] on [BLUE]box-make[BLUE] we can see that
         we can write a [GREEN]--box-name[GREEN] as [GREEN]-b[GREEN]:
             [BRIGHT_WHITE]tgbox-cli box-make -b=MyBox[BRIGHT_WHITE]
 
@@ -547,7 +547,7 @@
         command. It can start an [WHITE]Interactive Python Interpreter[WHITE] with
         the TGBOX-CLI [WHITE]globals()[WHITE]. You can use this command to make
         a direct access to the [WHITE]DecryptedLocalBox[WHITE] or [WHITE]DecryptedRemoteBox[WHITE]
-        objects (the [WHITE]get_box()[WHITE] function) and [WHITE]manually[WHITE] do things to TGBOX.
+        objects (via [WHITE]Objects[WHITE] variable) and [WHITE]manually[WHITE] do things to TGBOX.
         |
         The [BLUE]python[BLUE] command also allow users to [WHITE]execute some scripts[WHITE]
         written for the TGBOX-CLI. With [GREEN]--execute[GREEN] option you can
