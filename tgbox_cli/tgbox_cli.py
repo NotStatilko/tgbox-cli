@@ -50,6 +50,7 @@ else:
     from base64 import urlsafe_b64encode
     from shutil import get_terminal_size
     from traceback import format_exception
+    from inspect import isfunction, iscoroutine
 
     from subprocess import run as subprocess_run, PIPE
     from code import interact as interactive_console
@@ -114,8 +115,6 @@ else:
     logging.getLogger('tgbox').setLevel(
         logging.getLevelName(logging_level)
     )
-    # Progressbar manager
-    enlighten_manager = get_enlighten_manager()
 
 
 # = Function to check that CTX has requested fields ======= #
@@ -235,23 +234,21 @@ def cli(ctx):
             self._account = None
             self.session = None
 
-            self.__drb_initialized = False
+            self._enlighten_manager = None
 
         def __repr__(self):
             return f'Objects: {self.__dict__=}'
 
         @property
         def drb(self):
-            if self._drb and not self.__drb_initialized:
+            if iscoroutine(self._drb): # self._drb can be coroutine
                 self._drb = tgbox.sync(self._drb)
-                self.__drb_initialized = True
 
             return self._drb
 
         @property
         def account(self):
-            if self._account and not isinstance(
-                    self._account, tgbox.api.TelegramClient):
+            if isfunction(self._account): # self._account can be lambda
                 self.drb # Make sure DRB is initialized
                 self._account = self._account()
 
@@ -259,6 +256,13 @@ def cli(ctx):
                 tgbox.sync(self._account.connect())
 
             return self._account
+
+        @property
+        def enlighten_manager(self):
+            if isfunction(self._enlighten_manager):
+                self._enlighten_manager = self._enlighten_manager()
+
+            return self._enlighten_manager
 
     ctx.obj = Objects()
 
@@ -280,6 +284,13 @@ def cli(ctx):
         ctx.obj.session = Session(session_key)
     else:
         ctx.obj.session = None
+
+    # ========================================================= #
+
+    # = Setting ProgressBar manager =========================== #
+
+    # The Enlighten progressbar manager
+    ctx.obj._enlighten_manager = get_enlighten_manager
 
     # ========================================================= #
 
@@ -346,7 +357,8 @@ def cli(ctx):
             except tgbox.errors.SessionUnregistered:
                 pass # Session was disconnected
 
-        enlighten_manager.stop()
+        if not isfunction(ctx_.obj._enlighten_manager):
+            ctx_.obj.enlighten_manager.stop()
 
     # This will close Local & Remote on exit
     ctx.call_on_close(lambda: on_exit(ctx))
@@ -1066,7 +1078,7 @@ def box_sync(ctx, start_from_id, deep, timeout):
     if not deep:
         progress_callback = lambda i,a: echo(f'* [WHITE]ID{i}[WHITE]: [CYAN]{a}[CYAN]')
     else:
-        progress_callback = Progress(enlighten_manager,
+        progress_callback = Progress(ctx.obj.enlighten_manager,
             'Synchronizing...').update_2
 
     box_sync_coro = ctx.obj.dlb.sync(
@@ -1082,9 +1094,6 @@ def box_sync(ctx, start_from_id, deep, timeout):
     except tgbox.errors.RemoteFileNotFound as e:
         echo(f'[RED]{e}[RED]')
     else:
-        if deep:
-            enlighten_manager.stop()
-
         echo('[GREEN]Syncing complete.[GREEN]')
 
 @cli.command()
@@ -1297,11 +1306,9 @@ def box_clone(
         box_path = box_path,
 
         progress_callback = Progress(
-            enlighten_manager, 'Cloning...').update_2
+            ctx.obj.enlighten_manager, 'Cloning...').update_2
         )
     )
-    enlighten_manager.stop()
-
     echo('\n[CYAN]Updating local data...[CYAN] ', nl=False)
 
     for _, other_basekey in ctx.obj.session['BOX_LIST']:
@@ -1617,14 +1624,13 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
                 _upload(to_upload)
             except tgbox.errors.NotEnoughRights as e:
                 echo(f'\n[RED]{e}[RED]')
-                enlighten_manager.stop()
                 return
 
             current_workers = max_workers - 1
             current_bytes = max_bytes - pf.filesize
 
         push = ctx.obj.drb.push_file(pf, Progress(
-            enlighten_manager, current_path.name).update)
+            ctx.obj.enlighten_manager, current_path.name).update)
 
         to_upload.append(_push_wrapper(push, current_path))
 
@@ -1633,7 +1639,6 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
             _upload(to_upload)
         except tgbox.errors.NotEnoughRights as e:
             echo(f'\n[RED]{e}[RED]')
-            enlighten_manager.stop()
 
 @cli.command()
 @click.argument('filters',nargs=-1)
@@ -2000,7 +2005,7 @@ def file_download(
                             download_coroutine = drbf.download(
                                 outfile = outpath,
                                 progress_callback = Progress(
-                                    enlighten_manager, p_file_name).update,
+                                    ctx.obj.enlighten_manager, p_file_name).update,
                                 hide_folder = hide_folder,
                                 hide_name = hide_name
                             )
@@ -2028,8 +2033,6 @@ def file_download(
 
         if to_gather_files: # If any files left
             tgbox.sync(gather(*to_gather_files))
-
-        enlighten_manager.stop()
 
 @cli.command()
 @click.option(
