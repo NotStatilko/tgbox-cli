@@ -44,8 +44,10 @@ else:
     import logging
 
     from time import sleep
-    from platform import system
     from datetime import datetime
+
+    from platform import system
+    from functools import wraps
 
     from base64 import urlsafe_b64encode
     from shutil import get_terminal_size
@@ -117,7 +119,7 @@ else:
     )
 
 
-# = Function to check that CTX has requested fields ======= #
+# = Decorator/Func to check that CTX has requested fields = #
 
 class CheckCTXFailed(click.exceptions.ClickException):
     """Will be raised if check_ctx found unsupported requirement"""
@@ -151,8 +153,28 @@ def check_ctx(ctx, *, session=False, account=False, dlb=False, drb=False):
         )
         raise CheckCTXFailed('Failed on "drb" requirement')
 
-# ========================================================= #
+def ctx_require(**check_ctx_kwargs):
+    """
+    This decorator will check that CTX.obj has
+    requested fields or will raise CheckCTXFailed
+    if not. This will also pass the CTX to func,
+    so we don't need to add '@click.pass_context'
 
+    Also see 'check_ctx' function.
+    """
+    def check_ctx_decorator(func):
+        @wraps(func)
+        def check(*args, **kwargs):
+            ctx = click.get_current_context()
+            check_ctx(ctx, **check_ctx_kwargs)
+
+            func(ctx, *args, **kwargs)
+
+        return check
+
+    return check_ctx_decorator
+
+# ========================================================= #
 # = CLI configuration ===================================== #
 
 class StructuredGroup(click.Group):
@@ -277,7 +299,6 @@ def cli(ctx):
         proxy = None
 
     # ========================================================= #
-
     # = Setting CLI Session =================================== #
 
     if session_key := getenv('TGBOX_CLI_SK'):
@@ -286,14 +307,12 @@ def cli(ctx):
         ctx.obj.session = None
 
     # ========================================================= #
-
     # = Setting ProgressBar manager =========================== #
 
     # The Enlighten progressbar manager
     ctx.obj._enlighten_manager = get_enlighten_manager
 
     # ========================================================= #
-
     # = Setting DLB & DRB ===================================== #
 
     if not ctx.obj.session or ctx.obj.session['CURRENT_BOX'] is None:
@@ -317,7 +336,6 @@ def cli(ctx):
             ctx.obj._drb = drb
 
     # ========================================================= #
-
     # = Setting TelegramClient ================================ #
 
     if not ctx.obj.session:
@@ -343,7 +361,6 @@ def cli(ctx):
         ctx.obj._account = None
 
     # ========================================================= #
-
     def on_exit(ctx_):
         if ctx_.obj.dlb:
             try:
@@ -364,12 +381,10 @@ def cli(ctx):
     ctx.call_on_close(lambda: on_exit(ctx))
 
 # ========================================================= #
+# = Function to search for more RemoteBox on account ====== #
 
-# = Function to search for more RemoteBox on account ===== #
-
-@click.pass_context
+@ctx_require(account=True)
 def select_remotebox(ctx, number: int, prefix: str):
-    check_ctx(ctx, account=True)
 
     count, erb = 1, None
     to_iter = ctx.obj.account.iter_dialogs()
@@ -389,7 +404,6 @@ def select_remotebox(ctx, number: int, prefix: str):
         return erb
 
 # ========================================================= #
-
 # = CLI manage & setup commands =========================== #
 
 @cli.command()
@@ -476,7 +490,6 @@ def cli_info():
     )
 
 # ========================================================= #
-
 # = Telegram account management commands ================== #
 
 @cli.command()
@@ -484,10 +497,9 @@ def cli_info():
     '--phone', '-p', required=True, prompt=True,
     help='Phone number of your Telegram account'
 )
-@click.pass_context
+@ctx_require(session=True)
 def account_connect(ctx, phone):
     """Connect your Telegram account"""
-    check_ctx(ctx, session=True)
 
     tc = tgbox.api.TelegramClient(
         phone_number=phone,
@@ -558,11 +570,9 @@ def account_connect(ctx, phone):
     '--log-out', is_flag=True,
     help='Will log out from account if specified'
 )
-@click.pass_context
+@ctx_require(session=True)
 def account_disconnect(ctx, number, log_out):
     """Disconnect selected Account from Session"""
-
-    check_ctx(ctx, session=True)
 
     if ctx.obj.session['CURRENT_ACCOUNT'] is None:
         echo('[RED]You don\'t have any connected account.[RED]')
@@ -595,11 +605,9 @@ def account_disconnect(ctx, number, log_out):
         ctx.obj.session.commit()
 
 @cli.command()
-@click.pass_context
+@ctx_require(session=True)
 def account_list(ctx):
     """List all connected accounts"""
-
-    check_ctx(ctx, session=True)
 
     if ctx.obj.session['CURRENT_ACCOUNT'] is None:
         echo(
@@ -639,11 +647,9 @@ def account_list(ctx):
     '--number', '-n', required=True, type=int,
     help='Number of other connected account, use account-list command'
 )
-@click.pass_context
+@ctx_require(session=True)
 def account_switch(ctx, number):
     """Set as main your another connected Account"""
-
-    check_ctx(ctx, session=True)
 
     if ctx.obj.session['CURRENT_ACCOUNT'] is None:
         echo(
@@ -670,11 +676,9 @@ def account_switch(ctx, number):
     '--show-phone', is_flag=True,
     help='Specify this to show phone number'
 )
-@click.pass_context
+@ctx_require(account=True)
 def account_info(ctx, show_phone):
     """Show information about current account"""
-
-    check_ctx(ctx, account=True)
 
     me = tgbox.sync(ctx.obj.account.get_me())
 
@@ -711,7 +715,6 @@ def account_info(ctx, show_phone):
     )
 
 # ========================================================= #
-
 # = Local & Remote Box management commands ================ #
 
 @cli.command()
@@ -747,11 +750,9 @@ def account_info(ctx, show_phone):
     '--scrypt-dklen', '-L', 'l', help='Scrypt key length',
     default=int(tgbox.defaults.Scrypt.DKLEN)
 )
-@click.pass_context
+@ctx_require(account=True)
 def box_make(ctx, box_name, box_salt, phrase, s, n, p, r, l):
     """Create the new Box, the Remote and Local"""
-
-    check_ctx(ctx, account=True)
 
     if not phrase and click.confirm('Generate passphrase for you?'):
         phrase = tgbox.keys.Phrase.generate(6).phrase.decode()
@@ -855,11 +856,9 @@ def box_make(ctx, box_name, box_salt, phrase, s, n, p, r, l):
     '--scrypt-dklen', '-L', 'l', help='Scrypt key length',
     default=int(tgbox.defaults.Scrypt.DKLEN)
 )
-@click.pass_context
+@ctx_require(session=True)
 def box_open(ctx, box_path, phrase, s, n, p, r, l):
     """Decrypt & connect existing LocalBox"""
-
-    check_ctx(ctx, session=True)
 
     echo('[CYAN]Making BaseKey...[CYAN] ', nl=False)
 
@@ -899,11 +898,9 @@ def box_open(ctx, box_path, phrase, s, n, p, r, l):
     '--number', '-n', required=True, type=int,
     help='Number of other connected box, use box-list command'
 )
-@click.pass_context
+@ctx_require(dlb=True)
 def box_close(ctx, number):
     """Disconnect selected LocalBox from Session"""
-
-    check_ctx(ctx, dlb=True)
 
     if number < 1 or number > len(ctx.obj.session['BOX_LIST']):
         echo('[RED]Invalid number, see box-list[RED]')
@@ -924,11 +921,9 @@ def box_close(ctx, number):
     '--number', '-n', required=True, type=int,
     help='Number of other connected box, use box-list command'
 )
-@click.pass_context
+@ctx_require(dlb=True)
 def box_switch(ctx, number):
     """Set as main your another connected Box"""
-
-    check_ctx(ctx, dlb=True)
 
     if number < 1 or number > len(ctx.obj.session['BOX_LIST']):
         echo(
@@ -1042,7 +1037,7 @@ def box_list(ctx, remote, prefix):
     '--timeout','-t', default=15,
     help='Sleep timeout per every 1000 file'
 )
-@click.pass_context
+@ctx_require(dlb=True, drb=True)
 def box_sync(ctx, start_from_id, deep, timeout):
     """Synchronize your current LocalBox with RemoteBox
 
@@ -1073,8 +1068,6 @@ def box_sync(ctx, start_from_id, deep, timeout):
 
     (!) --start-from-id will be used only on deep sync.
     """
-    check_ctx(ctx, dlb=True, drb=True)
-
     if not deep:
         progress_callback = lambda i,a: echo(f'* [WHITE]ID{i}[WHITE]: [CYAN]{a}[CYAN]')
     else:
@@ -1101,7 +1094,7 @@ def box_sync(ctx, start_from_id, deep, timeout):
     '--number','-n', required=True, type=int,
     help='Number of connected account. We will take session from it.'
 )
-@click.pass_context
+@ctx_require(dlb=True)
 def box_account_change(ctx, number):
     """Change account of your current Box
 
@@ -1109,7 +1102,6 @@ def box_account_change(ctx, number):
     Telegram settings (Privacy & Security > Devices) or
     your local TGBOX was too long offline.
     """
-    check_ctx(ctx, dlb=True)
 
     if number < 1 or number > len(ctx.obj.session['ACCOUNT_LIST']):
         echo(
@@ -1188,11 +1180,9 @@ def box_request(number, phrase, s, n, p, r, l, prefix):
     '--requestkey', '-r',
     help='Requester\'s RequestKey, by box-request command'
 )
-@click.pass_context
+@ctx_require(dlb=True)
 def box_share(ctx, requestkey):
     """Command to make ShareKey & to share Box"""
-
-    check_ctx(ctx, dlb=True)
 
     requestkey = requestkey if not requestkey\
         else tgbox.keys.Key.decode(requestkey)
@@ -1329,7 +1319,7 @@ def box_clone(
 
 @cli.command()
 @click.argument('defaults',nargs=-1)
-@click.pass_context
+@ctx_require(dlb=True)
 def box_default(ctx, defaults):
     """Change the TGBOX default values to your own
 
@@ -1341,8 +1331,6 @@ def box_default(ctx, defaults):
         # Change download path from DownloadsTGBOX to Downloads
         tgbox-cli box-default DOWNLOAD_PATH=Downloads
     """
-    check_ctx(ctx, dlb=True)
-
     for default in defaults:
         try:
             key, value = default.split('=',1)
@@ -1356,11 +1344,9 @@ def box_default(ctx, defaults):
     '--bytesize-total', is_flag=True,
     help='Will compute a total size of all uploaded to Box files'
 )
-@click.pass_context
+@ctx_require(dlb=True, drb=True)
 def box_info(ctx, bytesize_total):
     """Show information about current Box"""
-
-    check_ctx(ctx, dlb=True, drb=True)
 
     if bytesize_total:
         total_bytes, current_file_count = 0, 0
@@ -1473,11 +1459,9 @@ def box_info(ctx, bytesize_total):
         )
 
 @cli.command()
-@click.pass_context
+@ctx_require(dlb=True, drb=True)
 def box_delete(ctx):
     """Completely remove your Box with all files in it"""
-
-    check_ctx(ctx, dlb=True, drb=True)
 
     dlb_box_name = Path(ctx.obj.dlb.tgbox_db.db_path).name
     drb_box_name = tgbox.sync(ctx.obj.drb.get_box_name())
@@ -1519,7 +1503,6 @@ def box_delete(ctx):
         echo(f'\nYou typed [WHITE]{user_input}[WHITE], which is incorrect. [YELLOW]Aborting.[YELLOW]')
 
 # ========================================================= #
-
 # = Local & Remote BoxFile management commands ============ #
 
 @cli.command()
@@ -1548,11 +1531,9 @@ def box_delete(ctx):
     type=click.IntRange(1000000, 1000000000),
     help='Max amount of bytes uploaded at the same time, default=500000000',
 )
-@click.pass_context
+@ctx_require(dlb=True, drb=True)
 def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
     """Upload specified path (file/dir) to the Box"""
-
-    check_ctx(ctx, dlb=True, drb=True)
 
     current_workers = max_workers
     current_bytes = max_bytes
@@ -2043,11 +2024,9 @@ def file_download(
     '--id', required=True, type=int,
     help='ID of file to share'
 )
-@click.pass_context
+@ctx_require(dlb=True)
 def file_share(ctx, requestkey, id):
     """Use this command to get a ShareKey to your file"""
-
-    check_ctx(ctx, dlb=True)
 
     dlbf = tgbox.sync(ctx.obj.dlb.get_file(id=id))
 
@@ -2084,11 +2063,9 @@ def file_share(ctx, requestkey, id):
     '--file-path', '-f', type=Path,
     help='Imported file\'s path.'
 )
-@click.pass_context
+@ctx_require(dlb=True, drb=True)
 def file_import(ctx, key, id, file_path):
     """Import RemoteBox file to your LocalBox"""
-
-    check_ctx(ctx, dlb=True, drb=True)
 
     erbf = tgbox.sync(ctx.obj.drb.get_file(
         id, return_imported_as_erbf=True))
@@ -2294,7 +2271,7 @@ def file_remove(ctx, filters, local_only, ask_before_remove):
     '--continuously', '-c', is_flag=True,
     help='Do not interrupt --propagate with input-ask'
 )
-@click.pass_context
+@ctx_require(dlb=True)
 def file_open(ctx, filters, locate, propagate, continuously):
     """
     Search by filters and try to open already
@@ -2356,8 +2333,6 @@ def file_open(ctx, filters, locate, propagate, continuously):
     that filters is for include (+i, ++include
     [by default]) or exclude (+e, ++exclude) search.
     """
-    check_ctx(ctx, dlb=True)
-
     try:
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
@@ -2392,7 +2367,7 @@ def file_open(ctx, filters, locate, propagate, continuously):
     '--entity', '-e', required=True,
     help='Entity to send file to'
 )
-@click.pass_context
+@ctx_require(dlb=True, drb=True, account=True)
 def file_forward(ctx, filters, entity):
     """
     Forward files by filters to specified entity
@@ -2466,8 +2441,6 @@ def file_forward(ctx, filters, entity):
         You can use both, the ++include and
         ++exclude (+i, +e) in one command.
     """
-    check_ctx(ctx, dlb=True, drb=True, account=True)
-
     try:
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
@@ -2495,7 +2468,7 @@ def file_forward(ctx, filters, entity):
     '--local-only','-l', is_flag=True,
     help='If specified, will change attr only in LocalBox'
 )
-@click.pass_context
+@ctx_require(dlb=True, drb=True)
 def file_attr_edit(ctx, filters, attribute, local_only):
     """Change attribute value of Box files (search by filters)
 
@@ -2571,8 +2544,6 @@ def file_attr_edit(ctx, filters, attribute, local_only):
         You can use both, the ++include and
         ++exclude (+i, +e) in one command.
     """
-    check_ctx(ctx, dlb=True, drb=True)
-
     try:
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
@@ -2641,15 +2612,12 @@ def file_attr_edit(ctx, filters, attribute, local_only):
             dxbf_to_update.clear()
 
 # ========================================================= #
-
 # = LocalBox directory management commands ================ #
 
 @cli.command()
-@click.pass_context
+@ctx_require(dlb=True)
 def dir_list(ctx):
     """List all directories in LocalBox"""
-
-    check_ctx(ctx, dlb=True)
 
     dirs = ctx.obj.dlb.contents(ignore_files=True)
 
@@ -2658,7 +2626,6 @@ def dir_list(ctx):
         echo(str(dir))
 
 # ========================================================= #
-
 # = Commands to manage TGBOX logger ======================= #
 
 @cli.command()
@@ -2684,7 +2651,7 @@ def logfile_size():
 
 @cli.command()
 @click.argument('entity', nargs=-1)
-@click.pass_context
+@ctx_require(account=True)
 def logfile_send(ctx, entity):
     """
     Send logfile to the specified entity
@@ -2693,14 +2660,11 @@ def logfile_send(ctx, entity):
     Example:\b
         tgbox-cli logfile-send @username
     """
-    check_ctx(ctx, account=True)
-
     for e in entity:
         tgbox.sync(ctx.obj.account.send_file(e, logfile))
         echo(f'[WHITE]Logfile has been sent to[WHITE] [BLUE]{e}[BLUE]')
 
 # ========================================================= #
-
 # = Documentation commands  =============================== #
 
 @cli.command(name='help')
@@ -2722,7 +2686,6 @@ def help_(non_interactive):
         click.echo_via_pager(color(help_text), color=colored)
 
 # ========================================================= #
-
 # = Hidden CLI tools commands ============================= #
 
 @cli.command(hidden=True)
