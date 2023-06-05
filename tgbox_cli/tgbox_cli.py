@@ -4,6 +4,7 @@ import click
 
 from os import getenv
 from pathlib import Path
+from functools import wraps
 
 import warnings
 
@@ -45,9 +46,7 @@ else:
 
     from time import sleep
     from datetime import datetime
-
     from platform import system
-    from functools import wraps
 
     from base64 import urlsafe_b64encode
     from shutil import get_terminal_size
@@ -782,7 +781,8 @@ def box_make(ctx, box_name, box_salt, phrase, s, n, p, r, l):
 
     echo('[CYAN]Making BaseKey...[CYAN] ', nl=False)
 
-    box_salt = bytes.fromhex(box_salt) if box_salt else None
+    if box_salt:
+        box_salt = tgbox.crypto.BoxSalt(bytes.fromhex(box_salt))
 
     basekey = tgbox.keys.make_basekey(
         phrase.strip().encode(),
@@ -966,7 +966,7 @@ def box_list(ctx, remote, prefix):
 
                 erb_name = tgbox.sync(erb.get_box_name())
                 erb_salt = tgbox.sync(erb.get_box_salt())
-                erb_salt = urlsafe_b64encode(erb_salt).decode()
+                erb_salt = urlsafe_b64encode(erb_salt.salt).decode()
 
                 echo(
                     f'''[WHITE]{count+1}[WHITE]) [BLUE]{erb_name}[BLUE]'''
@@ -995,7 +995,7 @@ def box_list(ctx, remote, prefix):
                         tgbox.keys.BaseKey(basekey), box_path)
                     )
                     name = Path(box_path).name
-                    salt = urlsafe_b64encode(dlb.box_salt).decode()
+                    salt = urlsafe_b64encode(dlb.box_salt.salt).decode()
 
                     echo(
                         f'''[WHITE]{count+1})[WHITE] [BLUE]{name}[BLUE]'''
@@ -1277,7 +1277,7 @@ def box_clone(
     else:
         key = tgbox.keys.make_importkey(
             key=basekey, sharekey=key,
-            box_salt=tgbox.sync(erb.get_box_salt())
+            salt=tgbox.sync(erb.get_box_salt())
         )
     drb = tgbox.sync(erb.decrypt(key=key))
 
@@ -1736,7 +1736,7 @@ def file_search(ctx, filters, force_remote, non_interactive, non_imported):
                     time = datetime.fromtimestamp(xrbf.upload_time)
                     time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN]"
 
-                    salt = urlsafe_b64encode(xrbf.file_salt).decode()
+                    salt = urlsafe_b64encode(xrbf.file_salt.salt).decode()
                     idsalt = f'[[BRIGHT_RED]{str(xrbf.id)}[BRIGHT_RED]:'
                     idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
 
@@ -2026,7 +2026,7 @@ def file_download(
 )
 @ctx_require(dlb=True)
 def file_share(ctx, requestkey, id):
-    """Use this command to get a ShareKey to your file"""
+    """Get a ShareKey from RequestKey to share file"""
 
     dlbf = tgbox.sync(ctx.obj.dlb.get_file(id=id))
 
@@ -2085,7 +2085,7 @@ def file_import(ctx, key, id, file_path):
                 key = tgbox.keys.make_importkey(
                     key=ctx.obj.dlb._mainkey,
                     sharekey=key,
-                    box_salt=erbf.file_salt
+                    salt=erbf.file_salt
                 )
             drbf = tgbox.sync(erbf.decrypt(key))
             tgbox.sync(ctx.obj.dlb.import_file(drbf, file_path))

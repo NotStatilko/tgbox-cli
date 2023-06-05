@@ -248,7 +248,7 @@ def format_dxbf(
     This will make a colored information string from
     the DecryptedRemoteBoxFile or DecryptedLocalBoxFile
     """
-    salt = urlsafe_b64encode(dxbf.file_salt).decode()
+    salt = urlsafe_b64encode(dxbf.file_salt.salt).decode()
 
     if dxbf.imported:
         idsalt = f'[[BRIGHT_BLUE]{str(dxbf.id)}[BRIGHT_BLUE]:'
