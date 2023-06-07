@@ -154,7 +154,7 @@ def formatted_bytes_to_int(formatted: str) -> int:
             * power_labels[formatted[-2:]]
 
     elif formatted[-1] == 'B':
-        formatted = formatted[:-1]
+        formatted = float(formatted[:-1])
 
     return int(formatted)
 
