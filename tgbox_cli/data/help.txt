@@ -226,7 +226,7 @@
         interactive list of all files that was uploaded to
         your Box, however, using [CYAN]them[CYAN] will allow you to
         [WHITE]search[WHITE] for specified files only. See this:
-            [BRIGHT_WHITE]tgbox-cli file-search mime=audio max_size=10000000[BRIGHT_WHITE]
+            [BRIGHT_WHITE]tgbox-cli file-search mime=audio max_size=10MB[BRIGHT_WHITE]
 
         Such [CYAN]filters[CYAN] will search [WHITE]only[WHITE] for audio files (by [CYAN]mime[CYAN]
         type) which size is < than 10MB ([CYAN]max_size[CYAN]). The [CYAN]filters[CYAN]
