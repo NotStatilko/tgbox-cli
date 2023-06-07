@@ -1635,8 +1635,12 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
     '--non-imported', is_flag=True,
     help='If specified, will search for non-imported files only'
 )
+@click.option(
+    '--upend', '-u', is_flag=True,
+    help='If specified, will search in reverse order'
+)
 @click.pass_context
-def file_search(ctx, filters, force_remote, non_interactive, non_imported):
+def file_search(ctx, filters, force_remote, non_interactive, non_imported, upend):
     """List files by selected filters
     
     \b
@@ -1732,7 +1736,7 @@ def file_search(ctx, filters, force_remote, non_interactive, non_imported):
 
         if non_imported:
             iter_over = ctx.obj.drb.search_file(
-                sf, reverse=False,
+                sf=sf, reverse=True,
                 cache_preview=False,
                 return_imported_as_erbf=True
             )
@@ -1763,16 +1767,20 @@ def file_search(ctx, filters, force_remote, non_interactive, non_imported):
         else:
             box = ctx.obj.drb if force_remote else ctx.obj.dlb
 
+            sgen = box.search_file(
+                sf=sf, reverse=upend,
+                cache_preview=False
+            )
+            sgen = bfi_gen(sgen)
+
             if non_interactive:
-                for dxbfs in bfi_gen(box.search_file(sf, cache_preview=False)):
+                for dxbfs in sgen:
                     echo(dxbfs, nl=False)
                 echo('')
             else:
-                sf_gen = bfi_gen(box.search_file(sf, cache_preview=False))
-
                 colored = True if system().lower() == 'windows' else None
                 colored = False if TGBOX_CLI_NOCOLOR else colored
-                click.echo_via_pager(sf_gen, color=colored)
+                click.echo_via_pager(sgen, color=colored)
 
 @cli.command()
 @click.argument('filters', nargs=-1)
