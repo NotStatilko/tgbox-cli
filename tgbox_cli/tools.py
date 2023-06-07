@@ -189,6 +189,18 @@ def filters_to_searchfilter(filters: tuple) -> tgbox.tools.SearchFilter:
 
                     filter[1] = cattrs
 
+            if filter[0] in ('min_time', 'max_time'):
+                # This filters can be also specified as string
+                # time, i.e "21/05/23, 19:51:29".
+                if not filter[1].replace('.','',1).isdigit():
+                    try:
+                        filter[1] = datetime.strptime(filter[1], '%d/%m/%y, %H:%M:%S')
+                    except ValueError:
+                        # Maybe only Date/Month/Year string was specified
+                        filter[1] = datetime.strptime(filter[1], '%d/%m/%y')
+
+                    filter[1] = filter[1].timestamp()
+
             if filter[0] not in current_filter:
                 current_filter[filter[0]] = [filter[1]]
             else:

@@ -874,7 +874,7 @@ def box_open(ctx, box_path, phrase, s, n, p, r, l):
     echo('[CYAN]Opening LocalBox...[CYAN] ', nl=False)
     try:
         dlb = tgbox.sync(tgbox.api.get_localbox(basekey, box_path))
-    except tgbox.errors.IncorrectKey:
+    except tgbox.errors.AESError:
         echo('[RED]Incorrect passphrase![RED]')
     else:
         echo('[GREEN]Successful![GREEN]')
@@ -1683,8 +1683,12 @@ def file_search(ctx, filters, force_remote, non_interactive, non_imported):
         min_size integer: File Size should be > min_size
         max_size integer: File Size should be < max_size
         \b
-        min_time integer/float: Upload Time should be > min_time
-        max_time integer/float: Upload Time should be < max_time
+        min_time integer/float/str: Upload Time should be > min_time
+        max_time integer/float/str: Upload Time should be < max_time
+        +
+        min_time & max_time can be also specified as string,
+            i.e "22/02/22, 22:22:22" or "22/02/22"
+               ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
         imported bool: Yield only imported files
         re       bool: re_search for every bytes filter
@@ -1863,8 +1867,12 @@ def file_download(
         min_size integer: File Size should be > min_size
         max_size integer: File Size should be < max_size
         \b
-        min_time integer/float: Upload Time should be > min_time
-        max_time integer/float: Upload Time should be < max_time
+        min_time integer/float/str: Upload Time should be > min_time
+        max_time integer/float/str: Upload Time should be < max_time
+        +
+        min_time & max_time can be also specified as string,
+            i.e "22/02/22, 22:22:22" or "22/02/22"
+               ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
         imported bool: Yield only imported files
         re       bool: re_search for every bytes filter
@@ -2169,8 +2177,12 @@ def file_remove(ctx, filters, local_only, ask_before_remove):
         min_size integer: File Size should be > min_size
         max_size integer: File Size should be < max_size
         \b
-        min_time integer/float: Upload Time should be > min_time
-        max_time integer/float: Upload Time should be < max_time
+        min_time integer/float/str: Upload Time should be > min_time
+        max_time integer/float/str: Upload Time should be < max_time
+        +
+        min_time & max_time can be also specified as string,
+            i.e "22/02/22, 22:22:22" or "22/02/22"
+               ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
         imported bool: Yield only imported files
         re       bool: re_search for every bytes filter
@@ -2320,8 +2332,12 @@ def file_open(ctx, filters, locate, propagate, continuously):
         min_size integer: File Size should be > min_size
         max_size integer: File Size should be < max_size
         \b
-        min_time integer/float: Upload Time should be > min_time
-        max_time integer/float: Upload Time should be < max_time
+        min_time integer/float/str: Upload Time should be > min_time
+        max_time integer/float/str: Upload Time should be < max_time
+        +
+        min_time & max_time can be also specified as string,
+            i.e "22/02/22, 22:22:22" or "22/02/22"
+               ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
         imported bool: Yield only imported files
         re       bool: re_search for every bytes filter
@@ -2416,8 +2432,12 @@ def file_forward(ctx, filters, entity):
         min_size integer: File Size should be > min_size
         max_size integer: File Size should be < max_size
         \b
-        min_time integer/float: Upload Time should be > min_time
-        max_time integer/float: Upload Time should be < max_time
+        min_time integer/float/str: Upload Time should be > min_time
+        max_time integer/float/str: Upload Time should be < max_time
+        +
+        min_time & max_time can be also specified as string,
+            i.e "22/02/22, 22:22:22" or "22/02/22"
+               ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
         imported bool: Yield only imported files
         re       bool: re_search for every bytes filter
@@ -2516,8 +2536,12 @@ def file_attr_edit(ctx, filters, attribute, local_only):
         min_size integer: File Size should be > min_size
         max_size integer: File Size should be < max_size
         \b
-        min_time integer/float: Upload Time should be > min_time
-        max_time integer/float: Upload Time should be < max_time
+        min_time integer/float/str: Upload Time should be > min_time
+        max_time integer/float/str: Upload Time should be < max_time
+        +
+        min_time & max_time can be also specified as string,
+            i.e "22/02/22, 22:22:22" or "22/02/22"
+               ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
         imported bool: Yield only imported files
         re       bool: re_search for every bytes filter
