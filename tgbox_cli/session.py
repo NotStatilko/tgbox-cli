@@ -1,12 +1,10 @@
 from tgbox.crypto import AESwState as AES
 
 from typing import Optional
-from platform import system
 from pickle import loads, dumps
 
 from hashlib import sha256
 from pathlib import Path
-from os.path import expandvars
 
 from .tools import get_cli_folder
 
@@ -16,7 +14,7 @@ class Session:
     This class serves as a simple implementation of
     Session to save & load state. All you need is
     specify the so-called SessionKey and it will
-    be used to encrypt any commited data.
+    be used to encrypt any committed data.
     """
     def __init__(self, key: str, folder: Optional[Path] = None):
         if not key:
