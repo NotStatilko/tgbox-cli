@@ -1638,7 +1638,7 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
 @click.pass_context
 def file_search(ctx, filters, force_remote, non_interactive, non_imported):
     """List files by selected filters
-
+    
     \b
     Available filters:\b
         scope: Define a path as search scope
@@ -1680,8 +1680,11 @@ def file_search(ctx, filters, force_remote, non_interactive, non_imported):
         min_id integer: File ID should be > min_id
         max_id integer: File ID should be < max_id
         \b
-        min_size integer: File Size should be > min_size
-        max_size integer: File Size should be < max_size
+        min_size integer/str: File Size should be > min_size
+        max_size integer/str: File Size should be < max_size
+        +
+        min_size & max_size can be also specified as string,
+            i.e "1GB" (one gigabyte), "122.45KB" or "700B"
         \b
         min_time integer/float/str: Upload Time should be > min_time
         max_time integer/float/str: Upload Time should be < max_time
@@ -1864,8 +1867,11 @@ def file_download(
         min_id integer: File ID should be > min_id
         max_id integer: File ID should be < max_id
         \b
-        min_size integer: File Size should be > min_size
-        max_size integer: File Size should be < max_size
+        min_size integer/str: File Size should be > min_size
+        max_size integer/str: File Size should be < max_size
+        +
+        min_size & max_size can be also specified as string,
+            i.e "1GB" (one gigabyte), "122.45KB" or "700B"
         \b
         min_time integer/float/str: Upload Time should be > min_time
         max_time integer/float/str: Upload Time should be < max_time
@@ -2174,8 +2180,11 @@ def file_remove(ctx, filters, local_only, ask_before_remove):
         min_id integer: File ID should be > min_id
         max_id integer: File ID should be < max_id
         \b
-        min_size integer: File Size should be > min_size
-        max_size integer: File Size should be < max_size
+        min_size integer/str: File Size should be > min_size
+        max_size integer/str: File Size should be < max_size
+        +
+        min_size & max_size can be also specified as string,
+            i.e "1GB" (one gigabyte), "122.45KB" or "700B"
         \b
         min_time integer/float/str: Upload Time should be > min_time
         max_time integer/float/str: Upload Time should be < max_time
@@ -2329,8 +2338,11 @@ def file_open(ctx, filters, locate, propagate, continuously):
         min_id integer: File ID should be > min_id
         max_id integer: File ID should be < max_id
         \b
-        min_size integer: File Size should be > min_size
-        max_size integer: File Size should be < max_size
+        min_size integer/str: File Size should be > min_size
+        max_size integer/str: File Size should be < max_size
+        +
+        min_size & max_size can be also specified as string,
+            i.e "1GB" (one gigabyte), "122.45KB" or "700B"
         \b
         min_time integer/float/str: Upload Time should be > min_time
         max_time integer/float/str: Upload Time should be < max_time
@@ -2429,8 +2441,11 @@ def file_forward(ctx, filters, entity):
         min_id integer: File ID should be > min_id
         max_id integer: File ID should be < max_id
         \b
-        min_size integer: File Size should be > min_size
-        max_size integer: File Size should be < max_size
+        min_size integer/str: File Size should be > min_size
+        max_size integer/str: File Size should be < max_size
+        +
+        min_size & max_size can be also specified as string,
+            i.e "1GB" (one gigabyte), "122.45KB" or "700B"
         \b
         min_time integer/float/str: Upload Time should be > min_time
         max_time integer/float/str: Upload Time should be < max_time
@@ -2533,8 +2548,11 @@ def file_attr_edit(ctx, filters, attribute, local_only):
         min_id integer: File ID should be > min_id
         max_id integer: File ID should be < max_id
         \b
-        min_size integer: File Size should be > min_size
-        max_size integer: File Size should be < max_size
+        min_size integer/str: File Size should be > min_size
+        max_size integer/str: File Size should be < max_size
+        +
+        min_size & max_size can be also specified as string,
+            i.e "1GB" (one gigabyte), "122.45KB" or "700B"
         \b
         min_time integer/float/str: Upload Time should be > min_time
         max_time integer/float/str: Upload Time should be < max_time

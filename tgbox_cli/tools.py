@@ -131,7 +131,7 @@ def format_bytes(size):
     # That's not mine. Thanks to the
     # https://stackoverflow.com/a/49361727
 
-    power, n = 2**10, 0
+    power, n = 10**3, 0
     power_labels = {
         0 : '',
         1: 'K',
@@ -142,6 +142,21 @@ def format_bytes(size):
         size /= power
         n += 1
     return f'{round(size,1)}{power_labels[n]}B'
+
+def formatted_bytes_to_int(formatted: str) -> int:
+    power_labels = {
+        'KB': 1000,
+        'MB': 1e+6,
+        'GB': 1e+9
+    }
+    if formatted[-2:] in power_labels:
+        formatted = float(formatted[:-2]) \
+            * power_labels[formatted[-2:]]
+
+    elif formatted[-1] == 'B':
+        formatted = formatted[:-1]
+
+    return int(formatted)
 
 def sync_async_gen(async_gen: AsyncGenerator):
     """
@@ -200,6 +215,12 @@ def filters_to_searchfilter(filters: tuple) -> tgbox.tools.SearchFilter:
                         filter[1] = datetime.strptime(filter[1], '%d/%m/%y')
 
                     filter[1] = filter[1].timestamp()
+
+            if filter[0] in ('min_size', 'max_size'):
+                # This filters can be also specified as string
+                # size, i.e "1GB" or "112KB" or "100B", etc...
+                if not filter[1].isdigit():
+                    filter[1] = formatted_bytes_to_int(filter[1])
 
             if filter[0] not in current_filter:
                 current_filter[filter[0]] = [filter[1]]
