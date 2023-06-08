@@ -1628,6 +1628,10 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
     help='If specified, will fetch files from RemoteBox'
 )
 @click.option(
+    '--upend', '-u', is_flag=True,
+    help='If specified, will search in reverse order'
+)
+@click.option(
     '--non-interactive', is_flag=True,
     help='If specified, will echo to shell instead of pager'
 )
@@ -1636,11 +1640,13 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
     help='If specified, will search for non-imported files only'
 )
 @click.option(
-    '--upend', '-u', is_flag=True,
-    help='If specified, will search in reverse order'
+    '--bytesize-total', is_flag=True,
+    help='If specified, will calc a total size of filtered files'
 )
 @click.pass_context
-def file_search(ctx, filters, force_remote, non_interactive, non_imported, upend):
+def file_search(
+        ctx, filters, force_remote, non_interactive,
+        non_imported, upend, bytesize_total):
     """List files by selected filters
     
     \b
@@ -1734,6 +1740,8 @@ def file_search(ctx, filters, force_remote, non_interactive, non_imported, upend
             for bfi in sync_async_gen(search_file_gen):
                 yield format_dxbf(bfi)
 
+        box = ctx.obj.drb if force_remote else ctx.obj.dlb
+
         if non_imported:
             iter_over = ctx.obj.drb.search_file(
                 sf=sf, reverse=True,
@@ -1764,9 +1772,26 @@ def file_search(ctx, filters, force_remote, non_interactive, non_imported, upend
                     )
                     echo(formatted)
             echo('')
-        else:
-            box = ctx.obj.drb if force_remote else ctx.obj.dlb
 
+        elif bytesize_total:
+            total_bytes, current_file_count = 0, 0
+
+            echo('')
+            for dlbf in sync_async_gen(box.search_file(sf, cache_preview=False)):
+                total_bytes += dlbf.size
+                current_file_count += 1
+
+                total_formatted = f'[BLUE]{format_bytes(total_bytes)}[BLUE]'
+                current_file = f'[YELLOW]{current_file_count}[YELLOW]'
+
+                echo_text = (
+                    f'''Total [WHITE]files found ({current_file})[WHITE] '''
+                    f'''size is {total_formatted}    \r'''
+                )
+                echo(echo_text, nl=False)
+
+            echo('\n')
+        else:
             sgen = box.search_file(
                 sf=sf, reverse=upend,
                 cache_preview=False
