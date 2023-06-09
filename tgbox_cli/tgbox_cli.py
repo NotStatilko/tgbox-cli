@@ -1565,7 +1565,7 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
             continue
 
         if not file_path:
-            remote_path = current_path.absolute()
+            remote_path = current_path.resolve()
         else:
             remote_path = Path(file_path) / current_path.name
 
@@ -1704,7 +1704,7 @@ def file_search(
                ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
         imported bool: Yield only imported files
-        re       bool: re_search for every bytes filter
+        re       bool: Regex search for every str filter
     \b
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
@@ -1914,7 +1914,7 @@ def file_download(
                ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
         imported bool: Yield only imported files
-        re       bool: re_search for every bytes filter
+        re       bool: Regex search for every str filter
     \b
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
@@ -2227,7 +2227,7 @@ def file_remove(ctx, filters, local_only, ask_before_remove):
                ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
         imported bool: Yield only imported files
-        re       bool: re_search for every bytes filter
+        re       bool: Regex search for every str filter
     \b
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
@@ -2385,7 +2385,7 @@ def file_open(ctx, filters, locate, propagate, continuously):
                ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
         imported bool: Yield only imported files
-        re       bool: re_search for every bytes filter
+        re       bool: Regex search for every str filter
     \b
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
@@ -2488,7 +2488,7 @@ def file_forward(ctx, filters, entity):
                ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
         imported bool: Yield only imported files
-        re       bool: re_search for every bytes filter
+        re       bool: Regex search for every str filter
     \b
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
@@ -2595,7 +2595,7 @@ def file_attr_edit(ctx, filters, attribute, local_only):
                ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
         imported bool: Yield only imported files
-        re       bool: re_search for every bytes filter
+        re       bool: Regex search for every str filter
     \b
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
