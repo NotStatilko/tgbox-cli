@@ -1545,7 +1545,7 @@ def file_upload(
     Upload specified path (file/dir) to the Box
 
     If file was already uploaded but changed (in size)
-    and --update (-u) specified, -- will re-upload.
+    and --no-update is NOT specified, -- will re-upload.
     """
     current_workers = max_workers
     current_bytes = max_bytes
