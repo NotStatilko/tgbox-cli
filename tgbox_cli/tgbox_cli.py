@@ -46,6 +46,8 @@ else:
 
     from time import sleep
     from datetime import datetime
+
+    from os.path import getsize
     from platform import system
 
     from base64 import urlsafe_b64encode
@@ -1519,6 +1521,10 @@ def box_delete(ctx):
     '--cattrs', '-c', help='File\'s CustomAttributes. Format: "key:value key:value"'
 )
 @click.option(
+    '--no-update', is_flag=True,
+    help='If specified, will NOT re-upload file if it was changed (in size)'
+)
+@click.option(
     '--thumb/--no-thumb', default=True,
     help='Add thumbnail or not, boolean'
 )
@@ -1532,9 +1538,15 @@ def box_delete(ctx):
     help='Max amount of bytes uploaded at the same time, default=500000000',
 )
 @ctx_require(dlb=True, drb=True)
-def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
-    """Upload specified path (file/dir) to the Box"""
+def file_upload(
+        ctx, path, file_path, cattrs, no_update,
+        thumb, max_workers, max_bytes):
+    """
+    Upload specified path (file/dir) to the Box
 
+    If file was already uploaded but changed (in size)
+    and --update (-u) specified, -- will re-upload.
+    """
     current_workers = max_workers
     current_bytes = max_bytes
 
@@ -1542,15 +1554,40 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
         tgbox.sync(gather(*to_upload))
         to_upload.clear()
 
-    async def _push_wrapper(push_coro, current_path):
-        # prepare_file will only check that
-        # filesize is < than max allowed,
-        # however, user can be without
-        # premium, so check on push_file
-        # will raise LimitExceeded.
+    async def _push_wrapper(current_path):
         try:
-            await push_coro
+            pf = await ctx.obj.dlb.prepare_file(
+                file = open(current_path,'rb'),
+                file_path = remote_path,
+                cattrs = parsed_cattrs,
+                make_preview = thumb,
+                skip_fingerprint_check = True
+            )
         except tgbox.errors.LimitExceeded as e:
+            echo(f'[YELLOW]{current_path}: {e} Skipping..[YELLOW]')
+            return
+
+        # Standart file upload if dlbf is not exists (from scratch)
+        if not (dlbf := await ctx.obj.dlb.get_file(fingerprint=pf.fingerprint)):
+            file_action = ctx.obj.drb.push_file(pf, Progress(
+                ctx.obj.enlighten_manager, current_path.name).update)
+
+        # File re-uploading (or updating) if file size differ
+        elif not no_update and dlbf and dlbf.size != getsize(current_path):
+            drbf = await ctx.obj.drb.get_file(dlbf.id)
+
+            file_action = ctx.obj.drb.update_file(drbf, pf, Progress(
+                ctx.obj.enlighten_manager, current_path.name).update)
+        else:
+            # Ignore upload if file exists and wasn't changed
+            echo(f'[YELLOW]{current_path} is already uploaded. Skipping...[YELLOW]')
+            return
+        try:
+            await file_action
+        except tgbox.errors.LimitExceeded as e:
+            # prepare_file will only check that filesize is < than max
+            # allowed, however, user can be without premium, so check
+            # on push_file (by actual limit) will raise LimitExceeded.
             echo(f'[YELLOW]{current_path}: {e} Skipping..[YELLOW]')
 
     if path.is_dir():
@@ -1583,21 +1620,8 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
                 raise ValueError('Invalid cattrs!', e) from None
         else:
             parsed_cattrs = None
-        try:
-            pf = tgbox.sync(ctx.obj.dlb.prepare_file(
-                file = open(current_path,'rb'),
-                file_path = remote_path,
-                cattrs = parsed_cattrs,
-                make_preview = thumb
-            ))
-        except tgbox.errors.FingerprintExists:
-            echo(f'[YELLOW]{current_path} is already uploaded. Skipping..[YELLOW]')
-            continue
-        except tgbox.errors.LimitExceeded as e:
-            echo(f'[YELLOW]{current_path}: {e} Skipping..[YELLOW]')
-            continue
 
-        current_bytes -= pf.filesize
+        current_bytes -= getsize(current_path)
         current_workers -= 1
 
         if not all((current_workers > 0, current_bytes > 0)):
@@ -1608,12 +1632,9 @@ def file_upload(ctx, path, file_path, cattrs, thumb, max_workers, max_bytes):
                 return
 
             current_workers = max_workers - 1
-            current_bytes = max_bytes - pf.filesize
+            current_bytes = max_bytes - getsize(current_path)
 
-        push = ctx.obj.drb.push_file(pf, Progress(
-            ctx.obj.enlighten_manager, current_path.name).update)
-
-        to_upload.append(_push_wrapper(push, current_path))
+        to_upload.append(_push_wrapper(current_path))
 
     if to_upload: # If any files left
         try:
