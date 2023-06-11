@@ -573,7 +573,7 @@ def account_connect(ctx, phone):
 )
 @ctx_require(session=True)
 def account_disconnect(ctx, number, log_out):
-    """Disconnect selected Account from Session"""
+    """Disconnect Account from Session"""
 
     if ctx.obj.session['CURRENT_ACCOUNT'] is None:
         echo('[RED]You don\'t have any connected account.[RED]')
@@ -1554,12 +1554,34 @@ def file_upload(
         tgbox.sync(gather(*to_upload))
         to_upload.clear()
 
-    async def _push_wrapper(current_path):
+    async def _push_wrapper(file, file_path, cattrs):
+        fingerprint = tgbox.tools.make_file_fingerprint(
+            mainkey = ctx.obj.dlb.mainkey,
+            file_path = str(remote_path)
+        )
+        # Standart file upload if dlbf is not exists (from scratch)
+        if not (dlbf := await ctx.obj.dlb.get_file(fingerprint=fingerprint)):
+            progressbar = Progress(ctx.obj.enlighten_manager, current_path.name)
+
+            file_action = (ctx.obj.drb.push_file,
+                {'progress_callback': progressbar.update}
+            )
+        # File re-uploading (or updating) if file size differ
+        elif not no_update and dlbf and dlbf.size != getsize(current_path):
+            drbf = await ctx.obj.drb.get_file(dlbf.id)
+            progressbar = Progress(ctx.obj.enlighten_manager, current_path.name)
+
+            file_action = (ctx.obj.drb.update_file,
+                {'rbf': drbf, 'progress_callback': progressbar.update})
+        else:
+            # Ignore upload if file exists and wasn't changed
+            echo(f'[YELLOW]{current_path} is already uploaded. Skipping...[YELLOW]')
+            return
         try:
             pf = await ctx.obj.dlb.prepare_file(
-                file = open(current_path,'rb'),
-                file_path = remote_path,
-                cattrs = parsed_cattrs,
+                file = open(file,'rb'),
+                file_path = file_path,
+                cattrs = cattrs,
                 make_preview = thumb,
                 skip_fingerprint_check = True
             )
@@ -1567,28 +1589,8 @@ def file_upload(
             echo(f'[YELLOW]{current_path}: {e} Skipping..[YELLOW]')
             return
 
-        # Standart file upload if dlbf is not exists (from scratch)
-        if not (dlbf := await ctx.obj.dlb.get_file(fingerprint=pf.fingerprint)):
-            file_action = ctx.obj.drb.push_file(pf, Progress(
-                ctx.obj.enlighten_manager, current_path.name).update)
-
-        # File re-uploading (or updating) if file size differ
-        elif not no_update and dlbf and dlbf.size != getsize(current_path):
-            drbf = await ctx.obj.drb.get_file(dlbf.id)
-
-            file_action = ctx.obj.drb.update_file(drbf, pf, Progress(
-                ctx.obj.enlighten_manager, current_path.name).update)
-        else:
-            # Ignore upload if file exists and wasn't changed
-            echo(f'[YELLOW]{current_path} is already uploaded. Skipping...[YELLOW]')
-            return
-        try:
-            await file_action
-        except tgbox.errors.LimitExceeded as e:
-            # prepare_file will only check that filesize is < than max
-            # allowed, however, user can be without premium, so check
-            # on push_file (by actual limit) will raise LimitExceeded.
-            echo(f'[YELLOW]{current_path}: {e} Skipping..[YELLOW]')
+        file_action[1]['pf'] = pf
+        await file_action[0](**file_action[1])
 
     if path.is_dir():
         iter_over = path.rglob('*')
@@ -1634,7 +1636,12 @@ def file_upload(
             current_workers = max_workers - 1
             current_bytes = max_bytes - getsize(current_path)
 
-        to_upload.append(_push_wrapper(current_path))
+        pw = _push_wrapper(
+            file = current_path,
+            file_path = remote_path,
+            cattrs = parsed_cattrs
+        )
+        to_upload.append(pw)
 
     if to_upload: # If any files left
         try:
