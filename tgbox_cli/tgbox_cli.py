@@ -1557,25 +1557,25 @@ def file_upload(
     async def _push_wrapper(file, file_path, cattrs):
         fingerprint = tgbox.tools.make_file_fingerprint(
             mainkey = ctx.obj.dlb.mainkey,
-            file_path = str(remote_path)
+            file_path = str(file_path)
         )
         # Standart file upload if dlbf is not exists (from scratch)
         if not (dlbf := await ctx.obj.dlb.get_file(fingerprint=fingerprint)):
-            progressbar = Progress(ctx.obj.enlighten_manager, current_path.name)
+            progressbar = Progress(ctx.obj.enlighten_manager, file.name)
 
             file_action = (ctx.obj.drb.push_file,
                 {'progress_callback': progressbar.update}
             )
         # File re-uploading (or updating) if file size differ
-        elif not no_update and dlbf and dlbf.size != getsize(current_path):
+        elif not no_update and dlbf and dlbf.size != getsize(file):
             drbf = await ctx.obj.drb.get_file(dlbf.id)
-            progressbar = Progress(ctx.obj.enlighten_manager, current_path.name)
+            progressbar = Progress(ctx.obj.enlighten_manager, file.name)
 
             file_action = (ctx.obj.drb.update_file,
                 {'rbf': drbf, 'progress_callback': progressbar.update})
         else:
             # Ignore upload if file exists and wasn't changed
-            echo(f'[YELLOW]{current_path} is already uploaded. Skipping...[YELLOW]')
+            echo(f'[YELLOW]{file} is already uploaded. Skipping...[YELLOW]')
             return
         try:
             pf = await ctx.obj.dlb.prepare_file(
@@ -1586,7 +1586,7 @@ def file_upload(
                 skip_fingerprint_check = True
             )
         except tgbox.errors.LimitExceeded as e:
-            echo(f'[YELLOW]{current_path}: {e} Skipping..[YELLOW]')
+            echo(f'[YELLOW]{file}: {e} Skipping..[YELLOW]')
             return
 
         file_action[1]['pf'] = pf
