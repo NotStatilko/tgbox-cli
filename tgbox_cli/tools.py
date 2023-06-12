@@ -77,7 +77,7 @@ class Progress:
 
     def update(self, _, total):
         if not self.total_blocks:
-            BAR = '{desc} | {percentage:3.0f}% |{bar}| [ETA {eta}]'
+            BAR = '{desc} | {percentage:3.0f}% |{bar}| [ETA {eta}] |'
 
             self.total_blocks = total / 524288
 

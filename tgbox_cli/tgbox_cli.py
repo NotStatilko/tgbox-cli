@@ -1525,8 +1525,12 @@ def box_delete(ctx):
     help='If specified, will NOT re-upload file if it was changed (in size)'
 )
 @click.option(
-    '--thumb/--no-thumb', default=True,
-    help='Add thumbnail or not, boolean'
+    '--force-update', is_flag=True,
+    help='If specified, will force re-upload every target file'
+)
+@click.option(
+    '--no-thumb', is_flag=True,
+    help='If specified, will not add thumbnail'
 )
 @click.option(
     '--max-workers', default=10, type=click.IntRange(1,50),
@@ -1540,7 +1544,7 @@ def box_delete(ctx):
 @ctx_require(dlb=True, drb=True)
 def file_upload(
         ctx, path, file_path, cattrs, no_update,
-        thumb, max_workers, max_bytes):
+        force_update, no_thumb, max_workers, max_bytes):
     """
     Upload specified path (file/dir) to the Box
 
@@ -1560,19 +1564,13 @@ def file_upload(
             file_path = str(file_path)
         )
         # Standart file upload if dlbf is not exists (from scratch)
-        if not (dlbf := await ctx.obj.dlb.get_file(fingerprint=fingerprint)):
-            progressbar = Progress(ctx.obj.enlighten_manager, file.name)
+        if not (dlbf := await ctx.obj.dlb.get_file(fingerprint=fingerprint)) and not force_update:
+            file_action = (ctx.obj.drb.push_file, {})
 
-            file_action = (ctx.obj.drb.push_file,
-                {'progress_callback': progressbar.update}
-            )
         # File re-uploading (or updating) if file size differ
-        elif not no_update and dlbf and dlbf.size != getsize(file):
+        elif force_update or not no_update and dlbf and dlbf.size != getsize(file):
             drbf = await ctx.obj.drb.get_file(dlbf.id)
-            progressbar = Progress(ctx.obj.enlighten_manager, file.name)
-
-            file_action = (ctx.obj.drb.update_file,
-                {'rbf': drbf, 'progress_callback': progressbar.update})
+            file_action = (ctx.obj.drb.update_file, {'rbf': drbf})
         else:
             # Ignore upload if file exists and wasn't changed
             echo(f'[YELLOW]{file} is already uploaded. Skipping...[YELLOW]')
@@ -1582,14 +1580,18 @@ def file_upload(
                 file = open(file,'rb'),
                 file_path = file_path,
                 cattrs = cattrs,
-                make_preview = thumb,
+                make_preview = (not no_thumb),
                 skip_fingerprint_check = True
             )
         except tgbox.errors.LimitExceeded as e:
             echo(f'[YELLOW]{file}: {e} Skipping..[YELLOW]')
             return
 
+        progressbar = Progress(ctx.obj.enlighten_manager, file.name)
+
         file_action[1]['pf'] = pf
+        file_action[1]['progress_callback'] = progressbar.update
+
         await file_action[0](**file_action[1])
 
     if path.is_dir():
