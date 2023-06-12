@@ -169,7 +169,7 @@ def ctx_require(**check_ctx_kwargs):
             ctx = click.get_current_context()
             check_ctx(ctx, **check_ctx_kwargs)
 
-            func(ctx, *args, **kwargs)
+            return func(ctx, *args, **kwargs)
 
         return check
 
@@ -1676,7 +1676,7 @@ def file_search(
         ctx, filters, force_remote, non_interactive,
         non_imported, upend, bytesize_total):
     """List files by selected filters
-    
+
     \b
     Available filters:\b
         scope: Define a path as search scope
