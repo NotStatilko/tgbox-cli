@@ -2101,6 +2101,10 @@ def file_download(
     '--id', required=True, type=int,
     help='ID of file to share'
 )
+@click.option(
+    '--directory', '-d', required=True, prompt=True,
+    help='Absolute path of Directory to share'
+)
 @ctx_require(dlb=True)
 def file_share(ctx, requestkey, id):
     """Get a ShareKey from RequestKey to share file"""
@@ -2137,13 +2141,21 @@ def file_share(ctx, requestkey, id):
     help='ID of file to import'
 )
 @click.option(
+    '--propagate', '-p', is_flag=True,
+    help='If specified, will open ALL matched files'
+)
+@click.option(
     '--file-path', '-f', type=Path,
     help='Imported file\'s path.'
 )
 @ctx_require(dlb=True, drb=True)
-def file_import(ctx, key, id, file_path):
-    """Import RemoteBox file to your LocalBox"""
+def file_import(ctx, key, id, propagate, file_path):
+    """Import RemoteBox file to your LocalBox
 
+    Use --propagate option to auto import a
+    bunch of files (if you have a ShareKey of
+    a DirectoryKey).
+    """
     erbf = tgbox.sync(ctx.obj.drb.get_file(
         id, return_imported_as_erbf=True))
 
@@ -2157,17 +2169,49 @@ def file_import(ctx, key, id, file_path):
             key = tgbox.keys.Key.decode(key)
         except tgbox.errors.IncorrectKey:
             echo(f'[RED]Specified Key is invalid[RED]')
-        else:
-            if isinstance(key, tgbox.keys.ShareKey):
-                key = tgbox.keys.make_importkey(
-                    key=ctx.obj.dlb._mainkey,
-                    sharekey=key,
-                    salt=erbf.file_salt
-                )
-            drbf = tgbox.sync(erbf.decrypt(key))
-            tgbox.sync(ctx.obj.dlb.import_file(drbf, file_path))
+            return
 
-            echo(format_dxbf(drbf))
+        if isinstance(key, tgbox.keys.ShareKey):
+            key = tgbox.keys.make_importkey(
+                key=ctx.obj.dlb._mainkey,
+                sharekey=key,
+                salt=erbf.file_salt
+            )
+
+        async def _import_wrap(erbf):
+            try:
+                drbf = await erbf.decrypt(key)
+            except tgbox.errors.AESError:
+                return # Probably not a file of Directory
+
+            await ctx.obj.dlb.import_file(drbf, file_path)
+            echo(format_dxbf(drbf), nl=False)
+
+        echo('\n[YELLOW]Searching for files to import[YELLOW]...')
+
+        # Import first found EncryptedRemoteBoxFile
+        tgbox.sync(_import_wrap(erbf))
+
+        if propagate:
+            IMPORT_STACK, IMPORT_WHEN = [], 100
+
+            iter_over = ctx.obj.drb.files(
+                offset_id=erbf.id, reverse=True,
+                return_imported_as_erbf=True
+            )
+            for erbf in sync_async_gen(iter_over):
+                if len(IMPORT_STACK) == IMPORT_WHEN:
+                    tgbox.sync(gather(*IMPORT_STACK))
+                    IMPORT_STACK.clear()
+
+                if type(erbf) is tgbox.api.DecryptedRemoteBoxFile:
+                    break # All files from shared Dir was imported
+
+                IMPORT_STACK.append(_import_wrap(erbf))
+
+            if IMPORT_STACK: # If any files left
+                tgbox.sync(gather(*IMPORT_STACK))
+            echo('')
 
 @cli.command()
 @click.option(
@@ -2455,13 +2499,17 @@ def file_open(ctx, filters, locate, propagate, continuously):
 @cli.command()
 @click.argument('filters', nargs=-1)
 @click.option(
-    '--entity', '-e', required=True,
-    help='Entity to send file to'
+    '--chat', '-c', required=True, prompt=True,
+    help='Chat to send file to'
+)
+@click.option(
+    '--chat-is-name', is_flag=True,
+    help='Interpret --chat as Chat name and search for it'
 )
 @ctx_require(dlb=True, drb=True, account=True)
-def file_forward(ctx, filters, entity):
+def file_forward(ctx, filters, chat, chat_is_name):
     """
-    Forward files by filters to specified entity
+    Forward files by filters to specified chat
 
     \b
     Available filters:\b
@@ -2531,14 +2579,21 @@ def file_forward(ctx, filters, entity):
         tgbox-cli file-forward scope=/home/non/Documents -e @username
         \b
         # Include flag (will ignore unmatched)
-        tgbox-cli file-forward +i id=22 --entity me
+        tgbox-cli file-forward +i id=22 --chat me
         \b
         # Exclude flag (will ignore matched)
-        tgbox-cli file-forward +e mime=audio --entity @channel
+        tgbox-cli file-forward +e mime=audio --chat @channel
         \b
         You can use both, the ++include and
         ++exclude (+i, +e) in one command.
     """
+    if not filters:
+        echo(
+            '''\n[RED]You didn\'t specified any filter.\n   This '''
+            '''will forward EVERY file from your Box[RED]\n'''
+        )
+        if not click.confirm('Are you TOTALLY sure?'):
+            return
     try:
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
@@ -2546,15 +2601,47 @@ def file_forward(ctx, filters, entity):
     except KeyError as e: # Unknown filters
         echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
     else:
+        try:
+            chat = tgbox.sync(ctx.obj.account.get_entity(chat))
+        except (UsernameNotOccupiedError, UsernameInvalidError, ValueError):
+            if not chat_is_name:
+                echo(f'[YELLOW]Can\'t find specified chat "{chat}"[YELLOW]')
+                return
+
+            for dialogue in sync_async_gen(ctx.obj.account.iter_dialogs()):
+                if chat in dialogue.title and dialogue.is_channel:
+                    chat = dialogue; break
+            else:
+                echo(f'[YELLOW]Can\'t find specified chat "{chat}"[YELLOW]')
+                return
+
         to_forward = ctx.obj.dlb.search_file(sf)
+        FORWARD_STACK, FORWARD_WHEN = [], 100
+
+        def _forward(stack: list):
+            forward = ctx.obj.account.forward_messages(
+                entity=chat,
+                messages=[dlbf.id for dlbf in stack],
+                from_peer=ctx.obj.drb.box_channel
+            )
+            tgbox.sync(forward)
+
+            box_name = chat.title.split(': ',1)[-1]
+            for dlbf in stack:
+                echo(f'[GREEN]ID{dlbf.id}: {dlbf.file_name}: was forwarded to {box_name}[GREEN]')
+
+        echo('[YELLOW]\nSearching files to forward...[YELLOW]\n')
 
         for dlbf in sync_async_gen(to_forward):
-            drbf = tgbox.sync(ctx.obj.drb.get_file(dlbf.id))
-            try:
-                tgbox.sync(ctx.obj.account.forward_messages(entity, drbf.message))
-                echo(f'[GREEN]ID{drbf.id}: {drbf.file_name}: was forwarded to {entity}[GREEN]')
-            except (UsernameNotOccupiedError, UsernameInvalidError, ValueError):
-                echo(f'[YELLOW]Can not find entity "{entity}"[YELLOW]')
+            if len(FORWARD_STACK) == FORWARD_WHEN:
+                _forward(FORWARD_STACK)
+                FORWARD_STACK.clear()
+
+            FORWARD_STACK.append(dlbf)
+
+        if FORWARD_STACK: # If any left
+            _forward(FORWARD_STACK)
+        echo('')
 
 @cli.command()
 @click.argument('filters', nargs=-1)
@@ -2730,6 +2817,67 @@ def dir_list(ctx):
         tgbox.sync(dir.lload(full=True))
         echo(str(dir))
 
+@cli.command()
+@click.option(
+    '--directory', '-d', required=True, prompt=True,
+    help='Absolute path of Directory to forward'
+)
+@click.option(
+    '--chat', '-c', required=True, prompt=True,
+    help='Chat to send file to'
+)
+@click.option(
+    '--chat-is-name', is_flag=True,
+    help='Interpret --chat as Chat name and search for it'
+)
+@ctx_require(dlb=True, drb=True, account=True)
+def dir_forward(ctx, directory, chat, chat_is_name):
+    """
+    Forward files from dir to specified chat
+    """
+    dlbd = tgbox.sync(ctx.obj.dlb.get_directory(directory))
+
+    if not dlbd:
+        echo(f'[RED]There is no dir "{directory}" in LocalBox.[RED]')
+    else:
+        filters = [f'scope={directory}', f'file_path={directory}$', 're=True']
+        ctx.invoke(file_forward, filters=filters, chat=chat, chat_is_name=chat_is_name)
+
+@cli.command()
+@click.option(
+    '--requestkey', '-r',
+    help='Requester\'s RequestKey'
+)
+@click.option(
+    '--directory', '-d', required=True, prompt=True,
+    help='Absolute path of Directory to share'
+)
+@ctx_require(dlb=True)
+def dir_share(ctx, requestkey, directory):
+    """Get a ShareKey from RequestKey to share dir"""
+
+    dlbd = tgbox.sync(ctx.obj.dlb.get_directory(directory))
+
+    if not dlbd:
+        echo(f'[RED]There is no dir "{directory}" in LocalBox.[RED]')
+    else:
+        requestkey = requestkey if not requestkey \
+            else tgbox.keys.Key.decode(requestkey)
+
+        sharekey = dlbd.get_sharekey(requestkey)
+
+        if not requestkey:
+            echo(
+                '''\n[RED]You didn\'t specified requestkey.\n   You '''
+                '''will receive decryption key IN PLAIN[RED]\n'''
+            )
+            if not click.confirm('Are you TOTALLY sure?'):
+                return
+        echo(
+            '''\nSend this Key to the Box requester:\n'''
+            f'''    [WHITE]{sharekey.encode()}[WHITE]\n'''
+        )
+
 # ========================================================= #
 # = Commands to manage TGBOX logger ======================= #
 
@@ -2739,33 +2887,33 @@ def dir_list(ctx):
     help='If specified, will open file path in file manager'
 )
 def logfile_open(locate):
-    """Open TGBOX-CLI log file with the default app"""
+    """Open logfile with default app"""
     click.launch(str(logfile), locate=locate)
 
 @cli.command()
 def logfile_wipe():
-    """Clear TGBOX-CLI log file"""
+    """Clear all logfile entries"""
     open(logfile,'w').close()
     echo('[GREEN]Done.[GREEN]')
 
 @cli.command()
 def logfile_size():
-    """Return size of TGBOX-CLI log file"""
+    """Get bytesize of logfile"""
     size = format_bytes(logfile.stat().st_size)
     echo(f'[WHITE]{str(logfile)}[WHITE]: {size}')
 
 @cli.command()
-@click.argument('entity', nargs=-1)
+@click.argument('chat', nargs=-1)
 @ctx_require(account=True)
-def logfile_send(ctx, entity):
+def logfile_send(ctx, chat):
     """
-    Send logfile to the specified entity
+    Send logfile to Telegram chat
 
     \b
     Example:\b
         tgbox-cli logfile-send @username
     """
-    for e in entity:
+    for e in chat:
         tgbox.sync(ctx.obj.account.send_file(e, logfile))
         echo(f'[WHITE]Logfile has been sent to[WHITE] [BLUE]{e}[BLUE]')
 
