@@ -1735,6 +1735,8 @@ def file_search(
         \b
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
+
+        non_recursive_scope bool: Ignore scope subdirectories
     \b
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
@@ -1945,6 +1947,8 @@ def file_download(
         \b
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
+
+        non_recursive_scope bool: Ignore scope subdirectories
     \b
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
@@ -2302,6 +2306,8 @@ def file_remove(ctx, filters, local_only, ask_before_remove):
         \b
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
+
+        non_recursive_scope bool: Ignore scope subdirectories
     \b
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
@@ -2460,6 +2466,8 @@ def file_open(ctx, filters, locate, propagate, continuously):
         \b
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
+
+        non_recursive_scope bool: Ignore scope subdirectories
     \b
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
@@ -2567,6 +2575,8 @@ def file_forward(ctx, filters, chat, chat_is_name):
         \b
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
+
+        non_recursive_scope bool: Ignore scope subdirectories
     \b
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
@@ -2602,6 +2612,7 @@ def file_forward(ctx, filters, chat, chat_is_name):
         echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
     else:
         try:
+            chat_name = chat
             chat = tgbox.sync(ctx.obj.account.get_entity(chat))
         except (UsernameNotOccupiedError, UsernameInvalidError, ValueError):
             if not chat_is_name:
@@ -2610,6 +2621,7 @@ def file_forward(ctx, filters, chat, chat_is_name):
 
             for dialogue in sync_async_gen(ctx.obj.account.iter_dialogs()):
                 if chat in dialogue.title and dialogue.is_channel:
+                    chat_name = dialogue.title.split(': ',1)[-1]
                     chat = dialogue; break
             else:
                 echo(f'[YELLOW]Can\'t find specified chat "{chat}"[YELLOW]')
@@ -2626,9 +2638,8 @@ def file_forward(ctx, filters, chat, chat_is_name):
             )
             tgbox.sync(forward)
 
-            box_name = chat.title.split(': ',1)[-1]
             for dlbf in stack:
-                echo(f'[GREEN]ID{dlbf.id}: {dlbf.file_name}: was forwarded to {box_name}[GREEN]')
+                echo(f'[GREEN]ID{dlbf.id}: {dlbf.file_name}: was forwarded to {chat_name}[GREEN]')
 
         echo('[YELLOW]\nSearching files to forward...[YELLOW]\n')
 
@@ -2713,6 +2724,8 @@ def file_attr_edit(ctx, filters, attribute, local_only):
         \b
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
+
+        non_recursive_scope bool: Ignore scope subdirectories
     \b
     See tgbox.readthedocs.io/en/indev/
         tgbox.html#tgbox.tools.SearchFilter
@@ -2840,7 +2853,7 @@ def dir_forward(ctx, directory, chat, chat_is_name):
     if not dlbd:
         echo(f'[RED]There is no dir "{directory}" in LocalBox.[RED]')
     else:
-        filters = [f'scope={directory}', f'file_path={directory}$', 're=True']
+        filters = [f'scope={directory}', 'non_recursive_scope=True']
         ctx.invoke(file_forward, filters=filters, chat=chat, chat_is_name=chat_is_name)
 
 @cli.command()
