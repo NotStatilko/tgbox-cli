@@ -16,7 +16,7 @@
     The CLI (or a Command-Line Interface) is an interface
     that operates with the text input, mostly from the
     user. Unlike the GUI (which is a Graphical Interface),
-    all interactions with the program is hidden behind the
+    all interactions with the program are hidden behind the
     raw commands. That's it! You don't even need to use
     your mouse! Using a CMD may seem kinda hard for a green
     users, so if you one of those, -- take a time to read
@@ -255,7 +255,7 @@
         local Box, decrypt file's attributes and compare them with your
         [CYAN]filters[CYAN]. While this isn't a problem for small Box, the ones who
         have a monster-size ([WHITE]many small uploads[WHITE]) containers may end up
-        in waiting for minute (or [WHITE]longer[WHITE]) to complete search process.
+        waiting for minute (or [WHITE]longer[WHITE]) to complete search process.
         |
         The TGBOX [WHITE]effectually[WHITE] storing abstract directories that code
         makes from every unique file path of every file you uploaded;
@@ -265,7 +265,7 @@
         Let's imagine that you have a [WHITE]*many*[WHITE] files in your Box. You
         want to find a nice track by name "[WHITE]Spit[WHITE]" of amazing singer,
         [WHITE]Poppy[WHITE]. You totally know that it has the word "[WHITE]Spit[WHITE]" in
-        name and also you sure that it's somewhere in the
+        name and also you're sure that it's somewhere in the
         [WHITE]/home/user/Music/[WHITE] directory (has this file path).
         |
         You can make the next request to the [BLUE]file-search[BLUE] command:
@@ -296,7 +296,7 @@
         You can specify [GREEN]--locate[GREEN] flag to open downloaded file
         in a file explorer (system default), as well as the
         [GREEN]--show[GREEN] to open it (by the system default app by the
-        mime type). The last can be useful i.e., to watch big
+        mime type). The last can be useful, i.e., to watch big
         video while it's being downloaded. [YELLOW]Make sure to use[YELLOW]
         [YELLOW]it on a single download[YELLOW], otherwise it can be a [WHITE]mess[WHITE].
 
@@ -396,7 +396,7 @@
         [WHITE]Admin with zero rights[WHITE] (all rights off). Ask
         the Box owner to make you such Admin. Note
         that you need to sync [WHITE]within 48 hours[WHITE] after
-        file was uploaded, because later Log will be cleared.
+        the file was uploaded, because later Log will be cleared.
 
         Alternatively, you can make a [CYAN]Deep Sync[CYAN]. It
         can be enabled by specifying the [GREEN]--deep[GREEN] flag.
@@ -449,7 +449,7 @@
 
         If you want to import file from other Box, [WHITE]make sure[WHITE]
         [WHITE]not to lose your LocalBox[WHITE] (DB file), because it's
-        only place where we store imported file keys. You
+        the only place where we store imported file keys. You
         will need to [WHITE]request for file again to restore it[WHITE].
 
         [MAGENTA]|||||| Directory Sharing ||||||[MAGENTA]
@@ -476,8 +476,8 @@
         [WHITE]Step one[WHITE]: [RED]Alice[RED] is sure about dir she wants to share,
         that is [WHITE]/home/alice/Arts[WHITE]. To share all files from it,
         she will invoke [BLUE]dir-forward[BLUE] command. This command
-        requires the [GREEN]--directory[GREEN] and [GREEN]--chat[GREEN] options. First
-        one is obvious, the second should be a [WHITE]Telegram[WHITE]
+        requires the [GREEN]--directory[GREEN] and [GREEN]--chat[GREEN] options. The
+        First one is obvious, the second should be a [WHITE]Telegram[WHITE]
         [WHITE]chat[WHITE] to forward. [RED]Alice[RED] can specify it as [CYAN]Bob[CYAN]'s
         [WHITE]@username[WHITE] (in this case, [CYAN]Bob[CYAN] will need to forward
         all received files to his Box by himself) or [CYAN]Bob[CYAN]
@@ -494,7 +494,7 @@
             This will search for ([WHITE]first[WHITE]) Channel with "BobBox"
             name and will forward all target dir files to it;
         [BRIGHT_BLACK]*[BRIGHT_BLACK]
-        [WHITE]Step two[WHITE]: [RED]Alice[RED] succesfully forwarded her files
+        [WHITE]Step two[WHITE]: [RED]Alice[RED] successfully forwarded her files
         to [CYAN]Bob[CYAN]'s [WHITE]RemoteBox[WHITE]. Now [CYAN]Bob[CYAN] will need to use a
         [BLUE]file-search[BLUE] command with [GREEN]--non-imported[GREEN] flag and
         take [WHITE]RequestKey[WHITE] for [YELLOW]the latest one[YELLOW] (with the
@@ -527,7 +527,7 @@
         unique Directory [WHITE]has its own DirectoryKey[WHITE], thus,
         [WHITE]should be shared separately[WHITE]. By making a [WHITE]ShareKey[WHITE]
         of [WHITE]DirectoryKey[WHITE], [RED]Giver[RED] [YELLOW]grants access to every[YELLOW]
-        [YELLOW]existen AND future file that will be attached[YELLOW]
+        [YELLOW]existing AND future file that will be attached[YELLOW]
         [YELLOW]to this directory[YELLOW] to [CYAN]Requester[CYAN] (if [CYAN]Requester[CYAN] has
         direct access to [RED]Giver[RED]'s [WHITE]RemoteBox[WHITE] contents). If
         you don't want this, use [BLUE]file-share[BLUE] command instead.
@@ -535,7 +535,7 @@
         See a [WHITE]TGBOX docs[WHITE] for more info about [WHITE]Protocol[WHITE].
 
         [WHITE]2[WHITE]/
-        The [BLUE]dir-forward[BLUE] is a some kind of [WHITE]syntatic sugar[WHITE]
+        The [BLUE]dir-forward[BLUE] is a some kind of [WHITE]syntactic sugar[WHITE]
         over the [BLUE]file-forward[BLUE] command. It is in [WHITE]CLI[WHITE] to
         make a [RED]Giver[RED]'s routine easier. As TGBOX Protocol
         [WHITE]doesn't support sharing subdirectories[WHITE], one [WHITE]should[WHITE]
@@ -553,7 +553,7 @@
         or [BRIGHT_BLUE]FILE_PATH_MAX[BRIGHT_BLUE], which specify [WHITE]the max length of file[WHITE]
         [WHITE]path[WHITE]. You probably [YELLOW]don't need to change them[YELLOW], because
         it [YELLOW]may break compatibility[YELLOW] with Boxes of other people:
-        for example, to share file, recepient [WHITE]will need[WHITE] to have
+        for example, to share file, recipient [WHITE]will need[WHITE] to have
         [WHITE]the same[WHITE] (or more) METADATA_MAX/FILE_PATH_MAX.
 
         By default, [BRIGHT_BLUE]METADATA_MAX[BRIGHT_BLUE]=[WHITE]1000000[WHITE] (1MB) and the
@@ -606,7 +606,7 @@
         app, [BLUE]logfile-size[BLUE] will print the total size of Log file,
         the [BLUE]logfile-wipe[BLUE] will clear it, and [BLUE]logfile-send[BLUE] will
         allow you to send logfile to [WHITE]any[WHITE] Telegram chat. Log file
-        [WHITE]will never stores any sensitive data[WHITE] (feel free to check
+        [WHITE]will never store any sensitive data[WHITE] (feel free to check
         it). Also, size of Log file [WHITE]may rise over time[WHITE]. Use
         the already mentioned command to completely empty it.
 
@@ -637,7 +637,7 @@
 
         The TGBOX-CLI has a few hidden commands. For example,
         there is [BLUE]sk-gen[BLUE], which generates [WHITE]SessionKey[WHITE] used to save
-        state of current CLI session. The [BLUE]sk-gen[BLUE] is presented on the
+        the state of the current CLI session. The [BLUE]sk-gen[BLUE] is presented on the
         list of commands in the [BLUE]cli-init[BLUE]. There is also [BLUE]phrase-gen[BLUE],
         which generates a number of [GREEN]--words[GREEN] that can be used as
         Box phrase (-> [WHITE]make_basekey[WHITE] -> [WHITE]BaseKey[WHITE]).
@@ -645,7 +645,7 @@
         The most interesting (for developers :) one is the [BLUE]python[BLUE]
         command. It can start an [WHITE]Interactive Python Interpreter[WHITE] with
         the TGBOX-CLI [WHITE]globals()[WHITE]. You can use this command to make
-        a direct access to the [WHITE]DecryptedLocalBox[WHITE] or [WHITE]DecryptedRemoteBox[WHITE]
+        direct access to the [WHITE]DecryptedLocalBox[WHITE] or [WHITE]DecryptedRemoteBox[WHITE]
         objects (via [WHITE]Objects[WHITE] variable) and [WHITE]manually[WHITE] do things to TGBOX.
         |
         The [BLUE]python[BLUE] command also allows users to [WHITE]execute some scripts[WHITE]
@@ -691,16 +691,16 @@
 
 [WHITE]THE END & THANKS[WHITE]
     This is it! A finish of this README text! I hope [WHITE]this[WHITE] will
-    give you some useful understanding of this CLI app usage
+    give you some useful understanding of this CLI app usage,
     so you can use it on expert level! Thanks to You, the
     human in front of this screen! (Don't tell me you're
-    an AI robot, I don't believe in fairy tales:)
+    an AI robot, I don't believe in fairy tales;)
 
     Thanks to all involved projects, on which
-    TGBOX, and its CLI version were built: the
+    TGBOX and its CLI version were built: the
     Telegram, Telethon, Crypto libs devs, the
     AIOSqlite devs and *MANY* others. See full
-    list of projects  TGBOX use on the GitHub
+    list of projects TGBOX use on the GitHub
     page: [BLUE]github.com/NonProjects/tgbox[BLUE]
 
     Thanks to all people who inspire me,
