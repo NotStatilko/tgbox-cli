@@ -6,7 +6,7 @@
     TGBOX (TelegramBox) is a non-official API to the encrypted
     cloud storage around the Telegram messenger written on
     a Python programming language by me, author of this
-    CLI app! In sake of a DRY principle we will not cover
+    CLI app! In sake of a DRY principle, we will not cover
     here API documentation. If you wonder what is a TGBOX
     in depth, then feel free to check the docs:
         [BLUE]tgbox.readthedocs.io/en/latest/index.html[BLUE]
@@ -15,8 +15,8 @@
 [WHITE]What should you know about CLI design[WHITE]
     The CLI (or a Command-Line Interface) is an interface
     that operates with the text input, mostly from the
-    user. Unlike the GUI (which is Graphical Interface),
-    all interaction with the program are hidden behind the
+    user. Unlike the GUI (which is a Graphical Interface),
+    all interactions with the program is hidden behind the
     raw commands. That's it! You don't even need to use
     your mouse! Using a CMD may seem kinda hard for a green
     users, so if you one of those, -- take a time to read
@@ -24,7 +24,7 @@
         [BLUE]en.wikipedia.org/wiki/Command-line_interface[BLUE]
 
 [WHITE]Working with TGBOX-CLI[WHITE]
-    Builded TGBOX-CLI (as .EXE or just with Python) internally
+    TGBOX-CLI App (as .EXE or just with Python) internally
     doesn't change while working with -- all data is stored
     inside the produced by the API files (LocalBox), so you
     may remove the *executable* at any time, this will not
@@ -33,7 +33,7 @@
     TGBOX-CLI is a portable: you may drop the .EXE file
     to your USB flash drive and run on any supported OS.
 
-    The Local database (LocalBox) store encrypted by your
+    The Local database (LocalBox) stores encrypted by your
     key data. Feel free to save it in a place that can't
     be trusted. [RED]Make sure to use a good encryption key[RED].
 
@@ -51,9 +51,9 @@
         [BRIGHT_WHITE]TGBOX_CLI_NOCOLOR[BRIGHT_WHITE]: any value will disable colored output
         [BRIGHT_WHITE]TGBOX_CLI_LOGFILE[BRIGHT_WHITE]: a full path to logging file
         [BRIGHT_WHITE]TGBOX_CLI_LOGLEVEL[BRIGHT_WHITE]: setup logging level (DEBUG/INFO/...etc)
-        [BRIGHT_WHITE]TGBOX_CLI_SK[BRIGHT_WHITE]: SessionKey, will be installed on initialization
+        [BRIGHT_WHITE]TGBOX_CLI_SK[BRIGHT_WHITE]: SessionKey. Will be installed on initialization
 
-    [BRIGHT_BLACK]! Ordinary users may only need the first var to setup Proxy[BRIGHT_BLACK]
+    [BRIGHT_BLACK]! Ordinary users may only need the first var to set up Proxy[BRIGHT_BLACK]
     [BRIGHT_BLACK]  and TGBOX_CLI_SHOW_PASSWORD to make input visible[BRIGHT_BLACK]
 
 [WHITE]COMMANDS & USAGE[WHITE]
@@ -62,14 +62,14 @@
     Try to run a TGBOX-CLI without arguments:
         [BRIGHT_WHITE]tgbox-cli[BRIGHT_WHITE]
 
-    As a result you should see a list of commands. If
+    As a result, you should see a list of commands. If
     you see an error with text something like "Sorry,
     we don't know such program/file" then locate to
     a folder with executable, open CMD in it and run
     & try once again.
 
     You can use a [GREEN]--help[GREEN] option with every command
-    to get a detailed information about them. Let's
+    to get detailed information about them. Let's
     take a look at first command: the [BLUE]cli-init[BLUE],
     which activates environment for a TGBOX-CLI app:
         [BRIGHT_WHITE]tgbox-cli cli-init --help[BRIGHT_WHITE]
@@ -90,14 +90,14 @@
 
         This will give you commands for session initialization.
         Write to your terminal proposed ones. Session will
-        store your encryption keys so you don't need to
+        store your encryption keys, so you don't need to
         enter it every time. Your session will be destroyed
         when you will close your command line.
 
         [RED]We encrypt your Box keys and some other sensitive[RED]
-        [RED]information used in session with TGBOX_CLI_SK key. It[RED]
+        [RED]information used in session with a TGBOX_CLI_SK key. It[RED]
         [RED]is stored in the environment variables, so ANY program[RED]
-        [RED]you will run in initialized CMD may recieve a FULL[RED]
+        [RED]you will run in initialized CMD may receive a FULL[RED]
         [RED]access to all your keys. To prevent this, always use[RED]
         [RED]a *new* command line instance and DON'T use anything[RED]
         [RED]except the TGBOX-CLI and system tools in initialized CMD.[RED]
@@ -112,7 +112,7 @@
             [BRIGHT_WHITE]tgbox-cli account-connect[BRIGHT_WHITE]
 
         This command will prompt you for phone number linked to
-        your Telegram account, login code and password.
+        your Telegram account, login code, and password.
 
         You can connect as many accounts as you want,
         as well as switch between them with the simple
@@ -123,12 +123,12 @@
 
         [MAGENTA]|||||| Making Box ||||||[MAGENTA]
 
-        You already connected account? Well, it's time to make your
+        You already connected an account? Well, it's time to make your
         first Box with the new [BLUE]box-make[BLUE] command! Try this:
             [BRIGHT_WHITE]tgbox-cli box-make[BRIGHT_WHITE]
 
         [BLUE]box-make[BLUE] command without any [GREEN]options[GREEN] will prompt you
-        firstly for name of your new Box. Let's try to specify
+        firstly for the name of your new Box. Let's try to specify
         it with [GREEN]option[GREEN], so you can understand how it works:
             [BRIGHT_WHITE]tgbox-cli box-make --box-name=MyBox[BRIGHT_WHITE]
 
@@ -139,23 +139,23 @@
             [BRIGHT_WHITE]tgbox-cli box-make -b=MyBox[BRIGHT_WHITE]
 
         [BRIGHT_BLACK]In this README we will write all options in a long variant,[BRIGHT_BLACK]
-        [BRIGHT_BLACK]i believe that this will be more easy to learn. Keep in mind[BRIGHT_BLACK]
+        [BRIGHT_BLACK]I believe that this will be easier to learn. Keep in mind[BRIGHT_BLACK]
         [BRIGHT_BLACK]that you can express them in a short way too![BRIGHT_BLACK]
 
-        In the next step the TGBOX-CLI will offer you a randomly
+        In the next step, the TGBOX-CLI will offer you a randomly
         generated passphrase. You can accept it or specify your
         own. If your choice is a second option, then [RED]make sure
         to specify a strong encryption password[RED], because your
         LocalBox will store a [RED]Telegram session[RED] and file info. The
-        key generation process wil require you to give a [RED]1GB of RAM[RED]
-        for a couple of seconds. You can decrease amount or make it
+        key generation process will require you to give a [RED]1GB of RAM[RED]
+        for a couple of seconds. You can decrease the amount or make it
         even bigger with the [BLUE]box-make[BLUE] command [GREEN]options[GREEN]. Setting
-        [YELLOW]lower amounts of MB per generation will make bruteforcing[YELLOW]
+        [YELLOW]lower amounts of MB per generation will make brute-forcing[YELLOW]
         [YELLOW]a more easy deal[YELLOW], change it only if you're understand
-        this. [YELLOW]Make sure to have a free RAM[YELLOW] if you're have an old
+        this. [YELLOW]Make sure to have a free RAM[YELLOW] if you're having an old
         machine, because this may freeze it down until reboot.
 
-        As a result of [BLUE]box-make[BLUE] command you should receive a
+        As a result of [BLUE]box-make[BLUE] command, you should receive a
         LocalBox file on your computer and private channel (
         the RemoteBox) on your Telegram account. You don't
         need to directly work with RemoteBox at all. All you
@@ -181,10 +181,10 @@
         folder and TGBOX-CLI will upload all dirs/files from it.
 
         [YELLOW]Please note that uploading one big file is always better[YELLOW]
-        [YELLOW]than a thousands of small[YELLOW] because we're working around the
+        [YELLOW]than a thousand of small[YELLOW] because we're working around the
         Telegram messenger, and [WHITE]not[WHITE] over the real file server. You
         may end up with a Box that will be really hard to work on
-        if your channel will contain i.e 100,000 files or even more (
+        if your channel will contain i.e. 100,000 files or even more (
         there is even limit on messages, 1M! This is not a challenge :).
         |
         [YELLOW]If you have a really big amount of small files[YELLOW], --
@@ -198,9 +198,16 @@
         to every file from the folder Scripts/ on upload,
         so you can later search for them with a [BLUE]command[BLUE].
 
+        If the file was already pushed to RemoteBox and was changed
+        since then ([WHITE]in size[WHITE]), the [BLUE]file-upload[BLUE] will [WHITE]auto update[WHITE]
+        (make a [WHITE]full re-upload[WHITE] of) it. You can disable this by
+        specifying [GREEN]--no-update[GREEN] flag on [BLUE]file-upload[BLUE]. There is
+        also the [GREEN]--force-update[GREEN] flag, which will force to
+        update every target file (from [GREEN]--path[GREEN]) on upload.
+
         Those who want to control file uploading at expert
         level should know about [WHITE]balancing[WHITE]. In a theory, we
-        can upload simultaneously as much files as we want,
+        can upload simultaneously as many files as we want,
         but in reality the Telegram servers [WHITE]will not like[WHITE]
         thousands of requests per second, which means only
         one -- the flood wait error. To omit this, we limit
@@ -219,7 +226,7 @@
 
         [MAGENTA]|||||| Searching Files ||||||[MAGENTA]
 
-        After you uploaded some files you may list them, try:
+        After you upload some files, you may list them, try:
             [BRIGHT_WHITE]tgbox-cli file-search[BRIGHT_WHITE]
 
         [BLUE]file-search[BLUE] without any [CYAN]filters[CYAN] will return you an
@@ -289,7 +296,7 @@
         You can specify [GREEN]--locate[GREEN] flag to open downloaded file
         in a file explorer (system default), as well as the
         [GREEN]--show[GREEN] to open it (by the system default app by the
-        mime type). The last can be useful i.e to watch big
+        mime type). The last can be useful i.e., to watch big
         video while it's being downloaded. [YELLOW]Make sure to use[YELLOW]
         [YELLOW]it on a single download[YELLOW], otherwise it can be a [WHITE]mess[WHITE].
 
@@ -338,7 +345,7 @@
         [MAGENTA]|||||| Box Sharing ||||||[MAGENTA]
 
         Let's assume that we have two friends: the [RED]A[RED]lice
-        and [CYAN]B[CYAN]ob. [RED]Alice[RED] want to share her Box with [CYAN]Bob[CYAN].
+        and [CYAN]B[CYAN]ob. [RED]Alice[RED] wants to share her Box with [CYAN]Bob[CYAN].
 
         [WHITE]Step one[WHITE]: [RED]Alice[RED] [WHITE]should add[WHITE] [CYAN]Bob[CYAN] to her RemoteBox
         [WHITE]Telegram channel[WHITE] and [YELLOW]optionally[YELLOW] grant some admin
@@ -385,39 +392,39 @@
         will try to use a [CYAN]Fast Sync[CYAN]: the synchronization
         [WHITE]from the[WHITE] Telegram Channel [WHITE]Admin Log[WHITE]; obviously
         this will require You [WHITE]to have admin rights[WHITE]; or,
-        to be more specific, You must to be [WHITE]at least[WHITE]
+        to be more specific, You must be [WHITE]at least[WHITE]
         [WHITE]Admin with zero rights[WHITE] (all rights off). Ask
         the Box owner to make you such Admin. Note
         that you need to sync [WHITE]within 48 hours[WHITE] after
-        file was uploaded, cuz later Log will be cleared.
+        file was uploaded, because later Log will be cleared.
 
         Alternatively, you can make a [CYAN]Deep Sync[CYAN]. It
         can be enabled by specifying the [GREEN]--deep[GREEN] flag.
 
         The [BLUE]box-sync[BLUE] [GREEN]--deep[GREEN] without additional options
         will check [WHITE]every file[WHITE] in RemoteBox and compare it
-        with one from LocalBox. Typically we [WHITE]don't[WHITE]
+        with one from LocalBox. Typically, we [WHITE]don't[WHITE]
         need a full synchronization, because it can be
-        [WHITE]really[WHITE] slow and useless. We can track a state of
+        [WHITE]really[WHITE] slow and useless. We can track the state of
         our LocalBox and RemoteBox with the [BLUE]file-last-id[BLUE]
         command. If your remote is ahead, use a
         [GREEN]--start-from-id[GREEN] on [BLUE]box-sync[BLUE] and specify it as
         last file ID in your LocalBox. This will
-        download all info about latest pushed files.
+        download all info about the latest pushed files.
 
         [MAGENTA]|||||| File Sharing ||||||[MAGENTA]
 
         Taking into account the previous example of [MAGENTA]Box Sharing[MAGENTA],
         let's assume that this time [RED]Alice[RED] wants to share one of
         the files with her well-known friend, [CYAN]Bob[CYAN]. Every file in
-        TGBOX has it's own, [WHITE]unique[WHITE] FileKey, which is a result of
+        TGBOX has its own, [WHITE]unique[WHITE] FileKey, which is a result of
         SHA256 over MainKey and FileSalt, so [RED]Alice[RED] can easily
         disclose encrypted files from her Box [WHITE]without[WHITE] fear that
         this will give some information about [WHITE]secret[WHITE] MainKey to [CYAN]Bob[CYAN];
 
         To share file, [RED]Alice[RED] & [CYAN]Bob[CYAN] should go through these steps:
         [BRIGHT_BLACK]*[BRIGHT_BLACK]
-        [WHITE]Step one[WHITE]: [RED]Alice[RED] need to decide which file she want to share
+        [WHITE]Step one[WHITE]: [RED]Alice[RED] need to decide which file she wants to share
         with [CYAN]Bob[CYAN], then, [WHITE]forward it[WHITE] to [CYAN]Bob[CYAN] from her RemoteBox. She
         can use [BLUE]file-forward[BLUE] command or do it from Telegram;
         [BRIGHT_BLACK]|[BRIGHT_BLACK]
@@ -441,19 +448,111 @@
         [GREEN]Done![GREEN]
 
         If you want to import file from other Box, [WHITE]make sure[WHITE]
-        [WHITE]not to lost your LocalBox[WHITE] (DB file), because it's
+        [WHITE]not to lose your LocalBox[WHITE] (DB file), because it's
         only place where we store imported file keys. You
         will need to [WHITE]request for file again to restore it[WHITE].
+
+        [MAGENTA]|||||| Directory Sharing ||||||[MAGENTA]
+
+        Instead of sharing multiply files separately, [RED]Alice[RED] can
+        share with [CYAN]Bob[CYAN] an [WHITE]entire Directory[WHITE]. This is pretty
+        similar to the [MAGENTA]File Sharing[MAGENTA], but make use of the two
+        new commands: the [BLUE]dir-forward[BLUE] & [BLUE]dir-share[BLUE].
+
+        The TGBOX Protocol [WHITE]can not share subdirectories[WHITE]. So,
+        for example, if [RED]Alice[RED] decides to share all arts
+        from her abstract Box folder [WHITE]/home/alice/Arts[WHITE], then
+        using the next commands will only affect files that
+        placed [WHITE]directly[WHITE] in [WHITE]/home/alice/Arts[WHITE] folder. Files
+        from the (i.e) [WHITE]/home/alice/Arts[WHITE][BRIGHT_BLACK]/Cats[BRIGHT_BLACK] will be ignored.
+
+        [YELLOW]Every nested directory should be shared separately.[YELLOW]
+
+        So, [RED]Alice[RED] has a directory [WHITE]/home/alice/Arts[WHITE] with
+        many arts in it. Making a ShareKey for each file and
+        sharing it separately (as in [MAGENTA]File Sharing[MAGENTA]) can be
+        really annoying. See a use of the [BLUE]dir-share[BLUE] command:
+
+        [WHITE]Step one[WHITE]: [RED]Alice[RED] is sure about dir she wants to share,
+        that is [WHITE]/home/alice/Arts[WHITE]. To share all files from it,
+        she will invoke [BLUE]dir-forward[BLUE] command. This command
+        requires the [GREEN]--directory[GREEN] and [GREEN]--chat[GREEN] options. First
+        one is obvious, the second should be a [WHITE]Telegram[WHITE]
+        [WHITE]chat[WHITE] to forward. [RED]Alice[RED] can specify it as [CYAN]Bob[CYAN]'s
+        [WHITE]@username[WHITE] (in this case, [CYAN]Bob[CYAN] will need to forward
+        all received files to his Box by himself) or [CYAN]Bob[CYAN]
+        can invite [RED]Alice[RED] to his [WHITE]Box[WHITE] and grant her
+        Admin rights (only "[WHITE]Post Messages[WHITE]" right will
+        be enough, in this case [RED]Alice[RED] will be only able
+        to post, not edit or delete files of [CYAN]Bob[CYAN]), so
+        [RED]Alice[RED] can [WHITE]forward directly[WHITE] to [WHITE]Box[WHITE] of [CYAN]Bob[CYAN]. If
+        [CYAN]Bob[CYAN]'s [WHITE]RemoteBox[WHITE] (Channel) is a private one, [RED]Alice[RED]
+        can specify [GREEN]--chat[GREEN] as [WHITE]RemoteBox name[WHITE] with the
+        [GREEN]--chat-as-name[GREEN] option. For example:
+            [BRIGHT_WHITE]tgbox-cli dir-forward --chat BobBox --chat-as-name[BRIGHT_WHITE]
+            --------------------------------------------------
+            This will search for ([WHITE]first[WHITE]) Channel with "BobBox"
+            name and will forward all target dir files to it;
+        [BRIGHT_BLACK]*[BRIGHT_BLACK]
+        [WHITE]Step two[WHITE]: [RED]Alice[RED] succesfully forwarded her files
+        to [CYAN]Bob[CYAN]'s [WHITE]RemoteBox[WHITE]. Now [CYAN]Bob[CYAN] will need to use a
+        [BLUE]file-search[BLUE] command with [GREEN]--non-imported[GREEN] flag and
+        take [WHITE]RequestKey[WHITE] for [YELLOW]the latest one[YELLOW] (with the
+        [YELLOW]biggest ID[YELLOW]) and send it to [RED]Alice[RED] in any way;
+        [BRIGHT_BLACK]*[BRIGHT_BLACK]
+        [WHITE]Step three[WHITE]: Now [RED]Alice[RED] has a [WHITE]RequestKey[WHITE] from
+        [CYAN]Bob[CYAN]. She will use the [BLUE]dir-share[BLUE] command, set
+        [GREEN]--requestkey[GREEN] ([GREEN]-r[GREEN]) and [GREEN]--directory[GREEN] ([GREEN]-d[GREEN]) options
+        and then will send the resulted [WHITE]ShareKey[WHITE] to
+        [CYAN]Bob[CYAN] (insecure canals are [WHITE]OK[WHITE], as [WHITE]RequestKey[WHITE])
+        [BRIGHT_BLACK]*[BRIGHT_BLACK]
+        [WHITE]Step four[WHITE]: with [WHITE]ShareKey[WHITE] from [RED]Alice[RED], [CYAN]Bob[CYAN] can
+        make a [WHITE]bunch import[WHITE]. He will use [BLUE]file-import[BLUE]
+        command in the same way as in [MAGENTA]File Sharing[MAGENTA], by
+        specifying [GREEN]--key[GREEN] and [GREEN]--id[GREEN], the only difference
+        will be addition of [GREEN]--propagate[GREEN] flag. This
+        will tell to [WHITE]CLI[WHITE] that [CYAN]Bob[CYAN] wants to import
+        file [WHITE]from most recent to oldest[WHITE] until
+        the first import error is encountered.
+        [BRIGHT_BLACK]*[BRIGHT_BLACK]
+        [GREEN]Done![GREEN]
+
+        [WHITE]Additional Information[WHITE]
+        [WHITE]----------------------[WHITE]
+        [WHITE]1[WHITE]/
+        In a [MAGENTA]File Sharing[MAGENTA] chapter we were making a [WHITE]ShareKey[WHITE]
+        of the [WHITE]FileKey[WHITE], -- the unique Key, which can decrypt
+        [WHITE]only one file[WHITE]. Here we share the [WHITE]DirectoryKey[WHITE], this
+        is a Key from which we're [WHITE]making FileKeys[WHITE]. Every
+        unique Directory [WHITE]has its own DirectoryKey[WHITE], thus,
+        [WHITE]should be shared separately[WHITE]. By making a [WHITE]ShareKey[WHITE]
+        of [WHITE]DirectoryKey[WHITE], [RED]Giver[RED] [YELLOW]grants access to every[YELLOW]
+        [YELLOW]existen AND future file that will be attached[YELLOW]
+        [YELLOW]to this directory[YELLOW] to [CYAN]Requester[CYAN] (if [CYAN]Requester[CYAN] has
+        direct access to [RED]Giver[RED]'s [WHITE]RemoteBox[WHITE] contents). If
+        you don't want this, use [BLUE]file-share[BLUE] command instead.
+        |
+        See a [WHITE]TGBOX docs[WHITE] for more info about [WHITE]Protocol[WHITE].
+
+        [WHITE]2[WHITE]/
+        The [BLUE]dir-forward[BLUE] is a some kind of [WHITE]syntatic sugar[WHITE]
+        over the [BLUE]file-forward[BLUE] command. It is in [WHITE]CLI[WHITE] to
+        make a [RED]Giver[RED]'s routine easier. As TGBOX Protocol
+        [WHITE]doesn't support sharing subdirectories[WHITE], one [WHITE]should[WHITE]
+        [WHITE]omit[WHITE] forwarding all nested folders. We achieve this
+        by using the [CYAN]non_recursive_scope[CYAN] filter. See this:
+            [BRIGHT_WHITE]tgbox-cli file-forward scope=/home/user/folder\[BRIGHT_WHITE]
+                [BRIGHT_WHITE]non_recursive_scope=True --chat @username[BRIGHT_WHITE]
 
     [WHITE]THE TOOLS[WHITE]
         [MAGENTA]|||||| Changing Defaults ||||||[MAGENTA]
 
         The TGBOX protocol has some [WHITE]inbuilt defaults[WHITE] that you may
         want to change. For example, there is [BRIGHT_BLUE]METADATA_MAX[BRIGHT_BLUE]
-        default, which define [WHITE]the max bytesize of the metadata[WHITE];
+        default, which defines [WHITE]the max bytesize of the metadata[WHITE];
         or [BRIGHT_BLUE]FILE_PATH_MAX[BRIGHT_BLUE], which specify [WHITE]the max length of file[WHITE]
         [WHITE]path[WHITE]. You probably [YELLOW]don't need to change them[YELLOW], because
-        it [YELLOW]may break compatibility[YELLOW] with Boxes of other peoples:
+        it [YELLOW]may break compatibility[YELLOW] with Boxes of other people:
         for example, to share file, recepient [WHITE]will need[WHITE] to have
         [WHITE]the same[WHITE] (or more) METADATA_MAX/FILE_PATH_MAX.
 
@@ -491,23 +590,23 @@
         [MAGENTA]|||||| Logging & Log Files ||||||[MAGENTA]
 
         The TGBOX & TGBOX-CLI can write [YELLOW]Warnings[YELLOW] and [RED]Errors[RED], as well
-        as [BRIGHT_WHITE]Information[BRIGHT_WHITE] occured on the usage. By default, TGBOX-CLI
+        as [BRIGHT_WHITE]Information[BRIGHT_WHITE] occurred on the usage. By default, TGBOX-CLI
         Log Level is the [YELLOW]Warning[YELLOW] (all [YELLOW]Warning[YELLOW]+ events will be written
         to the Log file, other [WHITE]ignored[WHITE]), however, you can easily
         change it with the [BRIGHT_BLUE]TGBOX_CLI_LOGLEVEL[BRIGHT_BLUE] environment variable
         as stated in the [WHITE]beginning of this help file[WHITE]. The log files
         can help you to locate error and is very important for
         developing any apps [BRIGHT_BLACK](especially buggy TGBOX-CLI one:)[BRIGHT_BLACK], so
-        you're welcomed to report "[WHITE]things that doesn't work[WHITE]" on
+        you're welcomed to report "[WHITE]things that don't work[WHITE]" on
         the [WHITE]Issues[WHITE] tab of official TGBOX-CLI GitHub page:
             [BLUE]github.com/NotStatilko/tgbox-cli/issues[BLUE]
 
-        There is some commands to manage Logging file: [BLUE]logfile-open[BLUE]
+        There are some commands to manage Logging file: [BLUE]logfile-open[BLUE]
         will open Log file with the default system's text editor
         app, [BLUE]logfile-size[BLUE] will print the total size of Log file,
         the [BLUE]logfile-wipe[BLUE] will clear it, and [BLUE]logfile-send[BLUE] will
         allow you to send logfile to [WHITE]any[WHITE] Telegram chat. Log file
-        [WHITE]will never store any sensitive data[WHITE] (feel free to check
+        [WHITE]will never stores any sensitive data[WHITE] (feel free to check
         it). Also, size of Log file [WHITE]may rise over time[WHITE]. Use
         the already mentioned command to completely empty it.
 
@@ -516,7 +615,7 @@
         [WHITE]Info Commands[WHITE]
         [WHITE]-------------[WHITE]
 
-        There is some information commands: the [BLUE]box-info[BLUE] will
+        There are some information commands: the [BLUE]box-info[BLUE] will
         give you comprehensive information about your Local
         and Remote boxes; [BLUE]account-info[BLUE] will show information
         about Telegram account you currently use ([GREEN]--show-phone[GREEN]
@@ -536,7 +635,7 @@
 
         [MAGENTA]|||||| Hidden Commands ||||||[MAGENTA]
 
-        The TGBOX-CLI has a little of hidden commands. For example,
+        The TGBOX-CLI has a few hidden commands. For example,
         there is [BLUE]sk-gen[BLUE], which generates [WHITE]SessionKey[WHITE] used to save
         state of current CLI session. The [BLUE]sk-gen[BLUE] is presented on the
         list of commands in the [BLUE]cli-init[BLUE]. There is also [BLUE]phrase-gen[BLUE],
@@ -549,7 +648,7 @@
         a direct access to the [WHITE]DecryptedLocalBox[WHITE] or [WHITE]DecryptedRemoteBox[WHITE]
         objects (via [WHITE]Objects[WHITE] variable) and [WHITE]manually[WHITE] do things to TGBOX.
         |
-        The [BLUE]python[BLUE] command also allow users to [WHITE]execute some scripts[WHITE]
+        The [BLUE]python[BLUE] command also allows users to [WHITE]execute some scripts[WHITE]
         written for the TGBOX-CLI. With [GREEN]--execute[GREEN] option you can
         specify a path to a Python file. [RED]NEVER EXECUTE SCRIPTS THAT[RED]
         [RED]YOU PERSONALLY DON'T UNDERSTAND OR DON'T TRUST[RED].
@@ -580,7 +679,7 @@
         the TGBOX-CLI will save the code from file in the constant-
         function [WHITE]EXEC_SCRIPT[WHITE]. To run it, write [WHITE]EXEC_SCRIPT()[WHITE].
 
-        The code above will [WHITE]calculate a total size of your Box[WHITE]
+        The code above will [WHITE]calculate the total size of your Box[WHITE]
         [WHITE]in bytes[WHITE], then format it and print to your terminal.
 
         You can [WHITE]disable[WHITE] Interactive Interpreter and run code directly:
@@ -595,16 +694,16 @@
     give you some useful understanding of this CLI app usage
     so you can use it on expert level! Thanks to You, the
     human in front of this screen! (Don't tell me you're
-    an AI robot, i don't believe in fairy tales:)
+    an AI robot, I don't believe in fairy tales:)
 
     Thanks to all involved projects, on which
-    TGBOX and it's CLI version was build: the
+    TGBOX, and its CLI version were built: the
     Telegram, Telethon, Crypto libs devs, the
-    AIOSqlite devs and *MANY* other. See full
+    AIOSqlite devs and *MANY* others. See full
     list of projects  TGBOX use on the GitHub
     page: [BLUE]github.com/NonProjects/tgbox[BLUE]
 
-    Thanks to every people who inspire me,
+    Thanks to all people who inspire me,
     and *BIG* thanks to the [WHITE]HEROES[WHITE] from the
     [YELLOW]UKRAINIAN[YELLOW] [BLUE]ARMY[BLUE]. I [WHITE]don't[WHITE] think this
     project will be possible without
