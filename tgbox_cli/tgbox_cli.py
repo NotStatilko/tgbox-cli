@@ -1829,7 +1829,7 @@ def file_search(
         else:
             sgen = box.search_file(
                 sf=sf, reverse=upend,
-                cache_preview=False
+                cache_preview=True
             )
             sgen = bfi_gen(sgen)
 

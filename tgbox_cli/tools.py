@@ -24,7 +24,8 @@ AVAILABLE_COLORS = [
     'white','yellow','magenta',
     'bright_black','bright_red',
     'bright_magenta', 'bright_blue',
-    'bright_cyan', 'bright_white'
+    'bright_cyan', 'bright_white',
+    'bright_yellow', 'bright_green'
 ]
 def color(text: Union[str, bytes]) -> Union[str, bytes]:
     """
@@ -299,7 +300,7 @@ def format_dxbf(
 
     if dxbf.duration:
         duration = str(timedelta(seconds=round(dxbf.duration,2)))
-        duration = f'[CYAN] ({duration.split(".")[0]})[CYAN]'
+        duration = f' [CYAN]({duration.split(".")[0]})[CYAN]'
     else:
         duration = ''
 
@@ -307,6 +308,8 @@ def format_dxbf(
     time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN]"
 
     mimedur = f'[WHITE]{dxbf.mime}[WHITE]' if dxbf.mime else 'regular file'
+    if dxbf.preview: mimedur += '[BRIGHT_BLACK]*[BRIGHT_BLACK]'
+
     mimedur += duration
 
     if dxbf.cattrs:
