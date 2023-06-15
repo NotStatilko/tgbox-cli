@@ -119,7 +119,6 @@ else:
         logging.getLevelName(logging_level)
     )
 
-
 # = Decorator/Func to check that CTX has requested fields = #
 
 class CheckCTXFailed(click.exceptions.ClickException):
@@ -1986,20 +1985,20 @@ def file_download(
         current_workers = max_workers
         current_bytes = max_bytes
 
-        to_download = ctx.obj.dlb.search_file(sf)
+        box = ctx.obj.drb if force_remote else ctx.obj.dlb
+        to_download = box.search_file(sf)
+
         while True:
             try:
                 to_gather_files = []
                 while all((current_workers > 0, current_bytes > 0)):
-                    dlbf = tgbox.sync(tgbox.tools.anext(to_download))
-
-                    preview_bytes = None
+                    dxbf = tgbox.sync(tgbox.tools.anext(to_download))
 
                     if hide_name:
                         file_name = tgbox.tools.prbg(16).hex()
-                        file_name += Path(dlbf.file_name).suffix
+                        file_name += Path(dxbf.file_name).suffix
                     else:
-                        file_name = dlbf.file_name
+                        file_name = dxbf.file_name
 
                     file_name = file_name.lstrip('/')
                     file_name = file_name.lstrip('\\')
@@ -2007,27 +2006,25 @@ def file_download(
                     file_name = file_name if not preview else file_name + '.jpg'
 
                     if not out:
-                        downloads = Path(dlbf.defaults.DOWNLOAD_PATH)
+                        downloads = Path(dxbf.defaults.DOWNLOAD_PATH)
                         downloads = downloads / ('Previews' if preview else 'Files')
                     else:
                         downloads = out
 
                     downloads.mkdir(parents=True, exist_ok=True)
 
-                    file_path = tgbox.tools.make_safe_file_path(dlbf.file_path)
+                    file_path = tgbox.tools.make_safe_file_path(dxbf.file_path)
 
                     outfile = downloads / file_path / file_name
                     outfile.parent.mkdir(exist_ok=True, parents=True)
 
-                    if preview and not force_remote:
-                        preview_bytes = dlbf.preview
-
-                    elif preview and force_remote:
-                        drbf = tgbox.sync(ctx.obj.drb.get_file(dlbf.id))
-                        preview_bytes = drbf.preview
+                    preview_bytes = dxbf.preview if preview else None
 
                     if preview_bytes is not None:
                         if preview_bytes == b'':
+                            # Drop the '.jpg' preview suffix string
+                            file_name = '.'.join(file_name.split('.')[:-1])
+
                             if force_remote:
                                 echo(f'[YELLOW]{file_name} doesn\'t have preview. Skipping.[YELLOW]')
                             else:
@@ -2047,46 +2044,49 @@ def file_download(
                             f'''[WHITE]{file_name}[WHITE] preview downloaded '''
                             f'''to [WHITE]{str(downloads)}[WHITE]''')
                     else:
-                        drbf = tgbox.sync(ctx.obj.drb.get_file(dlbf.id))
+                        if not force_remote: # box is DecryptedLocalBox
+                            dxbf = tgbox.sync(ctx.obj.drb.get_file(dxbf.id))
 
-                        if not drbf:
+                        if not dxbf:
                             echo(
-                                f'''[YELLOW]There is no file with ID={dlbf.id} in '''
-                                 '''RemoteBox. Skipping.[YELLOW]''')
-                        else:
-                            if not redownload and outfile.exists() and\
-                                outfile.stat().st_size == dlbf.size:
-                                    echo(f'[GREEN]{str(outfile)} downloaded. Skipping...[GREEN]')
-                                    continue
-
-                            current_workers -= 1
-                            current_bytes -= drbf.file_size
-
-                            outpath = open(outfile, 'wb')
-
-                            p_file_name = '<Filename hidden>' if hide_name\
-                                else drbf.file_name
-
-                            download_coroutine = drbf.download(
-                                outfile = outpath,
-                                progress_callback = Progress(
-                                    ctx.obj.enlighten_manager, p_file_name).update,
-                                hide_folder = hide_folder,
-                                hide_name = hide_name
+                                f'''[YELLOW]There is no file with ID={dxbf.id} in '''
+                                 '''RemoteBox. Skipping.[YELLOW]'''
                             )
-                            to_gather_files.append(download_coroutine)
+                            continue
 
-                            if show or locate:
-                                def _launch(path: str, locate: bool, size: int) -> None:
-                                    while (Path(path).stat().st_size+1) / size * 100 < 5:
-                                        sleep(1)
-                                    click.launch(path, locate=locate)
+                        if not redownload and outfile.exists() and\
+                            outfile.stat().st_size == dxbf.size:
+                                echo(f'[GREEN]{str(outfile)} downloaded. Skipping...[GREEN]')
+                                continue
 
-                                loop = get_event_loop()
+                        current_workers -= 1
+                        current_bytes -= dxbf.file_size
 
-                                to_gather_files.append(loop.run_in_executor(
-                                    None, lambda: _launch(outpath.name, locate, dlbf.size))
-                                )
+                        outpath = open(outfile, 'wb')
+
+                        p_file_name = '<Filename hidden>' if hide_name\
+                            else dxbf.file_name
+
+                        download_coroutine = dxbf.download(
+                            outfile = outpath,
+                            progress_callback = Progress(
+                                ctx.obj.enlighten_manager, p_file_name).update,
+                            hide_folder = hide_folder,
+                            hide_name = hide_name
+                        )
+                        to_gather_files.append(download_coroutine)
+
+                        if show or locate:
+                            def _launch(path: str, locate: bool, size: int) -> None:
+                                while (Path(path).stat().st_size+1) / size * 100 < 5:
+                                    sleep(1)
+                                click.launch(path, locate=locate)
+
+                            loop = get_event_loop()
+
+                            to_gather_files.append(loop.run_in_executor(
+                                None, lambda: _launch(outpath.name, locate, dxbf.size))
+                            )
                 if to_gather_files:
                     tgbox.sync(gather(*to_gather_files))
 
