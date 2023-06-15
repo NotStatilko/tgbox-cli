@@ -720,15 +720,18 @@ def account_info(ctx, show_phone):
 
 @cli.command()
 @click.option(
-    '--box-name', '-b', required=True,
-    prompt=True, help='Name of your Box'
+    '--box-path', '-p', help='Path to store LocalBox DB file',
+    type=click.Path(writable=True, readable=True, path_type=Path)
+)
+@click.option(
+    '--box-name', '-b', prompt=True,
+    help='Name of your future Box',
 )
 @click.option(
     '--box-salt', help='BoxSalt as hexadecimal'
 )
 @click.option(
-    '--phrase', '-p',
-    help='Passphrase to your Box. Keep it secret'
+    '--phrase', help='Passphrase to your Box. Keep it secret'
 )
 @click.option(
     '--scrypt-salt', 's',
@@ -752,8 +755,8 @@ def account_info(ctx, show_phone):
     default=int(tgbox.defaults.Scrypt.DKLEN)
 )
 @ctx_require(account=True)
-def box_make(ctx, box_name, box_salt, phrase, s, n, p, r, l):
-    """Create the new Box, the Remote and Local"""
+def box_make(ctx, box_path, box_name, box_salt, phrase, s, n, p, r, l):
+    """Create the new Box (Remote & Local)"""
 
     if not phrase and click.confirm('Generate passphrase for you?'):
         phrase = tgbox.keys.Phrase.generate(6).phrase.decode()
@@ -800,14 +803,15 @@ def box_make(ctx, box_name, box_salt, phrase, s, n, p, r, l):
     echo('[GREEN]Successful![GREEN]')
 
     echo('[CYAN]Making LocalBox...[CYAN] ', nl=False)
-    dlb = tgbox.sync(tgbox.api.make_localbox(erb, basekey))
+    dlb = tgbox.sync(tgbox.api.make_localbox(
+        erb, basekey, box_path=box_path, box_name=box_name))
     echo('[GREEN]Successful![GREEN]')
 
     echo('[CYAN]Updating local data...[CYAN] ', nl=False)
 
-    box_path = str(Path(box_name).absolute())
+    localbox_path = str(Path(dlb.tgbox_db.db_path).resolve())
 
-    ctx.obj.session['BOX_LIST'].append([box_path, basekey.key])
+    ctx.obj.session['BOX_LIST'].append([localbox_path, basekey.key])
     ctx.obj.session['CURRENT_BOX'] = len(ctx.obj.session['BOX_LIST']) - 1
 
     ctx.obj.session.commit()
@@ -882,12 +886,15 @@ def box_open(ctx, box_path, phrase, s, n, p, r, l):
         echo('[GREEN]Successful![GREEN]')
         echo('[CYAN]Updating local data...[CYAN] ', nl=False)
 
-        for _, other_basekey in ctx.obj.session['BOX_LIST']:
-            if basekey.key == other_basekey:
+        localbox_path = str(Path(dlb.tgbox_db.db_path).resolve())
+        box_data = [localbox_path, basekey.key]
+
+        for other_box_data in ctx.obj.session['BOX_LIST']:
+            if other_box_data == box_data:
                 echo('[RED]This Box is already opened[RED]')
                 break
         else:
-            ctx.obj.session['BOX_LIST'].append([box_path, basekey.key])
+            ctx.obj.session['BOX_LIST'].append(box_data)
             ctx.obj.session['CURRENT_BOX'] = len(ctx.obj.session['BOX_LIST']) - 1
 
             ctx.obj.session.commit()
@@ -993,10 +1000,11 @@ def box_list(ctx, remote, prefix):
 
             for box_path, basekey in ctx.obj.session['BOX_LIST']:
                 try:
+                    name = Path(box_path).name
+
                     dlb = tgbox.sync(tgbox.api.get_localbox(
                         tgbox.keys.BaseKey(basekey), box_path)
                     )
-                    name = Path(box_path).name
                     salt = urlsafe_b64encode(dlb.box_salt.salt).decode()
 
                     echo(
@@ -1005,7 +1013,10 @@ def box_list(ctx, remote, prefix):
                     )
                     tgbox.sync(dlb.done())
                 except FileNotFoundError:
-                    echo(f'[WHITE]{count+1})[WHITE] [RED]Moved, so removed.[RED]')
+                    echo(
+                       f'''[WHITE]{count+1})[WHITE] [RED]{name} LocalBox '''
+                        '''file was moved, so disconnected.[RED]'''
+                    )
                     lost_boxes.append([box_path, basekey])
 
                 count += 1
@@ -1205,12 +1216,12 @@ def box_share(ctx, requestkey):
 
 @cli.command()
 @click.option(
-    '--box-path', '-b', help='Path to which we will clone',
+    '--box-path', '-p', help='Path to which we will clone',
     type=click.Path(writable=True, readable=True, path_type=Path)
 )
 @click.option(
-    '--box-filename', '-f',
-    help='Filename of cloned DecryptedLocalBox',
+    '--box-name', '-b',
+    help='Filename to your future cloned LocalBox DB',
 )
 @click.option(
     '--box-number', '-n', required=True, type=int,
@@ -1224,7 +1235,7 @@ def box_share(ctx, requestkey):
     '--key', '-k', help='ShareKey/ImportKey received from Box owner.'
 )
 @click.option(
-    '--phrase', '-p', confirmation_prompt=True,
+    '--phrase', required=True,
     hide_input=(not TGBOX_CLI_SHOW_PASSWORD),
     prompt='Phrase to your cloned Box',
     help='To clone Box you need to specify phrase to it'
@@ -1252,7 +1263,7 @@ def box_share(ctx, requestkey):
 )
 @click.pass_context
 def box_clone(
-        ctx, box_path, box_filename,
+        ctx, box_path, box_name,
         box_number, prefix, key,
         phrase, s, n, p, r, l):
     """
@@ -1283,34 +1294,26 @@ def box_clone(
         )
     drb = tgbox.sync(erb.decrypt(key=key))
 
-    if box_path is None:
-        if box_filename:
-            box_path = box_filename
-        else:
-            box_path = tgbox.sync(drb.get_box_name())
-    else:
-        box_path += tgbox.sync(drb.get_box_name())\
-            if not box_filename else box_filename
-
     dlb = tgbox.sync(tgbox.api.local.clone_remotebox(
         drb = drb,
         basekey = basekey,
+        box_name = box_name,
         box_path = box_path,
-
         progress_callback = Progress(
             ctx.obj.enlighten_manager, 'Cloning...').update_2
         )
     )
     echo('\n[CYAN]Updating local data...[CYAN] ', nl=False)
 
-    for _, other_basekey in ctx.obj.session['BOX_LIST']:
-        if basekey.key == other_basekey:
+    localbox_path = str(Path(dlb.tgbox_db.db_path).resolve())
+    box_data = [localbox_path, basekey.key]
+
+    for other_box_data in ctx.obj.session['BOX_LIST']:
+        if other_box_data == box_data:
             echo('[RED]This Box is already opened[RED]')
             break
     else:
-        box_path = str(Path(box_path).absolute())
-
-        ctx.obj.session['BOX_LIST'].append([box_path, basekey.key])
+        ctx.obj.session['BOX_LIST'].append(box_data)
         ctx.obj.session['CURRENT_BOX'] = len(ctx.obj.session['BOX_LIST']) - 1
 
         ctx.obj.session.commit()
@@ -1735,7 +1738,7 @@ def file_search(
         \b
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
-
+        \b
         non_recursive_scope bool: Ignore scope subdirectories
     \b
     See tgbox.readthedocs.io/en/indev/
@@ -1947,7 +1950,7 @@ def file_download(
         \b
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
-
+        \b
         non_recursive_scope bool: Ignore scope subdirectories
     \b
     See tgbox.readthedocs.io/en/indev/
@@ -2230,11 +2233,11 @@ def file_last_id(ctx, remote):
 
     if remote:
         lfid = tgbox.sync(ctx.obj.drb.get_last_file_id())
+        echo(f'ID of last uploaded to [WHITE]RemoteBox[WHITE] file is [YELLOW]{lfid}[YELLOW]')
     else:
         lfid = tgbox.sync(ctx.obj.dlb.get_last_file_id())
+        echo(f'ID of last saved to [WHITE]LocalBox[WHITE] file is [YELLOW]{lfid}[YELLOW]')
 
-    sbox = 'Remote' if remote else 'Local'
-    echo(f'ID of last uploaded to [WHITE]{sbox}Box[WHITE] file is [GREEN]{lfid}[GREEN]')
 
 @cli.command()
 @click.argument('filters', nargs=-1)
@@ -2306,7 +2309,7 @@ def file_remove(ctx, filters, local_only, ask_before_remove):
         \b
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
-
+        \b
         non_recursive_scope bool: Ignore scope subdirectories
     \b
     See tgbox.readthedocs.io/en/indev/
@@ -2466,7 +2469,7 @@ def file_open(ctx, filters, locate, propagate, continuously):
         \b
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
-
+        \b
         non_recursive_scope bool: Ignore scope subdirectories
     \b
     See tgbox.readthedocs.io/en/indev/
@@ -2575,7 +2578,7 @@ def file_forward(ctx, filters, chat, chat_is_name):
         \b
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
-
+        \b
         non_recursive_scope bool: Ignore scope subdirectories
     \b
     See tgbox.readthedocs.io/en/indev/
@@ -2724,7 +2727,7 @@ def file_attr_edit(ctx, filters, attribute, local_only):
         \b
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
-
+        \b
         non_recursive_scope bool: Ignore scope subdirectories
     \b
     See tgbox.readthedocs.io/en/indev/
