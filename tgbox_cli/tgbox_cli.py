@@ -1589,6 +1589,10 @@ def file_upload(
             echo(f'[YELLOW]{file}: {e} Skipping..[YELLOW]')
             return
 
+        except PermissionError:
+            echo(f'[RED]{file} is not readable! Skipping.[RED]')
+            return
+
         progressbar = Progress(ctx.obj.enlighten_manager, file.name)
 
         file_action[1]['pf'] = pf
