@@ -1586,11 +1586,11 @@ def file_upload(
                 skip_fingerprint_check = True
             )
         except tgbox.errors.LimitExceeded as e:
-            echo(f'[YELLOW]{file}: {e} Skipping..[YELLOW]')
+            echo(f'[YELLOW]{file}: {e} Skipping...[YELLOW]')
             return
 
         except PermissionError:
-            echo(f'[RED]{file} is not readable! Skipping.[RED]')
+            echo(f'[RED]{file} is not readable! Skipping...[RED]')
             return
 
         progressbar = Progress(ctx.obj.enlighten_manager, file.name)
@@ -2855,7 +2855,7 @@ def dir_forward(ctx, directory, chat, chat_is_name):
     """
     Forward files from dir to specified chat
     """
-    dlbd = tgbox.sync(ctx.obj.dlb.get_directory(directory))
+    dlbd = tgbox.sync(ctx.obj.dlb.get_directory(directory.strip()))
 
     if not dlbd:
         echo(f'[RED]There is no dir "{directory}" in LocalBox.[RED]')
@@ -2876,7 +2876,7 @@ def dir_forward(ctx, directory, chat, chat_is_name):
 def dir_share(ctx, requestkey, directory):
     """Get a ShareKey from RequestKey to share dir"""
 
-    dlbd = tgbox.sync(ctx.obj.dlb.get_directory(directory))
+    dlbd = tgbox.sync(ctx.obj.dlb.get_directory(directory.strip()))
 
     if not dlbd:
         echo(f'[RED]There is no dir "{directory}" in LocalBox.[RED]')
