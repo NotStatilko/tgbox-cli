@@ -375,7 +375,23 @@ def cli(ctx):
                 pass # Session was disconnected
 
         if not isfunction(ctx_.obj._enlighten_manager):
-            ctx_.obj.enlighten_manager.stop()
+            ctx_.obj._enlighten_manager.stop()
+
+        # TODO: There is some problems with enlighten Progressbar
+        #       and bash after a037bee commit that I don't really
+        #       understand. enlighten_manager should flush and fix
+        #       Terminal after .stop() was called, however, in some
+        #       strange cases it leave a CMD in a broken state. As
+        #       I currently tried almost everything and don't know
+        #       how to fix this, we will force to call a "tset"
+        #       bash command, which will return CMD in a normal
+        #       state. You can disable this with any value on
+        #       the $TGBOX_CLI_NO_TSET, like "1" or "anything".
+        if not getenv('TGBOX_CLI_NO_TSET'):
+            current_shell = getenv('SHELL')
+            if 'bash' in current_shell:
+                os_system('tset') # from tools module
+
 
     # This will close Local & Remote on exit
     ctx.call_on_close(lambda: on_exit(ctx))
@@ -422,32 +438,41 @@ def cli_init(ctx):
             )
         else:
             current_shell = getenv('SHELL')
+
             if current_shell and 'bash' in current_shell:
-                autocomplete = 'eval "$(_TGBOX_CLI_COMPLETE=bash_source tgbox-cli)"'
+                autocomplete = '\neval "$(_TGBOX_CLI_COMPLETE=bash_source tgbox-cli)"'
+
             elif current_shell and 'zsh' in current_shell:
-                autocomplete = 'eval "$(_TGBOX_CLI_COMPLETE=zsh_source tgbox-cli)"'
+                autocomplete = '\neval "$(_TGBOX_CLI_COMPLETE=zsh_source tgbox-cli)"'
+
             elif current_shell and 'fish' in current_shell:
-                autocomplete = 'eval (env _TGBOX_CLI_COMPLETE=fish_source tgbox-cli)'
+                autocomplete = '\neval (env _TGBOX_CLI_COMPLETE=fish_source tgbox-cli)'
             else:
-                autocomplete = None
+                autocomplete = ''
 
-            if autocomplete:
+                if 'fish' in current_shell:
+                    eval_commands = (
+                        f'''export TGBOX_CLI_SK=(tgbox-cli sk-gen)\n'''
+                        f'''{autocomplete}''')
+
+            if 'fish' not in current_shell:
                 echo('\n# [BLUE](Execute commands below if eval doesn\'t work)[BLUE]\n')
-
-                real_commands = (
-                    '''export TGBOX_CLI_SK="$(tgbox-cli sk-gen)"\n'''
+                eval_commands = (
+                    f'''export TGBOX_CLI_SK="$(tgbox-cli sk-gen)"'''
                     f'''{autocomplete}'''
                 )
-                echo(real_commands)
+                echo(eval_commands)
 
-                commands = 'eval "$(!!)" || true && clear'
+                init_commands = 'eval "$(!!)" || true && clear'
             else:
-                commands = 'export TGBOX_CLI_SK="$(tgbox-cli sk-gen)"'
-
+                init_commands = (
+                    f'''export TGBOX_CLI_SK=(tgbox-cli sk-gen)'''
+                    f'''{autocomplete}'''
+                )
         echo(
             '''\n[YELLOW]Welcome to the TGBOX-CLI![YELLOW]\n\n'''
             '''Copy & Paste commands below to your shell:\n\n'''
-           f'''[WHITE]{commands}[WHITE]\n'''
+           f'''[WHITE]{init_commands}[WHITE]\n'''
         )
 
 @cli.command()
@@ -1571,8 +1596,11 @@ def file_upload(
 
         # File re-uploading (or updating) if file size differ
         elif force_update or not no_update and dlbf and dlbf.size != getsize(file):
-            drbf = await ctx.obj.drb.get_file(dlbf.id)
-            file_action = (ctx.obj.drb.update_file, {'rbf': drbf})
+            if not dlbf: # Wasn't uploaded before
+                file_action = (ctx.obj.drb.push_file, {})
+            else:
+                drbf = await ctx.obj.drb.get_file(dlbf.id)
+                file_action = (ctx.obj.drb.update_file, {'rbf': drbf})
         else:
             # Ignore upload if file exists and wasn't changed
             echo(f'[YELLOW]{file} is already uploaded. Skipping...[YELLOW]')
