@@ -377,21 +377,20 @@ def cli(ctx):
         if not isfunction(ctx_.obj._enlighten_manager):
             ctx_.obj._enlighten_manager.stop()
 
-        # TODO: There is some problems with enlighten Progressbar
-        #       and bash after a037bee commit that I don't really
-        #       understand. enlighten_manager should flush and fix
-        #       Terminal after .stop() was called, however, in some
-        #       strange cases it leave a CMD in a broken state. As
-        #       I currently tried almost everything and don't know
-        #       how to fix this, we will force to call a "tset"
-        #       bash command, which will return CMD in a normal
-        #       state. You can disable this with any value on
-        #       the $TGBOX_CLI_NO_TSET, like "1" or "anything".
-        if not getenv('TGBOX_CLI_NO_TSET'):
-            current_shell = getenv('SHELL')
-            if 'bash' in current_shell:
-                os_system('tset') # from tools module
-
+            # TODO: There is some problems with enlighten Progressbar
+            #       and bash after a037bee commit that I don't really
+            #       understand. enlighten_manager should flush and fix
+            #       Terminal after .stop() was called, however, in some
+            #       strange cases it leave a CMD in a broken state. As
+            #       I currently tried almost everything and don't know
+            #       how to fix this, we will force to call a "tset"
+            #       bash command, which will return CMD in a normal
+            #       state. You can disable this with any value on
+            #       the $TGBOX_CLI_NO_TSET, like "1" or "anything".
+            if not getenv('TGBOX_CLI_NO_TSET'):
+                current_shell = getenv('SHELL')
+                if 'bash' in current_shell:
+                    os_system('tset') # from tools module
 
     # This will close Local & Remote on exit
     ctx.call_on_close(lambda: on_exit(ctx))
