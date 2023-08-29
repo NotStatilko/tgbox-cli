@@ -2,8 +2,7 @@
 
 This is a [**CLI**](https://en.wikipedia.org/wiki/Command-line_interface) implementation of the [**TGBOX**](https://github.com/NonProjects/tgbox/) — an encrypted cloud storage built around the [**Telegram**](https://telegram.org).
 
-![List of the TGBOX-CLI commands](https://github.com/NotStatilko/tgbox-cli/assets/43419673/2be6136f-f2e3-4526-ba66-7132c3cbc10c)
-
+![List of the TGBOX-CLI commands](https://github.com/NotStatilko/tgbox-cli/assets/43419673/1a20cb7d-9d5b-4bf9-bea9-b8b79ca028c8)
 ## Installation
 
 To install the **TGBOX-CLI** you will need to have **at least** Python 3.8.
