@@ -1363,7 +1363,7 @@ def box_default(ctx, defaults):
         try:
             key, value = default.split('=',1)
             tgbox.sync(ctx.obj.dlb.defaults.change(key, value))
-            echo(f'[GREEN]Successfuly changed {key} to {value}[GREEN]')
+            echo(f'[GREEN]Successfully changed {key} to {value}[GREEN]')
         except AttributeError:
             echo(f'[RED]Default {key} doesn\'t exist, skipping[RED]')
 
@@ -1589,7 +1589,7 @@ def file_upload(
             mainkey = ctx.obj.dlb.mainkey,
             file_path = str(file_path)
         )
-        # Standart file upload if dlbf is not exists (from scratch)
+        # Standard file upload if dlbf is not exists (from scratch)
         if not (dlbf := await ctx.obj.dlb.get_file(fingerprint=fingerprint)) and not force_update:
             file_action = (ctx.obj.drb.push_file, {})
 

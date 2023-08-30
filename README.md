@@ -64,7 +64,7 @@ Feel free to remove the ``tgbox-cli-env`` folder after work was done.
 
 ## Usage
 
-The TGBOX-CLI is a typical Command-Line application. After install, it can be runned as follows:
+The TGBOX-CLI is a typical Command-Line application. After install, it can be ran as follows:
 ```bash
 tgbox-cli
 ```
