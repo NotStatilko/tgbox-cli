@@ -101,7 +101,7 @@ class Progress:
 
     def update_2(self, current, total):
         if not self.initialized:
-            BAR = '{desc} | {percentage:3.0f}% |{bar}| ({count}/{total}) [ETA {eta}]'
+            BAR = '{desc} | {percentage:3.0f}% |{bar}| ({count}/{total}) [ETA {eta}, ELA {elapsed}]'
 
             self.counter = self.manager.counter(
                 total=total - current,
