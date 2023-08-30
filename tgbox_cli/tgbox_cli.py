@@ -1102,8 +1102,14 @@ def box_sync(ctx, start_from_id, deep, timeout):
      |
     (?) Use tgbox-cli box-info to check your rights.
 
-    (!) --start-from-id will be used only on deep sync.
+    (!) --start-from-id can be used only with --deep sync.
     """
+    if start_from_id and not deep:
+        echo(
+            '''[WHITE]--start-from-id[WHITE] [RED]can be used only '''
+            '''with[RED] [WHITE]--deep[WHITE][RED]![RED]'''
+        ); return
+
     if not deep:
         progress_callback = lambda i,a: echo(f'* [WHITE]ID{i}[WHITE]: [CYAN]{a}[CYAN]')
     else:
