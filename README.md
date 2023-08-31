@@ -14,7 +14,8 @@ See [**Releases GitHub page**](https://github.com/NotStatilko/tgbox-cli/releases
 
 ### Build the TGBOX-CLI
 
-To make all features work, you will also need the [**FFmpeg**](https://ffmpeg.org/download.html) installed in your system (it should be also accessible by the simple ``ffmpeg`` command from your Terminal, in other words: in ``PATH``).
+To make all features work, you will also need the [**FFmpeg**](https://ffmpeg.org/download.html) installed in your system (it should\
+be also accessible by the simple ``ffmpeg`` command from your Terminal, in other words: in ``PATH``).
 
 #### Install with PIP
 
@@ -36,7 +37,8 @@ pip install ./tgbox-cli[fast]
 ```
 #### PyInstaller
 
-If you want to make your own .EXE build *with FFmpeg*, you *will need* to download it and place inside the ``tgbox/other`` directory [in Windows]. See this:
+If you want to make your own .EXE build *with FFmpeg*, you *will need* to download\
+it and place inside the ``tgbox/other`` directory (on Windows only). See this:
 ```bash
 python -m venv tgbox-cli-env
 cd tgbox-cli-env && . bin/activate
@@ -76,4 +78,6 @@ tgbox-cli help
 
 ## Bug reports
 
-Feel free to report some problems (i believe there can be many) on the [**GitHub Issue tab**](https://github.com/NotStatilko/tgbox-cli/issues). Any encountered error should be written to the logfile. Use the **logfile-open** command and **attach** its content to the bug report. **Thanks**.
+Feel free to report some problems (i believe there can be many) on the [**GitHub Issue tab**](https://github.com/NotStatilko/tgbox-cli/issues). Any encountered error should be written to the logfile. Use the **logfile-open** command and **attach** its content to the bug report. 
+
+**Thanks**.
