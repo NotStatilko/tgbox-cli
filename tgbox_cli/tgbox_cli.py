@@ -430,7 +430,7 @@ def cli_init(ctx):
         echo('[WHITE]CLI is already initialized.[WHITE]')
     else:
         if system().lower() == 'windows':
-            commands = (
+            init_commands = (
                 '''(for /f %i in (\'tgbox-cli sk-gen\') '''
                 '''do set "TGBOX_CLI_SK=%i") > NUL\n'''
                 '''chcp 65001 || # Change the default CMD encoding to UTF-8'''
