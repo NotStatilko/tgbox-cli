@@ -389,7 +389,7 @@ def cli(ctx):
             #       the $TGBOX_CLI_NO_TSET, like "1" or "anything".
             if not getenv('TGBOX_CLI_NO_TSET'):
                 current_shell = getenv('SHELL')
-                if 'bash' in current_shell:
+                if current_shell and 'bash' in current_shell:
                     os_system('tset') # from tools module
 
     # This will close Local & Remote on exit
