@@ -1874,8 +1874,11 @@ def file_search(
                     echo(dxbfs, nl=False)
                 echo('')
             else:
-                colored = True if system().lower() == 'windows' else None
-                colored = False if TGBOX_CLI_NOCOLOR else colored
+                colored = False if TGBOX_CLI_NOCOLOR else None
+
+                if getenv('TGBOX_CLI_FORCE_PAGER_COLOR'):
+                    colored = True
+
                 click.echo_via_pager(sgen, color=colored)
 
 @cli.command()
@@ -2987,8 +2990,11 @@ def help_(non_interactive):
     if non_interactive:
         echo(help_text)
     else:
-        colored = True if system().lower() == 'windows' else None
-        colored = False if TGBOX_CLI_NOCOLOR else colored
+        colored = False if TGBOX_CLI_NOCOLOR else None
+
+        if getenv('TGBOX_CLI_FORCE_PAGER_COLOR'):
+            colored = True
+
         click.echo_via_pager(color(help_text), color=colored)
 
 # ========================================================= #
