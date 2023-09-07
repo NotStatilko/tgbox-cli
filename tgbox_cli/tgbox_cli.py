@@ -2969,6 +2969,15 @@ def logfile_send(ctx, chat):
     Example:\b
         tgbox-cli logfile-send @username
     """
+    if not chat:
+        echo(
+            '''[YELLOW]You didn\'t specified any chat! Try'''
+            '''[YELLOW] [WHITE]tgbox-cli logfile-send me[WHITE]'''
+        )
+    elif not logfile.stat().st_size:
+        echo(f'[YELLOW]Logfile "{logfile.name}" is empty, so not sent.[YELLOW]')
+        return
+
     for e in chat:
         tgbox.sync(ctx.obj.account.send_file(e, logfile))
         echo(f'[WHITE]Logfile has been sent to[WHITE] [BLUE]{e}[BLUE]')
