@@ -1513,7 +1513,10 @@ def box_delete(ctx):
     )
     echo('\n' + warning_message)
 
-    echo(f'\n@ Please enter [RED]{drb_box_name}[RED] to destroy your Box or press CTRL+C to abort')
+    echo(
+       f'''\n@ Please enter [YELLOW]{drb_box_name}[YELLOW] to '''
+        '''[RED]DESTROY[RED] your Box or press [BLUE]CTRL+C[BLUE] to abort'''
+    )
     user_input = click.prompt('\nBox name')
 
     if user_input == drb_box_name:
