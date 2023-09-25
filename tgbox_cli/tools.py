@@ -75,6 +75,23 @@ class Progress:
         self.initialized = False
         self.last_id = None
 
+    def __del__(self):
+        if self.total_blocks: # If .update
+            block_total = str(self.counter.count).zfill(4)
+
+            self.counter.counter_format = '{desc}{desc_pad}' +\
+                color(f'[{block_total} [WHITE]Chunks[WHITE] [GREEN]DONE[GREEN]],') +\
+                ' {elapsed} ' + color('[WHITE]Elapsed[WHITE]')
+
+        elif self.last_id: # If .update_2
+            self.counter.counter_format = color('[WHITE]@[WHITE] ') + '{count:d} ' +\
+                color('[WHITE]Files[WHITE] [GREEN]SYNCED[GREEN], ') + '{elapsed} ' +\
+                color('[WHITE]Elapsed[WHITE], {rate:.0f} [WHITE]Files[WHITE]/second')
+
+        self.counter.update()
+        self.counter.close()
+
+
     def update(self, _, total):
         if not self.counter:
             BAR_FORMAT = '{desc} | {percentage:3.0f}% |{bar}| [ETA {eta}] |'
@@ -84,12 +101,12 @@ class Progress:
             if int(self.total_blocks) != self.total_blocks:
                 self.total_blocks = int(self.total_blocks) + 1
 
-            desc = self.desc[:40]
+            desc = self.desc[:32]
 
             if desc != self.desc:
-                desc = desc[:37] + '...'
+                desc = desc[:29] + '...'
 
-            while len(desc) < 40:
+            while len(desc) < 32:
                 desc += ' '
 
             self.counter = self.manager.counter(
