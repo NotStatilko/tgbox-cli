@@ -304,6 +304,10 @@
         the [GREEN]--max-workers[GREEN] options. See the end of the
         [MAGENTA]Uploading Files[MAGENTA] chapter to master this.
 
+        If your download was interrupted for some reason then
+        [BLUE]file-download[BLUE] will [WHITE]auto download[WHITE] missing blocks. You
+        can also specify the [GREEN]--offset[GREEN] if necessary.
+
         [MAGENTA]|||||| Removing Files ||||||[MAGENTA]
 
         You can easily remove uploaded files by [CYAN]filters[CYAN]:

@@ -63,13 +63,14 @@ class Progress:
         ..., progress_callback=Progress(manager).update
     )
     """
-    def __init__(self, manager, desc: str=None):
+    def __init__(self, manager, desc: str=None, blocks_downloaded: int=0):
         self.desc = desc
         self.counter = None
         self.manager = manager
 
         # For update
         self.total_blocks = 0
+        self.blocks_downloaded = blocks_downloaded
 
         # For update_2
         self.initialized = False
@@ -91,12 +92,11 @@ class Progress:
         self.counter.update()
         self.counter.close()
 
-
     def update(self, _, total):
         if not self.counter:
             BAR_FORMAT = '{desc} | {percentage:3.0f}% |{bar}| [ETA {eta}] |'
 
-            self.total_blocks = total / 524288
+            self.total_blocks = total // 524288 - self.blocks_downloaded
 
             if int(self.total_blocks) != self.total_blocks:
                 self.total_blocks = int(self.total_blocks) + 1

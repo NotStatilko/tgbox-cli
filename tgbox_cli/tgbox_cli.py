@@ -1920,6 +1920,10 @@ def file_search(
     help='If specified, will redownload already cached files'
 )
 @click.option(
+    '--offset', default=0,
+    help='Download decrypted file from specified offset'
+)
+@click.option(
     '--max-workers', default=10, type=click.IntRange(1,50),
     help='Max amount of files downloaded at the same time, default=10',
 )
@@ -1933,7 +1937,7 @@ def file_download(
         ctx, filters, preview, show, locate,
         hide_name, hide_folder, out,
         force_remote, redownload,
-        max_workers, max_bytes):
+        offset, max_workers, max_bytes):
     """Download files by selected filters
 
     \b
@@ -2097,25 +2101,47 @@ def file_download(
                             )
                             continue
 
-                        if not redownload and outfile.exists() and\
-                            outfile.stat().st_size == dxbf.size:
+                        write_mode = 'wb'
+
+                        if not redownload and outfile.exists():
+                            if outfile.stat().st_size == dxbf.size:
                                 echo(f'[GREEN]{str(outfile)} downloaded. Skipping...[GREEN]')
                                 continue
+                            else:
+                                if offset:
+                                    echo(
+                                       f'''[YELLOW]{str(outfile)} is partially downloaded and '''
+                                        '''you specified offset. This will corrupt file. Drop the '''
+                                        '''offset or remove file from your computer. Skipping...[YELLOW]'''
+                                    )
+                                    continue
+
+                                # File is partially downloaded, so we need to fetch left bytes
+                                offset, write_mode = outfile.stat().st_size, 'ab'
+
+                        if offset % 4096 or offset % 524288:
+                            echo('[RED]Offset must be divisible by 4096 and by 524288.[RED]')
+                            continue
 
                         current_workers -= 1
                         current_bytes -= dxbf.file_size
 
-                        outpath = open(outfile, 'wb')
+                        outpath = open(outfile, write_mode)
 
                         p_file_name = '<Filename hidden>' if hide_name\
                             else dxbf.file_name
 
+                        blocks_downloaded = 0 if not offset else offset // 524288
+
                         download_coroutine = dxbf.download(
                             outfile = outpath,
                             progress_callback = Progress(
-                                ctx.obj.enlighten_manager, p_file_name).update,
+                                ctx.obj.enlighten_manager,
+                                p_file_name, blocks_downloaded).update,
+
                             hide_folder = hide_folder,
-                            hide_name = hide_name
+                            hide_name = hide_name,
+                            offset = offset
                         )
                         to_gather_files.append(download_coroutine)
 
