@@ -97,9 +97,7 @@ class Progress:
             BAR_FORMAT = '{desc} | {percentage:3.0f}% |{bar}| [ETA {eta}] |'
 
             self.total_blocks = total // 524288 - self.blocks_downloaded
-
-            if int(self.total_blocks) != self.total_blocks:
-                self.total_blocks = int(self.total_blocks) + 1
+            self.total_blocks = 1 if self.total_blocks == 0 else self.total_blocks
 
             desc = self.desc[:32]
 
