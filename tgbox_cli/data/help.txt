@@ -219,7 +219,7 @@
         decrement by one the [GREEN]--max-workers[GREEN]. Upload list
         will expand until [GREEN]--max-workers[GREEN] or [GREEN]--max-bytes[GREEN]
         values > 0, otherwise launch [BLUE]file-upload[BLUE] process.
-            By default, [GREEN]--max-bytes[GREEN]=[WHITE]500MB[WHITE] and the
+            By default, [GREEN]--max-bytes[GREEN]=[WHITE]200MB[WHITE] and the
         [GREEN]--max-workers[GREEN]=[WHITE]10[WHITE]; as [BLUE]file-upload[BLUE] should push
         to remote at least one file, -- it [WHITE]will accept[WHITE]
         target which bytesize is > than [GREEN]--max-bytes[GREEN].
