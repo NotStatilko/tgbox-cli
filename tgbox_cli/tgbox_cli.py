@@ -1561,7 +1561,11 @@ def box_delete(ctx):
 )
 @click.option(
     '--force-update', is_flag=True,
-    help='If specified, will force re-upload every target file'
+    help='If specified, will force to re-upload every target file'
+)
+@click.option(
+    '--use-slow-upload', is_flag=True,
+    help='If specified, will use slow, non-parallel upload'
 )
 @click.option(
     '--no-thumb', is_flag=True,
@@ -1572,14 +1576,15 @@ def box_delete(ctx):
     help='Max amount of files uploaded at the same time, default=10',
 )
 @click.option(
-    '--max-bytes', default=500000000,
+    '--max-bytes', default=200000000,
     type=click.IntRange(1000000, 1000000000),
-    help='Max amount of bytes uploaded at the same time, default=500000000',
+    help='Max amount of bytes uploaded at the same time, default=200000000',
 )
 @ctx_require(dlb=True, drb=True)
 def file_upload(
         ctx, path, file_path, cattrs, no_update,
-        force_update, no_thumb, max_workers, max_bytes):
+        force_update, use_slow_upload, no_thumb,
+        max_workers, max_bytes):
     """
     Upload specified path (file/dir) to the Box
 
@@ -1633,6 +1638,7 @@ def file_upload(
 
         file_action[1]['pf'] = pf
         file_action[1]['progress_callback'] = progressbar.update
+        file_action[1]['use_slow_upload'] = use_slow_upload
 
         await file_action[0](**file_action[1])
 
@@ -1920,6 +1926,10 @@ def file_search(
     help='If specified, will redownload already cached files'
 )
 @click.option(
+    '--use-slow-download', is_flag=True,
+    help='If specified, will use slow, non-parallel download'
+)
+@click.option(
     '--offset', default=0,
     help='Download decrypted file from specified offset'
 )
@@ -1928,16 +1938,16 @@ def file_search(
     help='Max amount of files downloaded at the same time, default=10',
 )
 @click.option(
-    '--max-bytes', default=500000000,
+    '--max-bytes', default=200000000,
     type=click.IntRange(1000000, 1000000000),
-    help='Max amount of bytes downloaded at the same time, default=500000000',
+    help='Max amount of bytes downloaded at the same time, default=200000000',
 )
 @click.pass_context
 def file_download(
         ctx, filters, preview, show, locate,
-        hide_name, hide_folder, out,
-        force_remote, redownload,
-        offset, max_workers, max_bytes):
+        hide_name, hide_folder, out, force_remote,
+        redownload, use_slow_download, offset,
+        max_workers, max_bytes):
     """Download files by selected filters
 
     \b
@@ -2141,7 +2151,8 @@ def file_download(
 
                             hide_folder = hide_folder,
                             hide_name = hide_name,
-                            offset = offset
+                            offset = offset,
+                            use_slow_download = use_slow_download
                         )
                         to_gather_files.append(download_coroutine)
 
