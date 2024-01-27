@@ -2112,9 +2112,10 @@ def file_download(
                             continue
 
                         write_mode = 'wb'
+                        outfile_size = outfile.stat().st_size if outfile.exists() else 0
 
                         if not redownload and outfile.exists():
-                            if outfile.stat().st_size == dxbf.size:
+                            if outfile_size == dxbf.size:
                                 echo(f'[GREEN]{str(outfile)} downloaded. Skipping...[GREEN]')
                                 continue
                             else:
@@ -2125,6 +2126,10 @@ def file_download(
                                         '''offset or remove file from your computer. Skipping...[YELLOW]'''
                                     )
                                     continue
+
+                                if outfile_size % 524288: # Remove partially downloaded block
+                                    with open(outfile, 'ab') as f:
+                                        f.truncate(outfile_size - (outfile_size % 524288))
 
                                 # File is partially downloaded, so we need to fetch left bytes
                                 offset, write_mode = outfile.stat().st_size, 'ab'
