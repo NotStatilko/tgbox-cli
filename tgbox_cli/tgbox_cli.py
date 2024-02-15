@@ -1918,6 +1918,10 @@ def file_search(
     type=click.Path(writable=True, path_type=Path)
 )
 @click.option(
+    '--ignore-file-path', is_flag=True,
+    help='If specified, will NOT make folders from file path on download'
+)
+@click.option(
     '--force-remote','-r', is_flag=True,
     help='If specified, will fetch file data from RemoteBox'
 )
@@ -1945,9 +1949,9 @@ def file_search(
 @click.pass_context
 def file_download(
         ctx, filters, preview, show, locate,
-        hide_name, hide_folder, out, force_remote,
-        redownload, use_slow_download, offset,
-        max_workers, max_bytes):
+        hide_name, hide_folder, out, ignore_file_path,
+        force_remote, redownload, use_slow_download,
+        offset, max_workers, max_bytes):
     """Download files by selected filters
 
     \b
@@ -2070,12 +2074,16 @@ def file_download(
 
                     downloads.mkdir(parents=True, exist_ok=True)
 
-                    if hide_folder:
-                        file_path = tgbox.tools.make_safe_file_path(tgbox.defaults.DEF_UNK_FOLDER)
+                    if ignore_file_path:
+                        outfile = downloads / file_name
                     else:
-                        file_path = tgbox.tools.make_safe_file_path(dxbf.file_path)
+                        if hide_folder:
+                            file_path = tgbox.tools.make_safe_file_path(tgbox.defaults.DEF_UNK_FOLDER)
+                        else:
+                            file_path = tgbox.tools.make_safe_file_path(dxbf.file_path)
 
-                    outfile = downloads / file_path / file_name
+                        outfile = downloads / file_path / file_name
+
                     outfile.parent.mkdir(exist_ok=True, parents=True)
 
                     preview_bytes = dxbf.preview if preview else None
