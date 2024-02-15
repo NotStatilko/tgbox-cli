@@ -2161,6 +2161,9 @@ def file_download(
                         )
                         to_gather_files.append(download_coroutine)
 
+                        if write_mode == 'ab': # Partially downloaded write
+                            offset = 0 # Reset offset for the next files
+
                         if show or locate:
                             def _launch(path: str, locate: bool, size: int) -> None:
                                 while (Path(path).stat().st_size+1) / size * 100 < 5:
