@@ -2070,7 +2070,10 @@ def file_download(
 
                     downloads.mkdir(parents=True, exist_ok=True)
 
-                    file_path = tgbox.tools.make_safe_file_path(dxbf.file_path)
+                    if hide_folder:
+                        file_path = tgbox.tools.make_safe_file_path(tgbox.defaults.DEF_UNK_FOLDER)
+                    else:
+                        file_path = tgbox.tools.make_safe_file_path(dxbf.file_path)
 
                     outfile = downloads / file_path / file_name
                     outfile.parent.mkdir(exist_ok=True, parents=True)
@@ -2154,8 +2157,6 @@ def file_download(
                                 ctx.obj.enlighten_manager,
                                 p_file_name, blocks_downloaded).update,
 
-                            hide_folder = hide_folder,
-                            hide_name = hide_name,
                             offset = offset,
                             use_slow_download = use_slow_download
                         )
