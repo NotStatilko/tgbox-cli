@@ -48,7 +48,7 @@ else:
     from datetime import datetime
 
     from os.path import getsize
-    from platform import system
+    from platform import system, platform
 
     from base64 import urlsafe_b64encode
     from shutil import get_terminal_size
@@ -59,7 +59,7 @@ else:
     from code import interact as interactive_console
     from asyncio import gather, get_event_loop
 
-    from sys import exit
+    from sys import exit, version as sys_version
 
     if _MEIPASS:
         # PyInstaller builds has some problems in
@@ -504,6 +504,9 @@ def cli_info():
 
         f'''TGBOX-CLI Version: [YELLOW]{ver[0]}[YELLOW]\n'''
         f'''TGBOX Version: [MAGENTA]{ver[1]}[MAGENTA]\n\n'''
+
+        f'''PYTHON: [CYAN]{sys_version}[CYAN]\n'''
+        f'''SYSTEM: [CYAN]{platform()}[CYAN]\n\n'''
 
         f'''FFMPEG: {ffmpeg_version}\n'''
         f'''FAST_ENCRYPTION: {fast_encryption}\n'''
