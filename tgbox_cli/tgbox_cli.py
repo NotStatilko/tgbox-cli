@@ -1402,8 +1402,8 @@ def box_info(ctx, bytesize_total):
                 current_file = f'[YELLOW]{current_file_count}[YELLOW]'
 
             echo_text = (
-                f'''Total [WHITE]Box[WHITE] size is {total_formatted} ['''
-                f'''{current_file}/[GREEN]{total_files}[GREEN]]      \r'''
+                f'''Total [WHITE]Box[WHITE] size is {total_formatted}'''
+                f'''({total_bytes}) [{current_file}/[GREEN]{total_files}[GREEN]]   \r'''
             )
             echo(echo_text, nl=False)
 
@@ -1869,7 +1869,7 @@ def file_search(
 
                 echo_text = (
                     f'''Total [WHITE]files found ({current_file})[WHITE] '''
-                    f'''size is {total_formatted}    \r'''
+                    f'''size is {total_formatted}({total_bytes})   \r'''
                 )
                 echo(echo_text, nl=False)
 
