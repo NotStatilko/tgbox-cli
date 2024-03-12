@@ -3108,14 +3108,19 @@ def phrase_gen(words: int):
     help='Will enable logging for Python session'
 )
 @click.option(
-    '--execute', help='Path to Python script to execute'
+    '--execute', help='Path to Python script to execute',
+    type=click.Path(readable=True, path_type=Path)
 )
 @click.option(
     '--non-interactive', is_flag=True,
     help='Will disable interactive console'
 )
+@click.option(
+    '--i-understand-risk', is_flag=True,
+    help='Will disable warning prompt'
+)
 @click.pass_context
-def python(ctx, enable_logging, execute, non_interactive):
+def python(ctx, enable_logging, execute, non_interactive, i_understand_risk):
     """Launch interactive Python console"""
 
     global Objects
@@ -3131,7 +3136,7 @@ def python(ctx, enable_logging, execute, non_interactive):
     else:
         EXEC_SCRIPT = lambda: None
 
-    if execute:
+    if execute and not i_understand_risk:
         echo(
             '''\n    [RED]You are specified some Python script with the --execute option.\n'''
             '''    Third-party scripts can be useful for some actions that out of\n'''
