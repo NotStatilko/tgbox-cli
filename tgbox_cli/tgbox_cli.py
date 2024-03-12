@@ -888,8 +888,12 @@ def box_make(ctx, box_path, box_name, box_salt, phrase, s, n, p, r, l):
     '--scrypt-dklen', '-L', 'l', help='Scrypt key length',
     default=int(tgbox.defaults.Scrypt.DKLEN)
 )
+@click.option(
+    '--no-switch', is_flag=True,
+    help='If specified, will not switch to Box you connect'
+)
 @ctx_require(session=True)
-def box_open(ctx, box_path, phrase, s, n, p, r, l):
+def box_open(ctx, box_path, phrase, s, n, p, r, l, no_switch):
     """Decrypt & connect existing LocalBox"""
 
     echo('[CYAN]Making BaseKey...[CYAN] ', nl=False)
@@ -921,7 +925,9 @@ def box_open(ctx, box_path, phrase, s, n, p, r, l):
                 break
         else:
             ctx.obj.session['BOX_LIST'].append(box_data)
-            ctx.obj.session['CURRENT_BOX'] = len(ctx.obj.session['BOX_LIST']) - 1
+
+            if not no_switch:
+                ctx.obj.session['CURRENT_BOX'] = len(ctx.obj.session['BOX_LIST']) - 1
 
             ctx.obj.session.commit()
             echo('[GREEN]Successful![GREEN]')
@@ -1724,10 +1730,14 @@ def file_upload(
     '--bytesize-total', is_flag=True,
     help='If specified, will calc a total size of filtered files'
 )
+@click.option(
+    '--fetch-count', '-f', default=100,
+    help='Amount of files to fetch from LocalBox before return',
+)
 @click.pass_context
 def file_search(
         ctx, filters, force_remote, non_interactive,
-        non_imported, upend, bytesize_total):
+        non_imported, upend, bytesize_total, fetch_count):
     """List files by selected filters
 
     \b
@@ -1860,7 +1870,12 @@ def file_search(
             total_bytes, current_file_count = 0, 0
 
             echo('')
-            for dlbf in sync_async_gen(box.search_file(sf, cache_preview=False)):
+
+            iter_over = box.search_file(
+                sf, cache_preview=False,
+                fetch_count=fetch_count
+            )
+            for dlbf in sync_async_gen(iter_over):
                 total_bytes += dlbf.size
                 current_file_count += 1
 
