@@ -34,13 +34,6 @@ if getenv('_TGBOX_CLI_COMPLETE'):
     tgbox.defaults.Scrypt.R = 0
     tgbox.defaults.Scrypt.DKLEN = 0
 else:
-    try:
-        # Will be presented if run
-        # from the PyInstaller EXE
-        from sys import _MEIPASS
-    except ImportError:
-        _MEIPASS = None
-
     import tgbox
     import logging
 
@@ -61,22 +54,15 @@ else:
 
     from sys import exit, version as sys_version
 
-    if _MEIPASS:
-        # PyInstaller builds has some problems in
-        # importing modules started with dots, so
-        # here we will make an import from package
-        from tgbox_cli.tools import *
-        from tgbox_cli.version import *
-        from tgbox_cli.session import *
-    else:
-        from .tools import *
-        from .version import *
-        from .session import *
-
     from telethon.errors.rpcerrorlist import (
         UsernameNotOccupiedError, UsernameInvalidError
     )
     from enlighten import get_manager as get_enlighten_manager
+
+    from .tools import *
+    from .version import *
+    from .session import *
+
 
     TGBOX_CLI_NOCOLOR = bool(getenv('TGBOX_CLI_NOCOLOR'))
 
