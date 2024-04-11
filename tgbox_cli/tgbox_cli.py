@@ -498,6 +498,8 @@ def cli_info():
     else:
         fast_telethon = '[RED]NO[RED]'
 
+    sys_ver = sys_version.split('[', 1)[0].strip()
+
     echo(
         '''\n# Copyright [WHITE](c) Non [github.com/NotStatilko][WHITE], the MIT License\n'''
         '''# Author Email: [WHITE]thenonproton@protonmail.com[WHITE]\n\n'''
@@ -505,7 +507,7 @@ def cli_info():
         f'''TGBOX-CLI Version: [YELLOW]{ver[0]}[YELLOW]\n'''
         f'''TGBOX Version: [MAGENTA]{ver[1]}[MAGENTA]\n\n'''
 
-        f'''PYTHON: [CYAN]{sys_version}[CYAN]\n'''
+        f'''PYTHON: [CYAN]{sys_ver}[CYAN]\n'''
         f'''SYSTEM: [CYAN]{platform()}[CYAN]\n\n'''
 
         f'''FFMPEG: {ffmpeg_version}\n'''
