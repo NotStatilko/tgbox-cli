@@ -24,8 +24,8 @@ if system().lower() == 'windows':
     PYINSTALLER_DATA['ansicon/ANSI64.dll'] = 'depends/ansicon/ANSI64.dll'
 
 a = Analysis(
-    [str(MAIN_SCRIPT)],
-    pathex = [],
+    [MAIN_SCRIPT],
+    pathex = [str(TGBOX_CLI_FOLDER.parent)],
     binaries = [],
     datas = [],
     hiddenimports = [],
