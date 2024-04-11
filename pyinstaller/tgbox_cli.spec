@@ -10,7 +10,7 @@ TGBOX_CLI_FOLDER = Path.cwd().parent / 'tgbox_cli'
 DATA_FOLDER = TGBOX_CLI_FOLDER / 'data'
 
 SCRIPT_LOGO = DATA_FOLDER / 'logo.ico'
-MAIN_SCRIPT = TGBOX_CLI_FOLDER / 'tgbox_cli.py'
+MAIN_SCRIPT = Path.cwd() / '.tgbox_cli_wrapper.py'
 
 TGBOX_CLI_DATA: dict = {
     str(Path('data', i.name)): str(i)
