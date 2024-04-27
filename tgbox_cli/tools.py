@@ -89,8 +89,9 @@ class Progress:
                 color('[WHITE]Files[WHITE] [GREEN]SYNCED[GREEN], ') + '{elapsed} ' +\
                 color('[WHITE]Elapsed[WHITE], {rate:.0f} [WHITE]Files[WHITE]/second')
 
-        self.counter.update()
-        self.counter.close()
+        if self.counter:
+            self.counter.update()
+            self.counter.close()
 
     def update(self, _, total):
         if not self.counter:
