@@ -5,7 +5,7 @@ This is a [**CLI**](https://en.wikipedia.org/wiki/Command-line_interface) implem
 ![List of the TGBOX-CLI commands](https://github.com/NotStatilko/tgbox-cli/assets/43419673/1a20cb7d-9d5b-4bf9-bea9-b8b79ca028c8)
 ## Installation
 
-To install the **TGBOX-CLI** you will need to have **at least** Python 3.8.
+To *build* the **TGBOX-CLI** you will need to have **at least** Python 3.8.
 
 ### Windows builds (.EXE)
 
@@ -78,6 +78,6 @@ tgbox-cli help
 
 ## Bug reports
 
-Feel free to report some problems (i believe there can be many) on the [**GitHub Issue tab**](https://github.com/NotStatilko/tgbox-cli/issues). Any encountered error should be written to the logfile. Use the **logfile-open** command and **attach** its content to the bug report. 
+Feel free to report some problems (i believe there can be many) on the [**GitHub Issue tab**](https://github.com/NotStatilko/tgbox-cli/issues). Any encountered error should be written to the logfile. Use the **logfile-open** command and **attach** its content to the bug report.
 
 **Thanks**.
