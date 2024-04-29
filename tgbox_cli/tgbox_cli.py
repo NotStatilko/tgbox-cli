@@ -524,10 +524,13 @@ def cli_info():
             'The thoughts and images, the unborn child that never was conceived\n'
         )
         for L in bs_ana:
-            click.secho(
-                L, fg='white', bg='bright_red',
-                bold=True, italic=True, nl=False
-            )
+            if TGBOX_CLI_NOCOLOR:
+                echo(L, nl=False)
+            else:
+                click.secho(
+                    L, fg='white', bg='bright_red',
+                    bold=True, italic=True, nl=False
+                )
             if L == '\n':
                 sleep(0.999)
             elif L == ',':
