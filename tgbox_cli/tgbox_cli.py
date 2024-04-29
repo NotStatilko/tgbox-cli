@@ -63,6 +63,17 @@ else:
     from .version import *
     from .session import *
 
+    if tgbox.crypto.FAST_ENCRYPTION:
+        from cryptography import __version__ as CRYPTOGRAPHY_VERSION
+    else:
+        CRYPTOGRAPHY_VERSION = None
+
+    if tgbox.crypto.FAST_TELETHON:
+        from importlib.metadata import version as _package_version
+        CRYPTG_VERSION = _package_version('cryptg')
+    else:
+        CRYPTG_VERSION = None
+
 
     TGBOX_CLI_NOCOLOR = bool(getenv('TGBOX_CLI_NOCOLOR'))
 
@@ -470,17 +481,18 @@ def cli_info():
             args=[tgbox.defaults.FFMPEG, '-version'],
             stdout=PIPE, stderr=None
         )
-        ffmpeg_version = f"[GREEN]{sp_result.stdout.split(b' ',3)[2].decode()}[GREEN]"
+        ffmpeg_version = sp_result.stdout.split(b' ',3)[2].decode()
+        ffmpeg_version = f"[GREEN]YES[GREEN]([CYAN]v{ffmpeg_version}[CYAN])"
     except:
         ffmpeg_version = '[RED]NOT FOUND[RED]'
 
     if tgbox.crypto.FAST_ENCRYPTION:
-        fast_encryption = '[GREEN]YES[GREEN]'
+        fast_encryption = f'[GREEN]YES[GREEN]([CYAN]v{CRYPTOGRAPHY_VERSION}[CYAN])'
     else:
         fast_encryption = '[RED]NO[RED]'
 
     if tgbox.crypto.FAST_TELETHON:
-        fast_telethon = '[GREEN]YES[GREEN]'
+        fast_telethon = f'[GREEN]YES[GREEN]([CYAN]v{CRYPTG_VERSION}[CYAN])'
     else:
         fast_telethon = '[RED]NO[RED]'
 
@@ -500,9 +512,30 @@ def cli_info():
         f'''FAST_ENCRYPTION: {fast_encryption}\n'''
         f'''FAST_TELETHON: {fast_telethon}\n\n'''
 
-        f'''LOGLEVEL: [BLUE]{logging_level}[BLUE]\n'''
-        f'''LOGFILE: [BLUE]{logfile.name}[BLUE]\n'''
+        f'''LOGGING: [YELLOW]{logging_level}[YELLOW]([WHITE]{logfile.name}[WHITE])\n'''
     )
+    if getenv('BLACK_SABBATH'):
+        from time import sleep
+
+        bs_ana = (
+            '\nI am the world that hides the universal secret of all time\n'
+            'Destruction of the empty spaces is my one and only crime\n'
+            'I\'ve lived a thousand times, I found out what it means to be believed\n'
+            'The thoughts and images, the unborn child that never was conceived\n'
+        )
+        for L in bs_ana:
+            click.secho(
+                L, fg='white', bg='bright_red',
+                bold=True, italic=True, nl=False
+            )
+            if L == '\n':
+                sleep(0.999)
+            elif L == ',':
+                sleep(0.666)
+            else:
+                sleep(0.0666)
+
+        echo('\n') # HAHA!!!
 
 # ========================================================= #
 # = Telegram account management commands ================== #
