@@ -1589,14 +1589,13 @@ def box_delete(ctx):
 # = Local & Remote BoxFile management commands ============ #
 
 @cli.command()
-@click.option(
-    '--path', '-p', required=True, prompt=True,
-    help='Will upload specified path. If directory, upload all files in it',
+@click.argument(
+    'target', nargs=-1, required=False, default=None,
     type=click.Path(readable=True, dir_okay=True, path_type=Path)
 )
 @click.option(
     '--file-path', '-f', type=Path,
-    help='File path. Will be system\'s if not specified'
+    help='Change file path of target in Box. System\'s if not specified'
 )
 @click.option(
     '--cattrs', '-c', help='File\'s CustomAttributes. Format: "key:value key:value"'
@@ -1628,15 +1627,28 @@ def box_delete(ctx):
 )
 @ctx_require(dlb=True, drb=True)
 def file_upload(
-        ctx, path, file_path, cattrs, no_update,
+        ctx, target, file_path, cattrs, no_update,
         force_update, use_slow_upload, no_thumb,
         max_workers, max_bytes):
     """
-    Upload specified path (file/dir) to the Box
+    Upload specified TARGET to the Box
 
+    \b
+    TARGET can be a path to File or a Directory.
+    If TARGET is a Directory, -- this command
+    will upload to Box all files from dir.
+    \b
     If file was already uploaded but changed (in size)
     and --no-update is NOT specified, -- will re-upload.
+    \b
+    Example:\b
+        # You can specify as much Files/Directories as you wish
+        tgbox-cli file-upload /home/user/Music /home/user/Documents
     """
+    if not target:
+        target = click.prompt('Please enter target to upload')
+        target = (Path(target),)
+
     current_workers = max_workers
     current_bytes = max_bytes
 
@@ -1688,62 +1700,69 @@ def file_upload(
 
         await file_action[0](**file_action[1])
 
-    if path.is_dir():
-        iter_over = path.rglob('*')
-    else:
-        iter_over = (path,)
-
-    to_upload = []
-    for current_path in iter_over:
-
-        if current_path.is_dir():
+    for path in target:
+        if not path.exists():
+            echo(f'[RED]@ Target "{path}" doesn\'t exists! Skipping...[RED]')
             continue
 
-        if not file_path:
-            remote_path = current_path.resolve()
+        echo(f'[CYAN]@ Working on[CYAN] [WHITE]{str(path.absolute())}[WHITE] ...')
+
+        if path.is_dir():
+            iter_over = path.rglob('*')
         else:
-            remote_path = Path(file_path) / current_path.name
+            iter_over = (path,)
 
-        if cattrs:
-            try:
-                parsed_cattrs = [
-                    i.strip().split(':')
-                    for i in cattrs.split() if i
-                ]
-                parsed_cattrs = {
-                    k.strip() : v.strip().encode()
-                    for k,v in parsed_cattrs
-                }
-            except ValueError as e:
-                raise ValueError('Invalid cattrs!', e) from None
-        else:
-            parsed_cattrs = None
+        to_upload = []
+        for current_path in iter_over:
 
-        current_bytes -= getsize(current_path)
-        current_workers -= 1
+            if current_path.is_dir():
+                continue
 
-        if not all((current_workers > 0, current_bytes > 0)):
+            if not file_path:
+                remote_path = current_path.resolve()
+            else:
+                remote_path = Path(file_path) / current_path.name
+
+            if cattrs:
+                try:
+                    parsed_cattrs = [
+                        i.strip().split(':')
+                        for i in cattrs.split() if i
+                    ]
+                    parsed_cattrs = {
+                        k.strip() : v.strip().encode()
+                        for k,v in parsed_cattrs
+                    }
+                except ValueError as e:
+                    raise ValueError('Invalid cattrs!', e) from None
+            else:
+                parsed_cattrs = None
+
+            current_bytes -= getsize(current_path)
+            current_workers -= 1
+
+            if not all((current_workers > 0, current_bytes > 0)):
+                try:
+                    _upload(to_upload)
+                except tgbox.errors.NotEnoughRights as e:
+                    echo(f'\n[RED]{e}[RED]')
+                    return
+
+                current_workers = max_workers - 1
+                current_bytes = max_bytes - getsize(current_path)
+
+            pw = _push_wrapper(
+                file = current_path,
+                file_path = remote_path,
+                cattrs = parsed_cattrs
+            )
+            to_upload.append(pw)
+
+        if to_upload: # If any files left
             try:
                 _upload(to_upload)
             except tgbox.errors.NotEnoughRights as e:
                 echo(f'\n[RED]{e}[RED]')
-                return
-
-            current_workers = max_workers - 1
-            current_bytes = max_bytes - getsize(current_path)
-
-        pw = _push_wrapper(
-            file = current_path,
-            file_path = remote_path,
-            cattrs = parsed_cattrs
-        )
-        to_upload.append(pw)
-
-    if to_upload: # If any files left
-        try:
-            _upload(to_upload)
-        except tgbox.errors.NotEnoughRights as e:
-            echo(f'\n[RED]{e}[RED]')
 
 @cli.command()
 @click.argument('filters',nargs=-1)

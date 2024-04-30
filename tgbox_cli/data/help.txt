@@ -175,13 +175,16 @@
         [MAGENTA]|||||| Uploading Files ||||||[MAGENTA]
 
         It's time to upload our first file. Let's see how:
-            [BRIGHT_WHITE]tgbox-cli file-upload --path path/to/your/file[BRIGHT_WHITE]
+            [BRIGHT_WHITE]tgbox-cli file-upload path/to/your/file[BRIGHT_WHITE]
 
-        Option [GREEN]--path[GREEN] (or [GREEN]-p[GREEN]) will allow you to specify a path to
-        a file that will be prepared, encrypted and pushed to
+        Path here is a [CYAN]target[CYAN]. Add as much targets as you want:
+            [BRIGHT_WHITE]tgbox-cli file-upload TARGET_1 TARGET_2 ...[BRIGHT_WHITE]
+
+        Argument [CYAN]target[CYAN] will allow you to specify a path(s) to
+        a file(s) that will be prepared, encrypted and pushed to
         your RemoteBox channel. This will work not only for a
-        file, but for [WHITE]folders too[WHITE]! You can specify a path to a
-        folder and TGBOX-CLI will upload all dirs/files from it.
+        file, but for [WHITE]directories too[WHITE]! You can specify a path
+        to a folder and CLI will upload all dirs/files from it.
 
         [YELLOW]Please note that uploading one big file is always better[YELLOW]
         [YELLOW]than a thousand of small[YELLOW] because we're working around the
@@ -195,7 +198,7 @@
 
         We can also attach a special attributes -- CAttrs (or
         the "CustomAttributes") to a file before uploading:
-            [BRIGHT_WHITE]tgbox-cli file-upload --path Scripts/ --cattrs="tag:code"[BRIGHT_WHITE]
+            [BRIGHT_WHITE]tgbox-cli file-upload Scripts/ --cattrs="tag:code"[BRIGHT_WHITE]
 
         This will add CAttr with key "tag" and value "code"
         to every file from the folder Scripts/ on upload,
@@ -206,7 +209,7 @@
         (make a [WHITE]full re-upload[WHITE] of) it. You can disable this by
         specifying [GREEN]--no-update[GREEN] flag on [BLUE]file-upload[BLUE]. There is
         also the [GREEN]--force-update[GREEN] flag, which will force to
-        update every target file (from [GREEN]--path[GREEN]) on upload.
+        update every [CYAN]target[CYAN] file on upload.
 
         Those who want to control file uploading at expert
         level should know about [WHITE]balancing[WHITE]. In a theory, we
