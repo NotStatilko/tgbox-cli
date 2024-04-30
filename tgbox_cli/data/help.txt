@@ -114,6 +114,9 @@
         This command will prompt you for phone number linked to
         your Telegram account, login code, and password.
 
+        You can specify custom [WHITE]API_ID[WHITE] and [WHITE]API_HASH[WHITE] on this command
+        with ([GREEN]--api-id[GREEN] & [GREEN]--api-hash[GREEN]) if you want or need to.
+
         You can connect as many accounts as you want,
         as well as switch between them with the simple
         [BLUE]account-switch[BLUE] command.

@@ -548,14 +548,24 @@ def cli_info():
     '--phone', '-p', required=True, prompt=True,
     help='Phone number of your Telegram account'
 )
+@click.option(
+    '--api-id', type=int, help='Custom API_ID from my.telegram.org'
+)
+@click.option(
+    '--api-hash', help='Custom API_HASH from my.telegram.org'
+)
 @ctx_require(session=True)
-def account_connect(ctx, phone):
+def account_connect(ctx, phone, api_id, api_hash):
     """Connect your Telegram account"""
+
+    if any((api_id, api_hash)) and not all((api_id, api_hash)):
+        echo('[RED]You need to specify both, --api-id & --api-hash[RED]')
+        return
 
     tc = tgbox.api.TelegramClient(
         phone_number=phone,
-        api_id=API_ID,
-        api_hash=API_HASH
+        api_id=(api_id or API_ID),
+        api_hash=(api_hash or API_HASH)
     )
     echo('[CYAN]Connecting to Telegram...[CYAN]')
     tgbox.sync(tc.connect())
@@ -1176,8 +1186,11 @@ def box_account_change(ctx, number):
     This can be useful if you disconnected your TGBOX in
     Telegram settings (Privacy & Security > Devices) or
     your local TGBOX was too long offline.
-    """
 
+    You can also use it to change API_ID and API_HASH
+    params of your Box if '--api-id' & '--api-hash' was
+    used on the 'account-connect' command prior.
+    """
     if number < 1 or number > len(ctx.obj.session['ACCOUNT_LIST']):
         echo(
             '''[RED]Invalid account number! See[RED] '''
