@@ -2430,8 +2430,14 @@ def file_last_id(ctx, remote):
     '--ask-before-remove','-a', is_flag=True,
     help='If specified, will ask "Are you sure?" for each file'
 )
+@click.option(
+    '--remove-empty-directories','-e', is_flag=True,
+    help='If specified, will remove Directory of file If empty'
+)
 @click.pass_context
-def file_remove(ctx, filters, local_only, ask_before_remove):
+def file_remove(
+        ctx, filters, local_only, ask_before_remove,
+        remove_empty_directories):
     """Remove files by selected filters
 
     \b
@@ -2545,7 +2551,9 @@ def file_remove(ctx, filters, local_only, ask_before_remove):
                         'Are you TOTALLY sure? ([y]es | [n]o | [i]nfo | [e]xit)'
                     )
                     if choice.lower() in ('yes','y'):
-                        tgbox.sync(dlbf.delete())
+                        tgbox.sync(dlbf.delete(remove_empty_directories=\
+                            remove_empty_directories))
+
                         if not local_only:
                             drbf = tgbox.sync(ctx.obj.drb.get_file(dlbf.id))
                             tgbox.sync(drbf.delete())
@@ -2570,7 +2578,8 @@ def file_remove(ctx, filters, local_only, ask_before_remove):
                 echo(f'[WHITE]Removing[WHITE] [RED]{len(to_remove)}[RED] [WHITE]files[WHITE]...')
 
                 delete_files = ctx.obj.dlb.delete_files(
-                    *to_remove, rb=(None if local_only else ctx.obj.drb)
+                    *to_remove, rb=(None if local_only else ctx.obj.drb),
+                    remove_empty_directories=remove_empty_directories
                 )
                 tgbox.sync(delete_files)
 
