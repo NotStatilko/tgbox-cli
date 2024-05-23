@@ -1853,6 +1853,7 @@ def file_search(
             i.e "22/02/22, 22:22:22" or "22/02/22"
                ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
+        minor_version int: File minor version
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
         \b
@@ -2089,6 +2090,7 @@ def file_download(
             i.e "22/02/22, 22:22:22" or "22/02/22"
                ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
+        minor_version int: File minor version
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
         \b
@@ -2486,6 +2488,7 @@ def file_remove(ctx, filters, local_only, ask_before_remove):
             i.e "22/02/22, 22:22:22" or "22/02/22"
                ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
+        minor_version int: File minor version
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
         \b
@@ -2646,6 +2649,7 @@ def file_open(ctx, filters, locate, propagate, continuously):
             i.e "22/02/22, 22:22:22" or "22/02/22"
                ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
+        minor_version int: File minor version
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
         \b
@@ -2755,6 +2759,7 @@ def file_forward(ctx, filters, chat, chat_is_name):
             i.e "22/02/22, 22:22:22" or "22/02/22"
                ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
+        minor_version int: File minor version
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
         \b
@@ -2904,6 +2909,7 @@ def file_attr_edit(ctx, filters, attribute, local_only):
             i.e "22/02/22, 22:22:22" or "22/02/22"
                ("%d/%m/%y, %H:%M:%S" or "%d/%m/%y")
         \b
+        minor_version int: File minor version
         imported bool: Yield only imported files
         re       bool: Regex search for every str filter
         \b
