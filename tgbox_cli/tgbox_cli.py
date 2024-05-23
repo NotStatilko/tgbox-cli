@@ -1649,6 +1649,9 @@ def file_upload(
         target = click.prompt('Please enter target to upload')
         target = (Path(target),)
 
+    # Easily remove duplicates (if any)
+    target = tuple(set(target))
+
     current_workers = max_workers
     current_bytes = max_bytes
 
@@ -1939,7 +1942,7 @@ def file_search(
                 current_file = f'[YELLOW]{current_file_count}[YELLOW]'
 
                 echo_text = (
-                    f'''Total [WHITE]files found ({current_file})[WHITE] '''
+                    f'''Total [WHITE]files found [WHITE]({current_file}) '''
                     f'''size is {total_formatted}({total_bytes})   \r'''
                 )
                 echo(echo_text, nl=False)
@@ -2012,6 +2015,10 @@ def file_search(
     help='Download decrypted file from specified offset'
 )
 @click.option(
+    '--omit-hmac-check', is_flag=True,
+    help='If specified, will omit HMAC check on download'
+)
+@click.option(
     '--max-workers', default=10, type=click.IntRange(1,50),
     help='Max amount of files downloaded at the same time, default=10',
 )
@@ -2025,7 +2032,7 @@ def file_download(
         ctx, filters, preview, show, locate,
         hide_name, hide_folder, out, ignore_file_path,
         force_remote, redownload, use_slow_download,
-        offset, max_workers, max_bytes):
+        offset, omit_hmac_check, max_workers, max_bytes):
     """Download files by selected filters
 
     \b
@@ -2217,7 +2224,7 @@ def file_download(
                                         f.truncate(outfile_size - (outfile_size % 524288))
 
                                 # File is partially downloaded, so we need to fetch left bytes
-                                offset, write_mode = outfile.stat().st_size, 'ab'
+                                offset, write_mode = outfile.stat().st_size, 'ab+'
 
                         if offset % 4096 or offset % 524288:
                             echo('[RED]Offset must be divisible by 4096 and by 524288.[RED]')
@@ -2240,11 +2247,12 @@ def file_download(
                                 p_file_name, blocks_downloaded).update,
 
                             offset = offset,
-                            use_slow_download = use_slow_download
+                            use_slow_download = use_slow_download,
+                            omit_hmac_check = omit_hmac_check
                         )
                         to_gather_files.append(download_coroutine)
 
-                        if write_mode == 'ab': # Partially downloaded write
+                        if write_mode == 'ab+': # Partially downloaded write
                             offset = 0 # Reset offset for the next files
 
                         if show or locate:
