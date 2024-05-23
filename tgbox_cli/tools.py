@@ -322,7 +322,7 @@ def format_dxbf(
     time = datetime.fromtimestamp(dxbf.upload_time)
     time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN] "
 
-    version = f'v1.{dxbf.minor_version}' if dxbf.minor_version else 'ver N/A'
+    version = f'v1.{dxbf.minor_version}' if dxbf.minor_version > 0 else 'ver N/A'
     time += f'[BRIGHT_BLACK]({version})[BRIGHT_BLACK]'
 
     mimedur = f'[WHITE]{dxbf.mime}[WHITE]' if dxbf.mime else 'regular file'
