@@ -3024,15 +3024,24 @@ def file_attr_edit(ctx, filters, attribute, local_only):
 # = LocalBox directory management commands ================ #
 
 @cli.command()
+@click.option(
+    '--cleanup','-c', is_flag=True,
+    help='If specified, will remove ALL orphaned folders'
+)
 @ctx_require(dlb=True)
-def dir_list(ctx):
+def dir_list(ctx, cleanup):
     """List all directories in LocalBox"""
 
-    dirs = ctx.obj.dlb.contents(ignore_files=True)
+    if cleanup:
+        echo(f'\n[WHITE]@ Cleanup in process, please wait...[WHITE]')
+        tgbox.sync(ctx.obj.dlb.remove_empty_directories())
+        echo('[GREEN]Done.[GREEN]\n')
+    else:
+        dirs = ctx.obj.dlb.contents(ignore_files=True)
 
-    for dir in sync_async_gen(dirs):
-        tgbox.sync(dir.lload(full=True))
-        echo(str(dir))
+        for dir in sync_async_gen(dirs):
+            tgbox.sync(dir.lload(full=True))
+            echo(str(dir))
 
 @cli.command()
 @click.option(
