@@ -3036,12 +3036,12 @@ def dir_list(ctx, cleanup):
         echo(f'\n[WHITE]@ Cleanup in process, please wait...[WHITE]')
         tgbox.sync(ctx.obj.dlb.remove_empty_directories())
         echo('[GREEN]Done.[GREEN]\n')
-    else:
-        dirs = ctx.obj.dlb.contents(ignore_files=True)
 
-        for dir in sync_async_gen(dirs):
-            tgbox.sync(dir.lload(full=True))
-            echo(str(dir))
+    dirs = ctx.obj.dlb.contents(ignore_files=True)
+
+    for dir in sync_async_gen(dirs):
+        tgbox.sync(dir.lload(full=True))
+        echo(str(dir))
 
 @cli.command()
 @click.option(
