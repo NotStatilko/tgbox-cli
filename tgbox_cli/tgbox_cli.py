@@ -1591,7 +1591,7 @@ def box_delete(ctx):
 @cli.command()
 @click.argument(
     'target', nargs=-1, required=False, default=None,
-    type=click.Path(readable=True, dir_okay=True, path_type=Path)
+    type=click.Path(readable=None, dir_okay=True, path_type=Path)
 )
 @click.option(
     '--file-path', '-f', type=Path,
@@ -1707,6 +1707,13 @@ def file_upload(
         if not path.exists():
             echo(f'[RED]@ Target "{path}" doesn\'t exists! Skipping...[RED]')
             continue
+
+        if path.is_dir():
+            try:
+                next(path.iterdir())
+            except PermissionError:
+                echo(f'[RED]@ Target "{path}" is not readable! Skipping...[RED]')
+                continue
 
         echo(f'[CYAN]@ Working on[CYAN] [WHITE]{str(path.absolute())}[WHITE] ...')
 
