@@ -185,6 +185,34 @@ def sync_async_gen(async_gen: AsyncGenerator):
     except StopAsyncIteration:
         return
 
+def convert_str_date_size(date: str=None, size: str=None) -> int:
+    """
+    This function convert formatted date (str) to timestamp (int)
+    and formatted size (str) to regular bytesize (int).
+    """
+    if date:
+        if not date.replace('.','',1).isdigit():
+            # Date can be also specified as string
+            # time, i.e "21/05/23, 19:51:29".
+            try:
+                date = datetime.strptime(date, '%d/%m/%y, %H:%M:%S')
+            except ValueError:
+                # Maybe only Date/Month/Year string was specified?
+                date = datetime.strptime(date, '%d/%m/%y')
+            date = date.timestamp()
+        else:
+            date = float(date)
+        return date
+
+    if size:
+        if not size.isdigit():
+            # This filters can be also specified as string
+            # size, i.e "1GB" or "112KB" or "100B", etc...
+            size = formatted_bytes_to_int(size)
+        else:
+            size = int(size)
+        return size
+
 def filters_to_searchfilter(filters: tuple) -> tgbox.tools.SearchFilter:
     """
     This function will make SearchFilter from
@@ -221,22 +249,10 @@ def filters_to_searchfilter(filters: tuple) -> tgbox.tools.SearchFilter:
                     filter[1] = cattrs
 
             if filter[0] in ('min_time', 'max_time'):
-                # This filters can be also specified as string
-                # time, i.e "21/05/23, 19:51:29".
-                if not filter[1].replace('.','',1).isdigit():
-                    try:
-                        filter[1] = datetime.strptime(filter[1], '%d/%m/%y, %H:%M:%S')
-                    except ValueError:
-                        # Maybe only Date/Month/Year string was specified
-                        filter[1] = datetime.strptime(filter[1], '%d/%m/%y')
-
-                    filter[1] = filter[1].timestamp()
+                filter[1] = convert_str_date_size(date=filter[1])
 
             if filter[0] in ('min_size', 'max_size'):
-                # This filters can be also specified as string
-                # size, i.e "1GB" or "112KB" or "100B", etc...
-                if not filter[1].isdigit():
-                    filter[1] = formatted_bytes_to_int(filter[1])
+                filter[1] = convert_str_date_size(size=filter[1])
 
             if filter[0] not in current_filter:
                 current_filter[filter[0]] = [filter[1]]

@@ -190,8 +190,8 @@
         [YELLOW]than a thousand of small[YELLOW] because we're working around the
         Telegram messenger, and [WHITE]not[WHITE] over the real file server. You
         may end up with a Box that will be really hard to work on
-        if your channel will contain i.e. 100,000 files or even more (
-        there is even limit on messages, 1M! This is not a challenge :).
+        if your channel will contain i.e. 100,000 files or even more
+        [BRIGHT_BLACK](Limit on messages is 1M. Do not treat this as challenge :)[BRIGHT_BLACK]
         |
         [YELLOW]If you have a really big amount of small files[YELLOW], --
         [YELLOW]consider to ZIP them firstly[YELLOW], then upload.
@@ -210,6 +210,17 @@
         specifying [GREEN]--no-update[GREEN] flag on [BLUE]file-upload[BLUE]. There is
         also the [GREEN]--force-update[GREEN] flag, which will force to
         update every [CYAN]target[CYAN] file on upload.
+
+        You can use [CYAN]filters[CYAN] to control which files will be uploaded
+        to your Box. [BLUE]file-upload[BLUE] has [WHITE]eight[WHITE] [CYAN]filters[CYAN] in total. For
+        example, to upload [WHITE]only[WHITE] images from specified path you
+        can use this command (example):
+            [BRIGHT_WHITE]tgbox-cli file-upload Music/ +i mime=image[BRIGHT_WHITE]
+
+        See next, [MAGENTA]Searching Files[MAGENTA] chapter to master
+        [CYAN]filters[CYAN] usage. Please note that in [BLUE]file-upload[BLUE],
+        [CYAN]they[CYAN] should be placed [WHITE]after[WHITE] TARGET and [WHITE]always[WHITE]
+        include either [CYAN]+i[CYAN] ([CYAN]++include[CYAN]) or [CYAN]+e[CYAN] ([CYAN]++exclude[CYAN]).
 
         Those who want to control file uploading at expert
         level should know about [WHITE]balancing[WHITE]. In a theory, we

@@ -39,6 +39,7 @@ else:
 
     from time import sleep
     from datetime import datetime
+    from re import search as re_search
 
     from os.path import getsize
     from platform import system, platform
@@ -58,6 +59,7 @@ else:
         UsernameNotOccupiedError, UsernameInvalidError
     )
     from enlighten import get_manager as get_enlighten_manager
+    from filetype import guess as filetype_guess # Included in tgbox
 
     from .tools import *
     from .version import *
@@ -1590,8 +1592,7 @@ def box_delete(ctx):
 
 @cli.command()
 @click.argument(
-    'target', nargs=-1, required=False, default=None,
-    type=click.Path(readable=None, dir_okay=True, path_type=Path)
+    'target', nargs=-1, required=False, default=None
 )
 @click.option(
     '--file-path', '-f', type=Path,
@@ -1631,7 +1632,7 @@ def file_upload(
         force_update, use_slow_upload, no_thumb,
         max_workers, max_bytes):
     """
-    Upload specified TARGET to the Box
+    Upload TARGET by specified filters to the Box
 
     \b
     TARGET can be a path to File or a Directory.
@@ -1641,16 +1642,76 @@ def file_upload(
     If file was already uploaded but changed (in size)
     and --no-update is NOT specified, -- will re-upload.
     \b
+    Available filters:\b
+        file_path str: File path
+        file_name str: File name
+        mime str: File MIME type
+        \b
+        min_size integer/str: File Size should be > min_size
+        max_size integer/str: File Size should be < max_size
+        +
+        min_size & max_size can be also specified as string,
+            i.e "1GB" (one gigabyte), "122.45KB" or "700B"
+        \b
+        min_time integer/float/str: Upload Time should be > min_time
+        max_time integer/float/str: Upload Time should be < max_time
+        +
+        min_time & max_time can be also specified as string,
+            i.e "22/02/22, 22:22:22" or "22/02/22"
+        \b
+        re bool: Regex search for every str filter
+    \b
+    Please note that Filters should be placed after TARGET!
+    \b
+    You can also use special flags to specify
+    that filters is for include or exclude search:
+    \b
     Example:\b
-        # You can specify as much Files/Directories as you wish
+        # An ordinary upload process (upload Music & Documents folders)
         tgbox-cli file-upload /home/user/Music /home/user/Documents
+        \b
+        # Include flag (upload only .DOC from Documents, ignore unmatched)
+        tgbox-cli file-upload /home/non/Documents +i file_name='.doc'
+        \b
+        # Include flag (ingore .DOC, upload every single file from Documents)
+        tgbox-cli file-upload /home/non/Documents +e file_name='.doc'
+        \b
+        You can use both, the ++include and ++exclude (+i, +e)
+        in one command, but make sure to place them after TARGET!
     """
     if not target:
         target = click.prompt('Please enter target to upload')
         target = (Path(target),)
+    else:
+        if '+i' in target:
+            filters_pos_i = target.index('+i')
 
-    # Easily remove duplicates (if any)
-    target = tuple(set(target))
+        elif '++include' in target:
+            filters_pos_i = target.index('++include')
+        else:
+            filters_pos_i = None
+
+        if '+e' in target:
+            filters_pos_e = target.index('+e')
+
+        elif '++exclude' in target:
+            filters_pos_e = target.index('++exclude')
+        else:
+            filters_pos_e = None
+
+        if all((filters_pos_i, filters_pos_e)):
+            filters_pos = min(filters_pos_i, filters_pos_e)
+        else:
+            filters_pos = (filters_pos_i or filters_pos_e)
+
+        if filters_pos:
+            filters = filters_to_searchfilter(target[filters_pos:])
+            target = target[:filters_pos]
+        else:
+            filters = None
+
+    # Remove all duplicates present in Target (if any)
+    target = tuple(set(Path(p) for p in target))
 
     current_workers = max_workers
     current_bytes = max_bytes
@@ -1677,7 +1738,7 @@ def file_upload(
                 file_action = (ctx.obj.drb.update_file, {'rbf': drbf})
         else:
             # Ignore upload if file exists and wasn't changed
-            echo(f'[YELLOW]{file} is already uploaded. Skipping...[YELLOW]')
+            echo(f'[YELLOW]| File {file} is already uploaded. Skipping...[YELLOW]')
             return
         try:
             pf = await ctx.obj.dlb.prepare_file(
@@ -1715,18 +1776,124 @@ def file_upload(
                 echo(f'[RED]@ Target "{path}" is not readable! Skipping...[RED]')
                 continue
 
-        echo(f'[CYAN]@ Working on[CYAN] [WHITE]{str(path.absolute())}[WHITE] ...')
-
         if path.is_dir():
             iter_over = path.rglob('*')
         else:
             iter_over = (path,)
 
+        echo(f'[CYAN]@ Working on[CYAN] [WHITE]{str(path.absolute())}[WHITE] ...')
+
         to_upload = []
         for current_path in iter_over:
 
             if current_path.is_dir():
+
+                echo(f'[CYAN]@ Working on[CYAN] [WHITE]{str(current_path)}[WHITE] ...')
                 continue
+
+            if filters:
+                # Flags. First is for 'Include', the second
+                # is for 'Exclude. Both must be 'True' to
+                # start uploading process.
+                yield_result = [True, True]
+
+                # Will use Regex Search if 're' is included in Filters, "In" otherwise.
+                in_func = re_search if filters.in_filters['re'] else lambda p,s: p in s
+
+                for indx, filter in enumerate((filters.in_filters, filters.ex_filters)):
+                    try:
+                        cp_st_mtime = current_path.stat().st_mtime # File Modification Time
+                        cp_st_size = current_path.stat().st_size # File Size
+                        file_mime = filetype_guess(current_path) # File MIME Type
+                        file_mime = file_mime.mime if file_mime else ''
+                        abs_path = str(current_path.absolute()) # File absolute Path
+                    except FileNotFoundError:
+                        echo(f'[RED]x Can not stat() target "{current_path}". Skipping...[RED]')
+                        yield_result[0] = False; break
+
+                    for filter_file_path in filter['file_path']:
+                        if in_func(filter_file_path, abs_path):
+                            if indx == 1:
+                                yield_result[indx] = False
+                            break
+                    else:
+                        if filter['file_path']:
+                            if indx == 0:
+                                yield_result[indx] = False
+                                break
+
+                    for file_name in filter['file_name']:
+                        if in_func(file_name, current_path.name):
+                            if indx == 1:
+                                yield_result[indx] = False
+                            break
+                    else:
+                        if filter['file_name']:
+                            if indx == 0:
+                                yield_result[indx] = False
+                                break
+
+                    for mime in filter['mime']:
+                        if in_func(mime, file_mime):
+                            if indx == 1:
+                                yield_result[indx] = False
+                            break
+                    else:
+                        if filter['mime']:
+                            if indx == 0:
+                                yield_result[indx] = False
+                                break
+
+                    if filter['min_time']:
+                        if cp_st_mtime < filter['min_time'][-1]:
+                            if indx == 0:
+                                yield_result[indx] = False
+                                break
+
+                        elif cp_st_mtime >= filter['min_time'][-1]:
+                            if indx == 1:
+                                yield_result[indx] = False
+                                break
+
+                    if filter['max_time']:
+                        if cp_st_mtime > filter['max_time'][-1]:
+                            if indx == 0:
+                                yield_result[indx] = False
+                                break
+
+                        elif cp_st_mtime <= filter['max_time'][-1]:
+                            if indx == 1:
+                                yield_result[indx] = False
+                                break
+
+                    if filter['min_size']:
+                        if cp_st_size < filter['min_size'][-1]:
+                            if indx == 0:
+                                yield_result[indx] = False
+                                break
+
+                        elif cp_st_size >= filter['min_size'][-1]:
+                            if indx == 1:
+                                yield_result[indx] = False
+                                break
+
+                    if filter['max_size']:
+                        if cp_st_size > filter['max_size'][-1]:
+                            if indx == 0:
+                                yield_result[indx] = False
+                                break
+
+                        elif cp_st_size <= filter['max_size'][-1]:
+                            if indx == 1:
+                                yield_result[indx] = False
+                                break
+
+                if not all(yield_result):
+                    echo(
+                        f'[YELLOW]x Target "{current_path}" is '
+                        'ignored by filters! Skipping...[YELLOW]'
+                    )
+                    continue
 
             if not file_path:
                 remote_path = current_path.resolve()
@@ -1832,7 +1999,7 @@ def file_search(
                !: The min_id & max_id will be ignored if scope used.
         \b
         id integer: File’s ID
-        mime str: File mime type
+        mime str: File MIME type
         \b
         cattrs: File CAttrs
                 -----------
@@ -2069,7 +2236,7 @@ def file_download(
                !: The min_id & max_id will be ignored if scope used.
         \b
         id integer: File’s ID
-        mime str: File mime type
+        mime str: File MIME type
         \b
         cattrs: File CAttrs
                 -----------
@@ -2473,7 +2640,7 @@ def file_remove(
                !: The min_id & max_id will be ignored if scope used.
         \b
         id integer: File’s ID
-        mime str: File mime type
+        mime str: File MIME type
         \b
         cattrs: File CAttrs
                 -----------
@@ -2637,7 +2804,7 @@ def file_open(ctx, filters, locate, propagate, continuously):
                !: The min_id & max_id will be ignored if scope used.
         \b
         id integer: File’s ID
-        mime str: File mime type
+        mime str: File MIME type
         \b
         cattrs: File CAttrs
                 -----------
@@ -2747,7 +2914,7 @@ def file_forward(ctx, filters, chat, chat_is_name):
                !: The min_id & max_id will be ignored if scope used.
         \b
         id integer: File’s ID
-        mime str: File mime type
+        mime str: File MIME type
         \b
         cattrs: File CAttrs
                 -----------
@@ -2897,7 +3064,7 @@ def file_attr_edit(ctx, filters, attribute, local_only):
                !: The min_id & max_id will be ignored if scope used.
         \b
         id integer: File’s ID
-        mime str: File mime type
+        mime str: File MIME type
         \b
         cattrs: File CAttrs
                 -----------
