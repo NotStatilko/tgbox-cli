@@ -1775,7 +1775,7 @@ def file_upload(
         if path.is_dir():
             try:
                 next(path.iterdir())
-            except PermissionError:
+            except (FileNotFoundError, PermissionError, OSError) as e:
                 echo(f'[RED]@ Target "{path}" is not readable! Skipping...[RED]')
                 continue
 
@@ -1788,10 +1788,12 @@ def file_upload(
 
         to_upload = []
         for current_path in iter_over:
-
-            if current_path.is_dir():
-
-                echo(f'[CYAN]@ Working on[CYAN] [WHITE]{str(current_path)}[WHITE] ...')
+            try:
+                if current_path.is_dir():
+                    echo(f'[CYAN]@ Working on[CYAN] [WHITE]{str(current_path)}[WHITE] ...')
+                    continue
+            except (FileNotFoundError, PermissionError, OSError) as e:
+                echo(f'[RED]x Not Working on. {e}. Skipping...[RED]')
                 continue
 
             if filters:
@@ -1805,13 +1807,21 @@ def file_upload(
 
                 for indx, filter in enumerate((filters.in_filters, filters.ex_filters)):
                     try:
-                        cp_st_mtime = current_path.stat().st_mtime # File Modification Time
-                        cp_st_size = current_path.stat().st_size # File Size
-                        file_mime = filetype_guess(current_path) # File MIME Type
-                        file_mime = file_mime.mime if file_mime else ''
-                        abs_path = str(current_path.absolute()) # File absolute Path
-                    except FileNotFoundError:
-                        echo(f'[RED]x Can not stat() target "{current_path}". Skipping...[RED]')
+                        if filter['min_time'] or filter['max_time']:
+                            cp_st_mtime = current_path.stat().st_mtime # File Modification Time
+
+                        if filter['min_size'] or filter['max_size']:
+                            cp_st_size = current_path.stat().st_size # File Size
+
+                        if filter['mime']:
+                            file_mime = filetype_guess(current_path) # File MIME Type
+                            file_mime = file_mime.mime if file_mime else ''
+
+                        if filter['file_path']:
+                            abs_path = str(current_path.absolute()) # File absolute Path
+
+                    except (FileNotFoundError, PermissionError, OSError) as e:
+                        echo(f'[RED]x {e}. Skipping...[RED]')
                         yield_result[0] = False; break
 
                     for filter_file_path in filter['file_path']:
