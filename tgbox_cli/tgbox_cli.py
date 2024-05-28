@@ -1592,7 +1592,8 @@ def box_delete(ctx):
 
 @cli.command()
 @click.argument(
-    'target', nargs=-1, required=False, default=None
+    'target', nargs=-1, required=False, default=None,
+    type=click.Path(readable=None, dir_okay=True, path_type=Path)
 )
 @click.option(
     '--file-path', '-f', type=Path,
@@ -1653,8 +1654,8 @@ def file_upload(
         min_size & max_size can be also specified as string,
             i.e "1GB" (one gigabyte), "122.45KB" or "700B"
         \b
-        min_time integer/float/str: Upload Time should be > min_time
-        max_time integer/float/str: Upload Time should be < max_time
+        min_time integer/float/str: Modification Time should be > min_time
+        max_time integer/float/str: Modification Time should be < max_time
         +
         min_time & max_time can be also specified as string,
             i.e "22/02/22, 22:22:22" or "22/02/22"
@@ -1683,6 +1684,8 @@ def file_upload(
         target = click.prompt('Please enter target to upload')
         target = (Path(target),)
     else:
+        target = tuple((str(p) for p in target))
+
         if '+i' in target:
             filters_pos_i = target.index('+i')
 
