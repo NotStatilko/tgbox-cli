@@ -1768,7 +1768,7 @@ def file_upload(
         elif not cattrs: # Can be "", then remove CAttrs
             cattrs = None
         else:
-            if dlbf.cattrs: # Combine if dlbf has CAttrs
+            if dlbf and dlbf.cattrs: # Combine if dlbf has CAttrs
                 dlbf.cattrs.update(cattrs)
                 cattrs = dlbf.cattrs
         try:
