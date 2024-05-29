@@ -1723,17 +1723,7 @@ def file_upload(
         parsed_cattrs = {}
 
     elif cattrs is not None:
-        try:
-            parsed_cattrs = [
-                i.strip().split(':')
-                for i in cattrs.split('|') if i
-            ]
-            parsed_cattrs = {
-                k.strip() : v.strip().encode()
-                for k,v in parsed_cattrs
-            }
-        except ValueError as e:
-            raise ValueError('Invalid cattrs!', e) from None
+        parsed_cattrs = parse_str_cattrs(cattrs)
     else:
         parsed_cattrs = None
 
@@ -3164,20 +3154,7 @@ def file_attr_edit(ctx, filters, attribute, local_only):
         attr_key, attr_value = attribute.split('=',1)
 
         if attr_key == 'cattrs':
-            try:
-                attr_value = tgbox.tools.PackedAttributes.unpack(
-                    bytes.fromhex(attr_value)
-                );  assert attr_value
-            except (ValueError, AssertionError):
-                # Specified value isn't a hexed PackedAttributes
-                cattrs = {}
-                for items in attr_value.split():
-                    items = items.split(':',1)
-                    cattrs[items[0]] = items[1].encode()
-
-                attr_value = cattrs
-
-        if attr_key == 'cattrs':
+            attr_value = parse_str_cattrs(attr_value)
             changes = {attr_key: tgbox.tools.PackedAttributes.pack(**attr_value)}
         else:
             changes = {attr_key: attr_value.encode()}

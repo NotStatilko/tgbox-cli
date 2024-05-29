@@ -174,6 +174,36 @@ def formatted_bytes_to_int(formatted: str) -> int:
 
     return int(formatted)
 
+def parse_str_cattrs(cattrs_str: str) -> dict:
+    """
+    This function can convert str CAttrs of TGBOX-CLI
+    format into the dictionary. Also accepts raw
+    CAttrs as hex. For example:
+        cattrs="FF000004746578740000044F5A5A5900000474797065000005696D616765"
+        &
+        cattrs="type: image | text: OZZY"
+        =
+        return {'text': b'OZZY', 'type': b'image'}
+    """
+    try:
+        cattrs_str = tgbox.tools.PackedAttributes.unpack(
+            bytes.fromhex(cattrs_str)
+        );  assert cattrs_str
+    except (ValueError, AssertionError):
+        try:
+            cattrs_str = [
+                i.strip().split(':')
+                for i in cattrs_str.split('|') if i
+            ]
+            cattrs_str = {
+                k.strip() : v.strip().encode()
+                for k,v in cattrs_str
+            }
+        except ValueError as e:
+            raise ValueError('Invalid cattrs!') from e
+
+    return cattrs_str
+
 def sync_async_gen(async_gen: AsyncGenerator):
     """
     This will make async generator to sync
@@ -235,18 +265,7 @@ def filters_to_searchfilter(filters: tuple) -> tgbox.tools.SearchFilter:
             filter = filter.split('=',1)
 
             if filter[0] == 'cattrs':
-                try:
-                    filter[1] = tgbox.tools.PackedAttributes.unpack(
-                        bytes.fromhex(filter[1])
-                    );  assert filter[1]
-                except (ValueError, AssertionError):
-                    # Specified value isn't a hexed PackedAttributes
-                    cattrs = {}
-                    for items in filter[1].split():
-                        items = items.split(':',1)
-                        cattrs[items[0]] = items[1].encode()
-
-                    filter[1] = cattrs
+                filter[1] = parse_str_cattrs(filter[1])
 
             if filter[0] in ('min_time', 'max_time'):
                 filter[1] = convert_str_date_size(date=filter[1])
