@@ -199,8 +199,8 @@ def parse_str_cattrs(cattrs_str: str) -> dict:
                 k.strip() : v.strip().encode()
                 for k,v in cattrs_str
             }
-        except ValueError as e:
-            raise ValueError('Invalid cattrs!') from e
+        except (AttributeError, ValueError) as e:
+            raise ValueError(f'Invalid cattrs! {e}') from e
 
     return cattrs_str
 
