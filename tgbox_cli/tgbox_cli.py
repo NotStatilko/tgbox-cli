@@ -1600,7 +1600,7 @@ def box_delete(ctx):
     help='Change file path of target in Box. System\'s if not specified'
 )
 @click.option(
-    '--cattrs', '-c', help='File\'s CustomAttributes. Format: "key:value key:value"'
+    '--cattrs', '-c', help='File\'s CustomAttributes. Format: "key: value | key: value"'
 )
 @click.option(
     '--no-update', is_flag=True,
@@ -1719,6 +1719,24 @@ def file_upload(
     current_workers = max_workers
     current_bytes = max_bytes
 
+    if cattrs is not None and not cattrs:
+        parsed_cattrs = {}
+
+    elif cattrs is not None:
+        try:
+            parsed_cattrs = [
+                i.strip().split(':')
+                for i in cattrs.split('|') if i
+            ]
+            parsed_cattrs = {
+                k.strip() : v.strip().encode()
+                for k,v in parsed_cattrs
+            }
+        except ValueError as e:
+            raise ValueError('Invalid cattrs!', e) from None
+    else:
+        parsed_cattrs = None
+
     def _upload(to_upload: list):
         tgbox.sync(gather(*to_upload))
         to_upload.clear()
@@ -1743,6 +1761,16 @@ def file_upload(
             # Ignore upload if file exists and wasn't changed
             echo(f'[YELLOW]| File {file} is already uploaded. Skipping...[YELLOW]')
             return
+
+        if cattrs is None: # CAttrs not specified
+            cattrs = cattrs or dlbf.cattrs
+
+        elif not cattrs: # Can be "", then remove CAttrs
+            cattrs = None
+        else:
+            if dlbf.cattrs: # Combine if dlbf has CAttrs
+                dlbf.cattrs.update(cattrs)
+                cattrs = dlbf.cattrs
         try:
             pf = await ctx.obj.dlb.prepare_file(
                 file = open(file,'rb'),
@@ -1912,21 +1940,6 @@ def file_upload(
                 remote_path = current_path.resolve()
             else:
                 remote_path = Path(file_path) / current_path.name
-
-            if cattrs:
-                try:
-                    parsed_cattrs = [
-                        i.strip().split(':')
-                        for i in cattrs.split() if i
-                    ]
-                    parsed_cattrs = {
-                        k.strip() : v.strip().encode()
-                        for k,v in parsed_cattrs
-                    }
-                except ValueError as e:
-                    raise ValueError('Invalid cattrs!', e) from None
-            else:
-                parsed_cattrs = None
 
             current_bytes -= getsize(current_path)
             current_workers -= 1

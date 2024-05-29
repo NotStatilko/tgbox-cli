@@ -198,11 +198,14 @@
 
         We can also attach a special attributes -- CAttrs (or
         the "CustomAttributes") to a file before uploading:
-            [BRIGHT_WHITE]tgbox-cli file-upload Scripts/ --cattrs="tag:code"[BRIGHT_WHITE]
+            [BRIGHT_WHITE]tgbox-cli file-upload Scripts/ --cattrs="tag: code"[BRIGHT_WHITE]
 
         This will add CAttr with key "tag" and value "code"
         to every file from the folder Scripts/ on upload,
         so you can later search for them with a [BLUE]command[BLUE].
+
+        [WHITE]Please note[WHITE] that CAttrs should be separated by the "[WHITE]|[WHITE]"
+        symbol. For example: [WHITE]"tag: image | message: It's pretty!"[WHITE]
 
         If the file was already pushed to RemoteBox and was changed
         since then ([WHITE]in size[WHITE]), the [BLUE]file-upload[BLUE] will [WHITE]auto update[WHITE]
