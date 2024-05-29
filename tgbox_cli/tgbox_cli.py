@@ -1763,7 +1763,7 @@ def file_upload(
             return
 
         if cattrs is None: # CAttrs not specified
-            cattrs = cattrs or dlbf.cattrs
+            cattrs = cattrs or dlbf.cattrs if dlbf else None
 
         elif not cattrs: # Can be "", then remove CAttrs
             cattrs = None

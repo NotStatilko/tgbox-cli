@@ -335,11 +335,15 @@ def format_dxbf(
     else:
         duration = ''
 
-    time = datetime.fromtimestamp(dxbf.upload_time)
-    time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN] "
+    if hasattr(dxbf, '_updated_at_time'):
+        time = datetime.fromtimestamp(dxbf._updated_at_time)
+        time = f"* Updated at [CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN] "
+    else:
+        time = datetime.fromtimestamp(dxbf.upload_time)
+        time = f"* Uploaded at [CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN] "
 
     version = f'v1.{dxbf.minor_version}' if dxbf.minor_version > 0 else 'ver N/A'
-    time += f'[BRIGHT_BLACK]({version})[BRIGHT_BLACK]'
+    time += f'[BRIGHT_BLACK]({version})[BRIGHT_BLACK]\n'
 
     mimedur = f'[WHITE]{dxbf.mime}[WHITE]' if dxbf.mime else 'regular file'
     if dxbf.preview: mimedur += '[BRIGHT_BLACK]*[BRIGHT_BLACK]'
@@ -395,7 +399,7 @@ def format_dxbf(
                 f'''   [WHITE]{k}[WHITE]: '''
                 f'''[{color_}]{v}[{color_}]\n'''
             )
-    formatted += f"* Uploaded {time}\n"
+    formatted += time
 
     if isinstance(dxbf, tgbox.api.remote.DecryptedRemoteBoxFile)\
         and dxbf.sender:
