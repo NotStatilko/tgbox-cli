@@ -1491,6 +1491,13 @@ def box_info(ctx, bytesize_total):
         remote_box_date = remote_box_date.date.strftime('%d/%m/%Y')
         remote_date_created = f'[WHITE]{remote_box_date}[WHITE]'
 
+        box_description = tgbox.sync(ctx.obj.drb.get_box_description())
+        if box_description:
+            box_description = split_string(box_description, 15, symbol='>')
+            box_description = box_description.replace('\n',f'[YELLOW]\n[YELLOW]')
+        else:
+            box_description = '[RED]<Not presented>[RED]'
+
         rights_interested = {
             'post_messages' : 'Upload files',
             'delete_messages' : 'Remove files',
@@ -1520,6 +1527,7 @@ def box_info(ctx, bytesize_total):
             '''\n ====== Current Box (remote) ======\n\n'''
 
             f'''| Box name: {box_name}\n'''
+            f'''| Description: [YELLOW]{box_description}[YELLOW]\n'''
             f'''| Public link: {public_link}\n'''
             f'''| ID: {box_id}\no\n'''
             f'''| Date created: {remote_date_created}\n'''

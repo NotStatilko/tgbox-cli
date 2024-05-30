@@ -296,7 +296,8 @@ def split_string(path: str, indent: int=0, symbol: str='->') -> str:
         parts.append(path[:available] + symbol)
         path = path[available:]
 
-    parts[-1] = parts[-1][:-2]
+    if len(symbol):
+        parts[-1] = parts[-1][:-len(symbol)]
 
     joinsymbols = '\n'+' '*indent
     return joinsymbols.join(parts).strip()
