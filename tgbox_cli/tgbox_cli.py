@@ -1044,11 +1044,17 @@ def box_list(ctx, remote, prefix):
                 erb_name = tgbox.sync(erb.get_box_name())
                 erb_salt = tgbox.sync(erb.get_box_salt())
                 erb_salt = urlsafe_b64encode(erb_salt.salt).decode()
+                erb_desc = tgbox.sync(erb.get_box_description())
 
+                count_id = str(count+1).zfill(2)
                 echo(
-                    f'''[WHITE]{count+1}[WHITE]) [BLUE]{erb_name}[BLUE]'''
+                    f'''[WHITE]{count_id}[WHITE]) [BLUE]{erb_name}[BLUE]'''
                     f'''@[BRIGHT_BLACK]{erb_salt}[BRIGHT_BLACK]'''
                 )
+                if erb_desc:
+                    erb_desc = split_string(f'{erb_desc}', 4, '>')
+                    erb_desc = erb_desc.replace('\n',f'[YELLOW]\n[YELLOW]')
+                    echo(f'    Description: [YELLOW]{erb_desc}[YELLOW]')
                 count += 1
 
         echo('[YELLOW]Done.[YELLOW]')
@@ -1075,8 +1081,9 @@ def box_list(ctx, remote, prefix):
                     )
                     salt = urlsafe_b64encode(dlb.box_salt.salt).decode()
 
+                    count_id = str(count+1).zfill(2)
                     echo(
-                        f'''[WHITE]{count+1})[WHITE] [BLUE]{name}[BLUE]'''
+                        f'''[WHITE]{count_id})[WHITE] [BLUE]{name}[BLUE]'''
                         f'''@[BRIGHT_BLACK]{salt}[BRIGHT_BLACK]'''
                     )
                     tgbox.sync(dlb.done())

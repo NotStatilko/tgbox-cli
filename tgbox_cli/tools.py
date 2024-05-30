@@ -424,7 +424,7 @@ def format_dxbf(
             color_ = 'GREEN' if n % 2 else 'YELLOW'
             n += 1
 
-            v = split_string(v, 6, symbol='')
+            v = split_string(v, 6, symbol='>')
             v = v.replace('\n',f'[{color_}]\n[{color_}]')
 
             formatted += (
