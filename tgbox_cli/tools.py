@@ -280,13 +280,20 @@ def filters_to_searchfilter(filters: tuple) -> tgbox.tools.SearchFilter:
 
     return tgbox.tools.SearchFilter(**include).exclude(**exclude)
 
-def splitpath(path: str, indent: int=0) -> str:
+def split_string(path: str, indent: int=0, symbol: str='->') -> str:
+    """
+    This function can split long string into the
+    lines separated by the 'symbol' kwarg.
+
+    'indent' == int(get_terminal_size().columns // 1.8)
+    if 'indent' is not specified as optional kwarg.
+    """
     available = int(get_terminal_size().columns // 1.8)
     available = 30 if available < 30 else available
 
     parts = []
     while path:
-        parts.append(path[:available] + '->')
+        parts.append(path[:available] + symbol)
         path = path[available:]
 
     parts[-1] = parts[-1][:-2]
@@ -406,14 +413,19 @@ def format_dxbf(
 
     formatted = (
        f"""\nFile: {idsalt} {name}\n"""
-       f"""Path: {splitpath(file_path, 6)}\n"""
+       f"""Path: {split_string(file_path, 6)}\n"""
        f"""Size: {size}({dxbf.size}), {mimedur}\n"""
     )
     if cattrs:
         formatted += "* CustomAttributes:\n"
         n = 1
         for k,v in tuple(cattrs.items()):
-            color_ = 'GREEN' if n % 2 else 'YELLOW'; n+=1
+            color_ = 'GREEN' if n % 2 else 'YELLOW'
+            n += 1
+
+            v = split_string(v, 6, symbol='')
+            v = v.replace('\n',f'[{color_}]\n[{color_}]')
+
             formatted += (
                 f'''   [WHITE]{k}[WHITE]: '''
                 f'''[{color_}]{v}[{color_}]\n'''
