@@ -104,6 +104,9 @@ else:
     if not logfile:
         logfile = cli_folder / f'log{__version__}.txt'
 
+    elif logfile in ('STDOUT', 'stdout'):
+        logfile = None
+
     logging.basicConfig(
         format = (
             '''[%(asctime)s] %(levelname)s:%(name)s~'''
@@ -499,6 +502,7 @@ def cli_info():
         fast_telethon = '[RED]NO[RED]'
 
     sys_ver = sys_version.split('[', 1)[0].strip()
+    logfile_name = 'STDOUT' if not logfile else logfile.name
 
     echo(
         '''\n# Copyright [WHITE](c) Non [github.com/NotStatilko][WHITE], the MIT License\n'''
@@ -514,7 +518,7 @@ def cli_info():
         f'''FAST_ENCRYPTION: {fast_encryption}\n'''
         f'''FAST_TELETHON: {fast_telethon}\n\n'''
 
-        f'''LOGGING: [YELLOW]{logging_level}[YELLOW]([WHITE]{logfile.name}[WHITE])\n'''
+        f'''LOGGING: [YELLOW]{logging_level}[YELLOW]([WHITE]{logfile_name}[WHITE])\n'''
     )
     if getenv('BLACK_SABBATH'):
         from time import sleep
