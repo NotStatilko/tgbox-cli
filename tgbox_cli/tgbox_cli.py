@@ -1458,7 +1458,7 @@ def box_info(ctx, bytesize_total):
                 current_file = f'[YELLOW]{current_file_count}[YELLOW]'
 
             echo_text = (
-                f'''Total [WHITE]Box[WHITE] size is {total_formatted}'''
+                f'''@ Total [WHITE]Box[WHITE] size is {total_formatted}'''
                 f'''({total_bytes}) [{current_file}/[GREEN]{total_files}[GREEN]]   \r'''
             )
             echo(echo_text, nl=False)
@@ -1958,10 +1958,11 @@ def file_upload(
                 target_files_bs_f = format_bytes(target_files_bs)
 
                 echo_text = (
-                    f'Total [WHITE]targets found [WHITE]([YELLOW]{target_files}[YELLOW]) '
+                    f'@ Total [WHITE]targets found [WHITE]([YELLOW]{target_files}[YELLOW]) '
                     f'size is [BLUE]{target_files_bs_f}[BLUE]({target_files_bs})   \r'
                 )
                 echo(echo_text, nl=False)
+                echo(' ' * 60 + '\r', nl=False)
             else:
                 if not file_path:
                     remote_path = current_path.resolve()
@@ -1995,7 +1996,7 @@ def file_upload(
                     echo(f'\n[RED]{e}[RED]')
 
         if calculate:
-            click.echo(' ' * len(color(echo_text)) + '\r', nl=False)
+            echo(' ' * 60 + '\r', nl=True)
             echo(echo_text + '\n')
 
 @cli.command()
@@ -2174,7 +2175,7 @@ def file_search(
                 current_file = f'[YELLOW]{current_file_count}[YELLOW]'
 
                 echo_text = (
-                    f'''Total [WHITE]files found [WHITE]({current_file}) '''
+                    f'''@ Total [WHITE]files found [WHITE]({current_file}) '''
                     f'''size is {total_formatted}({total_bytes})   \r'''
                 )
                 echo(echo_text, nl=False)
