@@ -1638,6 +1638,10 @@ def box_delete(ctx):
     help='If specified, will not add thumbnail'
 )
 @click.option(
+    '--calculate', is_flag=True,
+    help='If specified, will calculate and show a total bytesize of targets'
+)
+@click.option(
     '--max-workers', default=10, type=click.IntRange(1,50),
     help='Max amount of files uploaded at the same time, default=10',
 )
@@ -1650,7 +1654,7 @@ def box_delete(ctx):
 def file_upload(
         ctx, target, file_path, cattrs, no_update,
         force_update, use_slow_upload, no_thumb,
-        max_workers, max_bytes):
+        calculate, max_workers, max_bytes):
     """
     Upload TARGET by specified filters to the Box
 
@@ -1823,6 +1827,9 @@ def file_upload(
 
         echo(f'[CYAN]@ Working on[CYAN] [WHITE]{str(path.absolute())}[WHITE] ...')
 
+        # Will be used if --calculate specified
+        target_files, target_files_bs = 0, 0
+
         to_upload = []
         for current_path in iter_over:
             try:
@@ -1945,36 +1952,51 @@ def file_upload(
                     )
                     continue
 
-            if not file_path:
-                remote_path = current_path.resolve()
+            if calculate:
+                cp_st_size = current_path.stat().st_size
+                target_files += 1; target_files_bs += cp_st_size
+                target_files_bs_f = format_bytes(target_files_bs)
+
+                echo_text = (
+                    f'Total [WHITE]targets found [WHITE]([YELLOW]{target_files}[YELLOW]) '
+                    f'size is [BLUE]{target_files_bs_f}[BLUE]({target_files_bs})   \r'
+                )
+                echo(echo_text, nl=False)
             else:
-                remote_path = Path(file_path) / current_path.name
+                if not file_path:
+                    remote_path = current_path.resolve()
+                else:
+                    remote_path = Path(file_path) / current_path.name
 
-            current_bytes -= getsize(current_path)
-            current_workers -= 1
+                current_bytes -= getsize(current_path)
+                current_workers -= 1
 
-            if not all((current_workers > 0, current_bytes > 0)):
+                if not all((current_workers > 0, current_bytes > 0)):
+                    try:
+                        _upload(to_upload)
+                    except tgbox.errors.NotEnoughRights as e:
+                        echo(f'\n[RED]{e}[RED]')
+                        return
+
+                    current_workers = max_workers - 1
+                    current_bytes = max_bytes - getsize(current_path)
+
+                pw = _push_wrapper(
+                    file = current_path,
+                    file_path = remote_path,
+                    cattrs = parsed_cattrs
+                )
+                to_upload.append(pw)
+
+            if to_upload: # If any files left
                 try:
                     _upload(to_upload)
                 except tgbox.errors.NotEnoughRights as e:
                     echo(f'\n[RED]{e}[RED]')
-                    return
 
-                current_workers = max_workers - 1
-                current_bytes = max_bytes - getsize(current_path)
-
-            pw = _push_wrapper(
-                file = current_path,
-                file_path = remote_path,
-                cattrs = parsed_cattrs
-            )
-            to_upload.append(pw)
-
-        if to_upload: # If any files left
-            try:
-                _upload(to_upload)
-            except tgbox.errors.NotEnoughRights as e:
-                echo(f'\n[RED]{e}[RED]')
+        if calculate:
+            click.echo(' ' * len(color(echo_text)) + '\r', nl=False)
+            echo(echo_text + '\n')
 
 @cli.command()
 @click.argument('filters',nargs=-1)
