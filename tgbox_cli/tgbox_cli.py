@@ -1953,7 +1953,14 @@ def file_upload(
                     continue
 
             if calculate:
+                if not current_path.exists():
+                    echo(
+                       f'[RED]@ Target "{current_path}" doesn\'t '
+                        'exists! Skipping...[RED]')
+                    continue
+
                 cp_st_size = current_path.stat().st_size
+
                 target_files += 1; target_files_bs += cp_st_size
                 target_files_bs_f = format_bytes(target_files_bs)
 
