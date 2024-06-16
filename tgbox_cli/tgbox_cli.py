@@ -2612,12 +2612,14 @@ def file_import(ctx, key, id, propagate, file_path):
                 return # Probably not a file of Directory
 
             await ctx.obj.dlb.import_file(drbf, file_path)
-            echo(format_dxbf(drbf), nl=False)
+            echo(format_dxbf(drbf), nl=False); return drbf
 
         echo('\n[YELLOW]Searching for files to import[YELLOW]...')
 
         # Import first found EncryptedRemoteBoxFile
-        tgbox.sync(_import_wrap(erbf))
+        if not (drbf := tgbox.sync(_import_wrap(erbf))):
+            echo(f'[RED]Can not decrypt. Specified Key is invalid[RED]')
+            return
 
         if propagate:
             IMPORT_STACK, IMPORT_WHEN = [], 100
