@@ -2,6 +2,16 @@ from pathlib import Path
 from platform import system
 
 from tgbox.defaults import PYINSTALLER_DATA
+try:
+    # Cryptg doesn't have __version__, so we need to check
+    # it from the package metadata. However, on making
+    # onefile EXE modern PyInstaller doesn't catch it,
+    # so it result in error. Here we add it.
+    from PyInstaller.utils.hooks import copy_metadata
+    cryptg_metadata = copy_metadata('cryptg')
+except ImportError: # Some old PyInstaller?
+    cryptg_metadata = []
+
 
 if Path.cwd().name != 'pyinstaller':
     raise RuntimeError('You should build App inside the "pyinstaller" folder.')
@@ -27,7 +37,7 @@ a = Analysis(
     [MAIN_SCRIPT],
     pathex = [str(TGBOX_CLI_FOLDER.parent)],
     binaries = [],
-    datas = [],
+    datas = [*cryptg_metadata],
     hiddenimports = [],
     hookspath = [],
     hooksconfig = {},

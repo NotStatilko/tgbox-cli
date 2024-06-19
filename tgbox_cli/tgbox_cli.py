@@ -2569,7 +2569,7 @@ def file_share(ctx, requestkey, id):
 )
 @click.option(
     '--propagate', '-p', is_flag=True,
-    help='If specified, will open ALL matched files'
+    help='If specified, will import all files up to first error'
 )
 @click.option(
     '--file-path', '-f', type=Path,
