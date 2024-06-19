@@ -1,5 +1,6 @@
 from pathlib import Path
 from platform import system
+from os import getenv
 
 from tgbox.defaults import PYINSTALLER_DATA
 try:
@@ -15,6 +16,10 @@ except ImportError: # Some old PyInstaller?
 
 if Path.cwd().name != 'pyinstaller':
     raise RuntimeError('You should build App inside the "pyinstaller" folder.')
+
+# If presented in Env vars, will not make a single .EXE file
+# instead a folder with all bytecoded source
+TGBOX_CLI_NON_ONEFILE = getenv('TGBOX_CLI_NON_ONEFILE')
 
 TGBOX_CLI_FOLDER = Path.cwd().parent / 'tgbox_cli'
 DATA_FOLDER = TGBOX_CLI_FOLDER / 'data'
@@ -74,5 +79,17 @@ exe = EXE(
     disable_windowed_traceback = False,
     target_arch = None,
     codesign_identity = None,
-    entitlements_file = None
+    entitlements_file = None,
+
+    exclude_binaries = True if TGBOX_CLI_NON_ONEFILE else None
 )
+if TGBOX_CLI_NON_ONEFILE:
+    coll = COLLECT(exe,
+        a.binaries,
+        a.zipfiles,
+        a.datas,
+        strip=False,
+        upx=True,
+        upx_exclude=[],
+        name='tgbox-cli'
+    )
