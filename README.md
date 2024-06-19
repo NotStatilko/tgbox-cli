@@ -62,7 +62,8 @@ pyinstaller tgbox_cli.spec
 # Run the executable and show info
 dist/tgbox-cli.exe cli-info
 ```
-Feel free to remove the ``tgbox-cli-env`` folder after work was done.
+**Please note** that You can also set `TGBOX_CLI_NON_ONEFILE` env variable to build without packing \
+into one executable file & feel free to remove the ``tgbox-cli-env`` folder after work was done.
 
 ## Usage
 
