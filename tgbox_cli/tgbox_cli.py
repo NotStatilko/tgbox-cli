@@ -38,6 +38,8 @@ else:
     import logging
 
     from time import sleep
+    from io import BytesIO
+
     from datetime import datetime
     from re import search as re_search
 
@@ -2123,6 +2125,18 @@ def file_search(
         check_ctx(ctx, dlb=True)
     try:
         sf = filters_to_searchfilter(filters)
+
+        scope_path_list = (
+              list(sf.in_filters['scope'])\
+            + list(sf.in_filters['file_path'])
+        )
+        for filter_ in scope_path_list:
+            if '__BOX_CHAT__' in filter_: # Remove all files in __BOX_CHAT__
+                break                     # from the file-search list if
+        else:                             # user didn't requested it
+            sf.ex_filters['file_path'].append('__BOX_CHAT__')
+            sf.ex_filters['scope'].append('__BOX_CHAT__')
+
     except IndexError: # Incorrect filters format
         echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
     except KeyError as e: # Unknown filters
@@ -3249,8 +3263,12 @@ def file_attr_edit(ctx, filters, attribute, local_only):
     '--cleanup','-c', is_flag=True,
     help='If specified, will remove ALL orphaned folders'
 )
+@click.option(
+    '--show-box-chat','-s', is_flag=True,
+    help='If specified, will show Box Chat dirs (if any)'
+)
 @ctx_require(dlb=True)
-def dir_list(ctx, cleanup):
+def dir_list(ctx, cleanup, show_box_chat):
     """List all directories in LocalBox"""
 
     if cleanup:
@@ -3262,6 +3280,10 @@ def dir_list(ctx, cleanup):
 
     for dir in sync_async_gen(dirs):
         tgbox.sync(dir.lload(full=True))
+
+        if str(dir.parts[0]) == '__BOX_CHAT__' and not show_box_chat:
+            continue
+
         echo(str(dir))
 
 @cli.command()
@@ -3324,6 +3346,223 @@ def dir_share(ctx, requestkey, directory):
             '''\nSend this Key to the Box requester:\n'''
             f'''    [WHITE]{sharekey.encode()}[WHITE]\n'''
         )
+
+# ========================================================= #
+# = Chat commands ========================================= #
+
+@cli.command()
+@click.option(
+    '--topic', '-t', default='Main',
+    help='Chat topic (Folder-like)'
+)
+@click.option(
+    '--current-date', '-d',
+    help='Date (format %Y/%m/%d) from which we will fetch messages'
+)
+@click.option(
+    '--auto-mode-wait', '-w', type=click.IntRange(3, None), default=10,
+    help='Seconds of Sleep before fetching Chat Updates.'
+)
+@ctx_require(dlb=True, drb=True)
+def chat_open(ctx, topic, current_date, auto_mode_wait):
+    """Launch simple Chat inside your Box"""
+
+    chat_dir = tgbox.sync(ctx.obj.dlb.get_directory('__BOX_CHAT__'))
+    if not chat_dir:
+        echo(
+            '[YELLOW]@ Currently we don\'t know about Chat in this Box. Did '
+            'you tried[YELLOW] [WHITE]box-sync[WHITE][YELLOW]? If YES '
+            'and you want to create it, type Y. If NO, type N and try sync.[YELLOW]'
+        )
+        if not click.confirm('Type your choice and press Enter'):
+            return
+
+        echo('\n[WHITE]@ We need to configure Box chat firstly.[WHITE]\n')
+
+        chat_name = click.prompt('Chat name')
+        description = click.prompt('Chat description', default='No Description.')
+
+        echo('\n[WHITE]@ Uploading configuration...[WHITE]\n')
+
+        file = BytesIO(b'')
+        file.name = 'MAIN'
+
+        config_pf = ctx.obj.dlb.prepare_file(
+            file = file,
+            file_path = '__BOX_CHAT__/__CONFIG__/CONFIG',
+            cattrs = {
+                'name': chat_name.encode(),
+                'description': description.encode()
+            },
+            make_preview = False,
+            file_size = 0
+        )
+        config_pf = tgbox.sync(config_pf)
+        tgbox.sync(ctx.obj.drb.push_file(config_pf))
+
+
+    config = ctx.obj.dlb.search_file(
+        sf=tgbox.tools.SearchFilter(scope='__BOX_CHAT__/__CONFIG__')
+    )
+    config = tgbox.sync(tgbox.tools.anext(config))
+
+    chat_name = config.cattrs['name'].decode()
+    description = config.cattrs['description'].decode()
+
+    auto_mode = False
+    clear_console()
+    while True:
+        try:
+            if current_date is None:
+                current_date = datetime.fromtimestamp(datetime.now().timestamp())
+                current_date = current_date.strftime('%Y/%m/%d')
+
+            topic = topic.strip('/').strip('\\') or 'Main'
+            topic_path = f'__BOX_CHAT__/__CHAT__/{topic}/{current_date}'
+
+            echo(f'\n# [WHITE]Chat {chat_name}[WHITE] ({description})')
+            echo(f'# [WHITE]Topic/{topic}, Date: {current_date}[WHITE]')
+
+            chat_dir = tgbox.sync(ctx.obj.dlb.get_directory(topic_path))
+            if not chat_dir:
+                echo('\n[YELLOW]@ Chat is currently empty...[YELLOW]')
+                dlbf_messages = []
+            else:
+                contents = ctx.obj.dlb.contents(sfpid=chat_dir.part_id)
+
+                dlbf_messages = [
+                    dlbf for dlbf in sync_async_gen(contents)
+                    if isinstance(dlbf, tgbox.api.local.DecryptedLocalBoxFile)
+                ]
+            for dlbf in dlbf_messages:
+                echo(format_dxbf_message(dlbf))
+
+            if not auto_mode:
+                echo(
+                    '\n[WHITE]1) Send Message; 2) Auto Mode; 3) Exit[WHITE]\n'
+                    '[WHITE]Press ENTER to Update or Select Mode[WHITE]', nl=False
+                )
+                mode = click.prompt('', default='', show_default=False)
+
+                if mode == '1':
+                    echo('')
+
+                    msg_name = tgbox.tools.prbg(8).hex()
+                    message = click.prompt('Message').encode()
+
+                    me = tgbox.sync(ctx.obj.drb.tc.get_me())
+                    author = f'@{me.username}' if me.username else me.first_name
+                    author_id = f'id{me.id}'
+
+                    msg_pf = ctx.obj.dlb.prepare_file(b'',
+                        file_path = f'{topic_path}/{msg_name}',
+                        cattrs = {
+                            'text': message,
+                            'author': author.encode(),
+                            'author_id': author_id.encode()
+                        },
+                        make_preview = False,
+                        file_size = 0
+                    )
+                    msg_pf = tgbox.sync(msg_pf)
+                    tgbox.sync(ctx.obj.drb.push_file(msg_pf))
+
+                elif mode == '2':
+                    auto_mode = True
+
+                elif mode == '3':
+                    break
+                else:
+                    tgbox.sync(ctx.obj.dlb.sync(ctx.obj.drb))
+
+            else:
+                time = datetime.now().strftime('%d/%m/%y, %H:%M:%S')
+                echo(
+                    f'\n[WHITE]% ({time}) Waiting {auto_mode_wait} '
+                    'seconds before Sync...[WHITE]'
+                )
+                echo('[WHITE]@ Press CTRL+C to Return to Input Mode\r[WHITE]', nl=False)
+
+                sleep(auto_mode_wait)
+
+                time = datetime.now().strftime('%d/%m/%y, %H:%M:%S')
+                echo(f'[WHITE]V ({time}) Syncing your Chat with Fast Sync...[WHITE]')
+
+                tgbox.sync(ctx.obj.dlb.sync(ctx.obj.drb))
+
+        except KeyboardInterrupt:
+            auto_mode = False
+        finally:
+            clear_console()
+
+
+@cli.command()
+@ctx_require(dlb=True, drb=True)
+def chat_info(ctx):
+    """Show info about Chat on selected Box"""
+
+    chat_dir = tgbox.sync(ctx.obj.dlb.get_directory('__BOX_CHAT__'))
+
+    if not chat_dir:
+        echo('\n[YELLOW]This Box doesn\'t have Chat yet.[YELLOW]\n')
+        return
+
+    config = ctx.obj.dlb.search_file(
+        sf=tgbox.tools.SearchFilter(scope='__BOX_CHAT__/__CONFIG__')
+    )
+    try:
+        config = tgbox.sync(tgbox.tools.anext(config))
+    except StopAsyncIteration:
+        echo('[RED]\nChat doesn\'t have config!!! Try to reset it, error![RED]\n')
+        return
+
+    chat_name = config.cattrs['name'].decode()
+    description = config.cattrs['description'].decode()
+
+    echo(f'\n# [WHITE]Chat {chat_name}[WHITE] ({description})')
+
+    chat_dir = tgbox.sync(ctx.obj.dlb.get_directory('__BOX_CHAT__/__CHAT__'))
+    if not chat_dir:
+        echo('\n[YELLOW]This Chat doesn\'t have any Messages yet.[YELLOW]\n')
+        return
+
+    topics_dict = {}
+    topics = ctx.obj.dlb.contents(chat_dir.part_id, ignore_files=True)
+
+    for topic in sync_async_gen(topics):
+        tgbox.sync(topic.lload(full=True))
+
+        if len(topic.parts) < 3:
+             continue
+
+        if len(topic.parts) == 6:
+            topic_path = Path(str(topic)).parts[2:]
+            topic_path = str(Path(*topic_path))
+
+            topic, date = topic_path.split('/', 1)
+
+            if topic not in topics_dict:
+                topics_dict[topic] = []
+
+            topics_dict[topic].append(date)
+
+        for v in topics_dict.values():
+            v.sort()
+
+    for k,v in topics_dict.items():
+        echo(f'\n[CYAN]@ Topic[CYAN] "[WHITE]{k}[WHITE]"')
+
+        for date in v:
+            messages_total = tgbox.sync(
+                ctx.obj.dlb.get_directory(f'__BOX_CHAT__/__CHAT__/{k}/{date}')
+            )
+            messages_total = tgbox.sync(messages_total.get_files_total())
+
+            echo(
+                f'[WHITE]| {date}[WHITE] ([YELLOW]'
+                f'{messages_total}[YELLOW])'
+            )
+    echo('')
 
 # ========================================================= #
 # = Commands to manage TGBOX logger ======================= #

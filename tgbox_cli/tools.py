@@ -280,7 +280,7 @@ def filters_to_searchfilter(filters: tuple) -> tgbox.tools.SearchFilter:
 
     return tgbox.tools.SearchFilter(**include).exclude(**exclude)
 
-def split_string(path: str, indent: int=0, symbol: str='->') -> str:
+def split_string(string: str, indent: int=0, symbol: str='->') -> str:
     """
     This function can split long string into the
     lines separated by the 'symbol' kwarg.
@@ -292,9 +292,9 @@ def split_string(path: str, indent: int=0, symbol: str='->') -> str:
     available = 30 if available < 30 else available
 
     parts = []
-    while path:
-        parts.append(path[:available] + symbol)
-        path = path[available:]
+    while string:
+        parts.append(string[:available] + symbol)
+        string = string[available:]
 
     if len(symbol):
         parts[-1] = parts[-1][:-len(symbol)]
@@ -437,4 +437,63 @@ def format_dxbf(
         and dxbf.sender:
             formatted += f'* Author: [YELLOW]{dxbf.sender}[YELLOW]\n'
 
+    return color(formatted)
+
+
+def format_dxbf_message(
+        dxbf: Union['tgbox.api.DecryptedRemoteBoxFile',
+            'tgbox.api.DecryptedLocalBoxFile']) -> str:
+    """
+    This will make a colored information string from the
+    DecryptedRemoteBoxFile or DecryptedLocalBoxFile message
+    """
+    salt = urlsafe_b64encode(dxbf.file_salt.salt).decode()
+
+    if dxbf.imported:
+        idsalt = f'[[BRIGHT_BLUE]{str(dxbf.id)}[BRIGHT_BLUE]:'
+    else:
+        idsalt = f'[[BRIGHT_RED]{str(dxbf.id)}[BRIGHT_RED]:'
+
+    idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
+
+    try:
+        name = click.format_filename(dxbf.file_name)
+    except UnicodeDecodeError:
+        name = '[RED][Unable to display][RED]'
+
+    time = datetime.fromtimestamp(dxbf.upload_time)
+    time = f"* Sent at [CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN] "
+
+    version = f'v1.{dxbf.minor_version}' if dxbf.minor_version > 0 else 'ver N/A'
+    time += f'[BRIGHT_BLACK]({version})[BRIGHT_BLACK]'
+
+    if dxbf.file_path:
+        file_path = str(dxbf.file_path)
+        topic = f'[YELLOW]{Path(file_path).parts[2]}[YELLOW]'
+
+        date = Path(*Path(file_path).parts[3:])
+        date = f'[WHITE]{str(date)}[WHITE]'
+    else:
+        if hasattr(dxbf, 'directory'):
+            tgbox.sync(dxbf.directory.lload(full=True))
+            topic = f'[YELLOW]{str(dxbf.directory.parts[2])}[YELLOW]'
+
+            date = Path(*dxbf.directory.parts[3:])
+            date = f'[WHITE]{str(date)}[WHITE]'
+        else:
+            topic = '[RED][Unknown Topic][RED]'
+
+    name = f'[BLUE]{dxbf.file_name}[BLUE]'
+
+    text = split_string(dxbf.cattrs['text'].decode(), 5)
+    text = f'[WHITE]{text}[WHITE]'
+
+    author = f'[YELLOW]{dxbf.cattrs["author"].decode()}[YELLOW]'
+    author += f' [BRIGHT_BLACK]({dxbf.cattrs["author_id"].decode()})[BRIGHT_BLACK]'
+
+    formatted = (
+       f"""\n {idsalt} {name} ({topic}:{date})\n"""
+       f""" * Author: {author}\n"""
+       f""" {time}\n |\n [WHITE]@[WHITE] Message: {text}"""
+    )
     return color(formatted)

@@ -657,6 +657,58 @@
 
         [BRIGHT_BLACK]PRO TIP: Combine it with the grep![BRIGHT_BLACK]
 
+        [MAGENTA]|||||| Chat inside your Box ||||||[MAGENTA]
+
+        [WHITE]Version 1.3[WHITE] of TGBOX-CLI introduces the new feature:
+        [WHITE]Chat inside your Box[WHITE]! It can be created/opened with
+        the new command: [BLUE]chat-open[BLUE]. Chat is [WHITE]not[WHITE] a part of
+        the TGBOX Protocol, rather Proof of Concept which I
+        wanted to implement a long time ago.
+
+        [WHITE]How does Chat work?[WHITE] It's simple! When user creates
+        new Chat we form the "[WHITE]CONFIG[WHITE]" file and attach some
+        CAttrs to it (i.e [WHITE]Chat name[WHITE] / [WHITE]Description[WHITE]). Actual
+        file contains [WHITE]zero[WHITE] bytes. We upload this file under
+        the [WHITE]__BOX_CHAT__/__CONFIG__[WHITE] Directory. Obviously,
+        later we will have chance to [WHITE]change[WHITE] Chat CONFIG
+        via manipulating CAttrs with [BLUE]file-attr-edit[BLUE].
+
+        When user "[WHITE]send Message[WHITE]" to Chat, we form a zero-
+        bytes File with random name and attach CAttrs
+        to it (i.e [WHITE]Text[WHITE], [WHITE]Author[WHITE], etc). We will upload
+        this file under directory which will contain
+        [CYAN]Topic[CYAN] and [CYAN]Date[CYAN]. Both of this [WHITE]can[WHITE] be changed by
+        User. By default, [CYAN]Topic[CYAN] is "[CYAN]Main[CYAN]" and [CYAN]Date[CYAN] is
+        [WHITE]current date[WHITE] in a format of [CYAN]%Y/%m/%d[CYAN] (i.e [CYAN]2024/06/23[CYAN]).
+
+        Absolute Directory of Message will be the next:
+         [WHITE]__BOX_CHAT__/__CHAT__/Main/2024/06/23[WHITE]. As you
+         can expect, [BLUE]chat-open[BLUE] will be able to show
+         messages only for selected [CYAN]Topic[CYAN] or [CYAN]Date[CYAN]:
+            [BRIGHT_WHITE]tgbox-cli chat-open --topic Music[BRIGHT_WHITE]
+            [BRIGHT_WHITE]tgbox-cli chat-open --date 2024/06/23[BRIGHT_WHITE]
+            [BRIGHT_WHITE]tgbox-cli chat-open --date 2024/06[BRIGHT_WHITE]
+            [BRIGHT_WHITE]tgbox-cli chat-open --date 2024[BRIGHT_WHITE]
+
+        If no Messages found in your [CYAN]Topic[CYAN], -- you can send
+        one and [WHITE]start conversation[WHITE] here! Another user will
+        get it after pressing [WHITE]ENTER[WHITE] key or automatically
+        after some time if "[WHITE]Auto Mode[WHITE]" was selected.
+
+        By default, TGBOX-CLI [WHITE]will hide[WHITE] the Files under the
+        [WHITE]__BOX_CHAT__[WHITE] directory (i.e in [BLUE]file-search[BLUE] or [BLUE]dir-list[BLUE])
+        however, [WHITE]you can request them[WHITE] explicitly
+            [BRIGHT_WHITE]tgbox-cli dir-list --show-box-chat[BRIGHT_WHITE]
+            [BRIGHT_WHITE]tgbox-cli file-search scope=__BOX_CHAT__[BRIGHT_WHITE]
+
+        As [WHITE]__BOX_CHAT__[WHITE] contents is just a [WHITE]typical files[WHITE],
+        you can use all "[BLUE]file-*[BLUE]" commands on them.
+
+        [YELLOW]Please note[YELLOW] that "Box Chat" is just [WHITE]a way of[WHITE]
+        [WHITE]representing files[WHITE], [YELLOW]not[YELLOW] a really full & Secure
+        E2E Chat. It [YELLOW]can't replace[YELLOW] Secret Chat of Telegram
+        or any other Secure messaging platform!!!
+
         [MAGENTA]|||||| Hidden Commands ||||||[MAGENTA]
 
         The TGBOX-CLI has a few hidden commands. For example,
