@@ -3409,13 +3409,34 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
     chat_name = config.cattrs['name'].decode()
     description = config.cattrs['description'].decode()
 
-    auto_mode = False
+    auto_mode, warning_shown = False, False
     clear_console()
     while True:
         try:
             if current_date is None:
                 current_date = datetime.fromtimestamp(datetime.now().timestamp())
                 current_date = current_date.strftime('%Y/%m/%d')
+            else:
+                if not warning_shown:
+                    cd_check = current_date.split('/')
+
+                    if not all((i.isnumeric() for i in cd_check))\
+                        or len(cd_check[0]) != 4 or len(cd_check) != 3:
+                            echo(
+                                '[YELLOW]\nYou provided absolute or incorrect Date. '
+                                'Sending\nMessages to it will not work as you may expect. '
+                                '\nRead Only or Review your --current-date option.[YELLOW]'
+                            )
+                            echo(
+                                '\n[WHITE]Correct format is "%Y/%m/%d" '
+                                '(i.e "2024/02/22")[WHITE]'
+                            )
+                            click.prompt(
+                                '\n@ Press ENTER to Continue [OK]',
+                                default='', show_default=False
+                            )
+                            warning_shown = True
+                            clear_console()
 
             topic = topic.strip('/').strip('\\') or 'Main'
             topic_path = f'__BOX_CHAT__/__CHAT__/{topic}/{current_date}'
@@ -3455,7 +3476,7 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
                     author_id = f'id{me.id}'
 
                     msg_pf = ctx.obj.dlb.prepare_file(b'',
-                        file_path = f'{topic_path}/{msg_name}',
+                        file_path = str(Path(topic_path, msg_name)),
                         cattrs = {
                             'text': message,
                             'author': author.encode(),
@@ -3537,9 +3558,9 @@ def chat_info(ctx):
 
         if len(topic.parts) == 6:
             topic_path = Path(str(topic)).parts[2:]
-            topic_path = str(Path(*topic_path))
 
-            topic, date = topic_path.split('/', 1)
+            topic = topic_path[0]
+            date = '/'.join(topic_path[1:])
 
             if topic not in topics_dict:
                 topics_dict[topic] = []
@@ -3553,9 +3574,9 @@ def chat_info(ctx):
         echo(f'\n[CYAN]@ Topic[CYAN] "[WHITE]{k}[WHITE]"')
 
         for date in v:
-            messages_total = tgbox.sync(
-                ctx.obj.dlb.get_directory(f'__BOX_CHAT__/__CHAT__/{k}/{date}')
-            )
+            date_dir = str(Path('__BOX_CHAT__', '__CHAT__', k, *date.split('/')))
+
+            messages_total = tgbox.sync(ctx.obj.dlb.get_directory(date_dir))
             messages_total = tgbox.sync(messages_total.get_files_total())
 
             echo(
