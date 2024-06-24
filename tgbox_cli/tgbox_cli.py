@@ -2135,7 +2135,6 @@ def file_search(
                 break                     # from the file-search list if
         else:                             # user didn't requested it
             sf.ex_filters['file_path'].append('__BOX_CHAT__')
-            sf.ex_filters['scope'].append('__BOX_CHAT__')
 
     except IndexError: # Incorrect filters format
         echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
