@@ -1711,32 +1711,32 @@ def file_upload(
     else:
         target = tuple((str(p) for p in target))
 
-        if '+i' in target:
-            filters_pos_i = target.index('+i')
+    if '+i' in target:
+        filters_pos_i = target.index('+i')
 
-        elif '++include' in target:
-            filters_pos_i = target.index('++include')
-        else:
-            filters_pos_i = None
+    elif '++include' in target:
+        filters_pos_i = target.index('++include')
+    else:
+        filters_pos_i = None
 
-        if '+e' in target:
-            filters_pos_e = target.index('+e')
+    if '+e' in target:
+        filters_pos_e = target.index('+e')
 
-        elif '++exclude' in target:
-            filters_pos_e = target.index('++exclude')
-        else:
-            filters_pos_e = None
+    elif '++exclude' in target:
+        filters_pos_e = target.index('++exclude')
+    else:
+        filters_pos_e = None
 
-        if all((filters_pos_i, filters_pos_e)):
-            filters_pos = min(filters_pos_i, filters_pos_e)
-        else:
-            filters_pos = (filters_pos_i or filters_pos_e)
+    if all((filters_pos_i, filters_pos_e)):
+        filters_pos = min(filters_pos_i, filters_pos_e)
+    else:
+        filters_pos = (filters_pos_i or filters_pos_e)
 
-        if filters_pos:
-            filters = filters_to_searchfilter(target[filters_pos:])
-            target = target[:filters_pos]
-        else:
-            filters = None
+    if filters_pos:
+        filters = filters_to_searchfilter(target[filters_pos:])
+        target = target[:filters_pos]
+    else:
+        filters = None
 
     # Remove all duplicates present in Target (if any)
     target = tuple(set(Path(p) for p in target))
