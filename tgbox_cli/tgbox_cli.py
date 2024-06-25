@@ -3388,7 +3388,7 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
 
         config_pf = ctx.obj.dlb.prepare_file(
             file = file,
-            file_path = '__BOX_CHAT__/__CONFIG__/CONFIG',
+            file_path = str(Path('__BOX_CHAT__', '__CONFIG__', 'CONFIG')),
             cattrs = {
                 'name': chat_name.encode(),
                 'description': description.encode()
@@ -3400,8 +3400,8 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
         tgbox.sync(ctx.obj.drb.push_file(config_pf))
 
 
-    config = ctx.obj.dlb.search_file(
-        sf=tgbox.tools.SearchFilter(scope='__BOX_CHAT__/__CONFIG__')
+    config = ctx.obj.dlb.search_file(sf=tgbox.tools.SearchFilter(
+        scope=str(Path('__BOX_CHAT__', '__CONFIG__')))
     )
     config = tgbox.sync(tgbox.tools.anext(config))
 
@@ -3438,12 +3438,12 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
                             clear_console()
 
             topic = topic.strip('/').strip('\\') or 'Main'
-            topic_path = f'__BOX_CHAT__/__CHAT__/{topic}/{current_date}'
+            topic_path = Path('__BOX_CHAT__', '__CHAT__', topic, current_date)
 
             echo(f'\n# [WHITE]Chat {chat_name}[WHITE] ({description})')
             echo(f'# [WHITE]Topic/{topic}, Date: {current_date}[WHITE]')
 
-            chat_dir = tgbox.sync(ctx.obj.dlb.get_directory(topic_path))
+            chat_dir = tgbox.sync(ctx.obj.dlb.get_directory(str(topic_path)))
             if not chat_dir:
                 echo('\n[YELLOW]@ Chat is currently empty...[YELLOW]')
                 dlbf_messages = []
@@ -3475,7 +3475,7 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
                     author_id = f'id{me.id}'
 
                     msg_pf = ctx.obj.dlb.prepare_file(b'',
-                        file_path = str(Path(topic_path, msg_name)),
+                        file_path = str(topic_path / msg_name),
                         cattrs = {
                             'text': message,
                             'author': author.encode(),
@@ -3527,8 +3527,8 @@ def chat_info(ctx):
         echo('\n[YELLOW]This Box doesn\'t have Chat yet.[YELLOW]\n')
         return
 
-    config = ctx.obj.dlb.search_file(
-        sf=tgbox.tools.SearchFilter(scope='__BOX_CHAT__/__CONFIG__')
+    config = ctx.obj.dlb.search_file(sf=tgbox.tools.SearchFilter(
+        scope=str(Path('__BOX_CHAT__', '__CONFIG__')))
     )
     try:
         config = tgbox.sync(tgbox.tools.anext(config))
@@ -3541,7 +3541,9 @@ def chat_info(ctx):
 
     echo(f'\n# [WHITE]Chat {chat_name}[WHITE] ({description})')
 
-    chat_dir = tgbox.sync(ctx.obj.dlb.get_directory('__BOX_CHAT__/__CHAT__'))
+    chat_dir = tgbox.sync(ctx.obj.dlb.get_directory(
+        str(Path('__BOX_CHAT__', '__CHAT__')))
+    )
     if not chat_dir:
         echo('\n[YELLOW]This Chat doesn\'t have any Messages yet.[YELLOW]\n')
         return
