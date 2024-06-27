@@ -56,6 +56,10 @@ else:
     from asyncio import gather, get_event_loop
 
     from sys import exit, version as sys_version
+    try:
+        import readline # This will enable navigation in input
+    except (ImportError, ModuleNotFoundError):
+        pass
 
     from telethon.errors.rpcerrorlist import (
         UsernameNotOccupiedError, UsernameInvalidError
