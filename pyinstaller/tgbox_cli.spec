@@ -1,5 +1,7 @@
 from pathlib import Path
 from platform import system
+
+from sys import maxsize
 from os import getenv
 
 from tgbox.defaults import PYINSTALLER_DATA
@@ -28,15 +30,18 @@ SCRIPT_LOGO = DATA_FOLDER / 'logo.ico'
 MAIN_SCRIPT = Path.cwd() / '.tgbox_cli_wrapper.py'
 
 TGBOX_CLI_DATA: dict = {
-    str(Path('data', i.name)): str(i)
+    str(Path('tgbox_cli', 'data', i.name)): str(i)
     for i in DATA_FOLDER.glob('*')
 }
 PYINSTALLER_DATA.update(TGBOX_CLI_DATA)
 
-if system().lower() == 'windows':
+
+if system() == 'Windows':
     # Enlighten may require ANSICON DLLs (32/64) on the Windows machine
-    PYINSTALLER_DATA['ansicon/ANSI32.dll'] = 'depends/ansicon/ANSI32.dll'
-    PYINSTALLER_DATA['ansicon/ANSI64.dll'] = 'depends/ansicon/ANSI64.dll'
+    if maxsize > 2**32: # 64bit
+        PYINSTALLER_DATA['ansicon/ANSI64.dll'] = 'depends/ansicon/ANSI64.dll'
+    else:
+        PYINSTALLER_DATA['ansicon/ANSI32.dll'] = 'depends/ansicon/ANSI32.dll'
 
 a = Analysis(
     [MAIN_SCRIPT],
