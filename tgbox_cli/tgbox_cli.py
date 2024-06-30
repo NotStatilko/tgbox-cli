@@ -2027,11 +2027,11 @@ def file_upload(
                 )
                 to_upload.append(pw)
 
-            if to_upload: # If any files left
-                try:
-                    _upload(to_upload)
-                except tgbox.errors.NotEnoughRights as e:
-                    echo(f'\n[RED]{e}[RED]')
+        if to_upload: # If any files left
+            try:
+                _upload(to_upload)
+            except tgbox.errors.NotEnoughRights as e:
+                echo(f'\n[RED]{e}[RED]')
 
         if calculate:
             echo(' ' * 60 + '\r', nl=True)
@@ -2632,7 +2632,7 @@ def file_import(ctx, key, id, propagate, file_path):
         echo(f'[RED]There is no file in RemoteBox by ID {id}[RED]')
 
     elif isinstance(erbf, tgbox.api.remote.DecryptedRemoteBoxFile):
-        echo(f'[RED]File ID{id} is already decrypted. Do you mistyped ID?[RED]')
+        echo(f'[RED]File ID{id} is already decrypted. Did you mistyped ID?[RED]')
     else:
         try:
             key = tgbox.keys.Key.decode(key)
