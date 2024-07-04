@@ -37,7 +37,7 @@ setup(
         'Cloud', 'Non-official'
     ],
     classifiers = [
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Intended Audience :: End Users/Desktop',
         'Topic :: Security :: Cryptography',
@@ -46,6 +46,7 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12'
     ],
     entry_points='''
         [console_scripts]
