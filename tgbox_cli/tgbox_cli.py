@@ -2033,7 +2033,7 @@ def file_upload(
             except tgbox.errors.NotEnoughRights as e:
                 echo(f'\n[RED]{e}[RED]')
 
-        if calculate:
+        if calculate and target_files:
             echo(' ' * 60 + '\r', nl=True)
             echo(echo_text + '\n')
 
