@@ -36,7 +36,8 @@ class Session:
             folder = Path(gettempdir()) / '.tgbox-cli'
 
         folder.mkdir(exist_ok=True, parents=True)
-
+        folder.chmod(0o777) # Allow different users to store
+                          # sessions in this folder (UNIX)
         self.folder, self.session_key = folder, session_key
         self.enc_key = sha256(session_key.encode()).digest()
 
