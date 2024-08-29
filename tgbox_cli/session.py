@@ -35,6 +35,8 @@ class Session:
         if not folder:
             folder = Path(gettempdir()) / '.tgbox-cli'
 
+        folder.mkdir(exist_ok=True, parents=True)
+
         self.folder, self.session_key = folder, session_key
         self.enc_key = sha256(session_key.encode()).digest()
 
