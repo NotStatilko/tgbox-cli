@@ -1,12 +1,12 @@
 from tgbox.crypto import AESwState as AES
 
 from typing import Optional
+from tempfile import gettempdir
 from pickle import loads, dumps
 
+from base64 import urlsafe_b64encode
 from hashlib import sha256
 from pathlib import Path
-
-from .tools import get_cli_folder
 
 
 class Session:
@@ -16,21 +16,40 @@ class Session:
     specify the so-called SessionKey and it will
     be used to encrypt any committed data.
     """
-    def __init__(self, key: str, folder: Optional[Path] = None):
-        if not key:
-            raise ValueError('key can not be empty')
+    def __init__(self, session_key: str, folder: Optional[Path] = None):
+        """
+        Arguments:
+            session_key: str:
+                In TGBOX-CLI, session key is a Key that
+                we store in $TGBOX_CLI_SK env var. We
+                use it to generate session Enc key.
+
+            folder: Path, optional:
+                Folder is a directory where session
+                file will be stored. By default, it's
+                <TEMP>/.tgbox-cli directory
+        """
+        if not session_key:
+            raise ValueError('session_key can not be empty')
 
         if not folder:
-            folder = get_cli_folder()
+            folder = Path(gettempdir()) / '.tgbox-cli'
 
-        self.folder, self.key = folder, key
-        self.enc_key = sha256(key.encode()).digest()
+        self.folder, self.session_key = folder, session_key
+        self.enc_key = sha256(session_key.encode()).digest()
 
-        self.file = folder / f'sess_{sha256(self.enc_key).hexdigest()}'
+        session_id = sha256(session_key.encode() + self.enc_key)
+        session_id = urlsafe_b64encode(session_id.digest()[:18])
+
+        self.file = folder / f'sess_{session_id.decode()}'
         try:
             state = open(self.file,'rb').read()
+            assert state, 'State is empty.'
             self.state = loads(AES(self.enc_key).decrypt(state))
-        except FileNotFoundError:
+        except (AssertionError, FileNotFoundError):
+            self.file.touch()      # chmod is effectively ignored by Windows, so
+            self.file.chmod(0o600) # this basically works only on a POSIX-like
+                                   # machines. Blame shitty Windows for this.
             self.state = {
                 'BOX_LIST': [],
                 'CURRENT_BOX': None,

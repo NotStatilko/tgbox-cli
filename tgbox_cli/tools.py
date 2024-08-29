@@ -413,9 +413,9 @@ def format_dxbf(
             name = f'[WHITE]{name}[WHITE]'
 
     formatted = (
-       f"""\nFile: {idsalt} {name}\n"""
-       f"""Path: {split_string(file_path, 6)}\n"""
-       f"""Size: {size}({dxbf.size}), {mimedur}\n"""
+       f'\nFile: {idsalt} {name}\n'
+       f'Path: {split_string(file_path, 6)}\n'
+       f'Size: {size}({dxbf.size}), {mimedur}\n'
     )
     if cattrs:
         formatted += "* CustomAttributes:\n"
@@ -428,8 +428,8 @@ def format_dxbf(
             v = v.replace('\n',f'[{color_}]\n[{color_}]')
 
             formatted += (
-                f'''   [WHITE]{k}[WHITE]: '''
-                f'''[{color_}]{v}[{color_}]\n'''
+                f'   [WHITE]{k}[WHITE]: '
+                f'[{color_}]{v}[{color_}]\n'
             )
     formatted += time
 
@@ -492,8 +492,8 @@ def format_dxbf_message(
     author += f' [BRIGHT_BLACK]({dxbf.cattrs["author_id"].decode()})[BRIGHT_BLACK]'
 
     formatted = (
-       f"""\n {idsalt} {name} ({topic}:{date})\n"""
-       f""" * Author: {author}\n"""
-       f""" {time}\n |\n [WHITE]@[WHITE] Message: {text}"""
+       f'\n {idsalt} {name} ({topic}:{date})\n'
+       f' * Author: {author}\n'
+       f' {time}\n |\n [WHITE]@[WHITE] Message: {text}'
     )
     return color(formatted)
