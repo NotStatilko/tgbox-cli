@@ -36,8 +36,16 @@ class Session:
             folder = Path(gettempdir()) / '.tgbox-cli'
 
         folder.mkdir(exist_ok=True, parents=True)
-        folder.chmod(0o777) # Allow different users to store
-                          # sessions in this folder (UNIX)
+        try:
+            if folder.stat().st_size != 16895: # oct(16895) is 0o777
+                # Allow different users to store
+                # sessions in this folder (UNIX)
+                folder.chmod(0o777)
+        except PermissionError:
+            pass # We can not change permissions from this user.
+                 # This shoudln't be a problem, as initial user
+                 # (creator) of this folder should set it to 777
+
         self.folder, self.session_key = folder, session_key
         self.enc_key = sha256(session_key.encode()).digest()
 
