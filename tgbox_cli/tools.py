@@ -404,18 +404,24 @@ def break_string(string: str, indent: int=0) -> str:
     """
     result_str, cycle_str = '', ''
     string_spl = string.split()
+    actual_cycle_str_len = 0
 
     limit = int(get_terminal_size().columns // 1.8)
     limit = 30 if limit < 30 else limit
 
     while string_spl:
         part = string_spl.pop(0)
+        unst = click.unstyle(part)
 
-        if (len(cycle_str) + len(part)) > limit:
+        actual_cycle_str_len += len(unst)
+
+        if actual_cycle_str_len > limit:
             if cycle_str:
                 indentw = '\n'+' '*indent
                 result_str += cycle_str + indentw
+
                 cycle_str = ''
+                actual_cycle_str_len = 0
 
         cycle_str += (part + ' ')
 
@@ -604,11 +610,13 @@ def format_dxbf_message(
 
     name = f'[B0b]{dxbf.file_name}[X]'
 
-    text = break_string(dxbf.cattrs['text'].decode(), 5)
-    colorized_text = colorize(text)
+    text = dxbf.cattrs['text'].decode()
 
-    if text == colorized_text:
-        text = f'[W0b]{text}[X]'
+    unformatt_text = break_string(text, 5)
+    colorized_text = break_string(colorize(text), 5)
+
+    if unformatt_text == colorized_text:
+        text = f'[W0b]{unformatt_text}[X]'
     else:
         text = colorized_text
 
