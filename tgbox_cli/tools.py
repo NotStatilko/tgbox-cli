@@ -378,19 +378,48 @@ def split_string(string: str, indent: int=0, symbol: str='->') -> str:
     'indent' == int(get_terminal_size().columns // 1.8)
     if 'indent' is not specified as optional kwarg.
     """
-    available = int(get_terminal_size().columns // 1.8)
-    available = 30 if available < 30 else available
+    limit = int(get_terminal_size().columns // 1.8)
+    limit = 30 if limit < 30 else limit
 
     parts = []
     while string:
-        parts.append(string[:available] + symbol)
-        string = string[available:]
+        parts.append(string[:limit] + symbol)
+        string = string[limit:]
 
     if len(symbol):
         parts[-1] = parts[-1][:-len(symbol)]
 
     joinsymbols = '\n'+' '*indent
     return joinsymbols.join(parts).strip()
+
+def break_string(string: str, indent: int=0) -> str:
+    """
+    This function can break long string into the
+    lines separated by the whitespace. It break
+    line only after space symbol, thus doesn't
+    break color codes.
+
+    'indent' == int(get_terminal_size().columns // 1.8)
+    if 'indent' is not specified as optional kwarg.
+    """
+    result_str, cycle_str = '', ''
+    string_spl = string.split()
+
+    limit = int(get_terminal_size().columns // 1.8)
+    limit = 30 if limit < 30 else limit
+
+    while string_spl:
+        part = string_spl.pop(0)
+
+        if (len(cycle_str) + len(part)) > limit:
+            if cycle_str:
+                indentw = '\n'+' '*indent
+                result_str += cycle_str + indentw
+                cycle_str = ''
+
+        cycle_str += (part + ' ')
+
+    return (result_str + cycle_str)
 
 def env_proxy_to_pysocks(env_proxy: str) -> tuple:
     p = parse_url(env_proxy)
@@ -575,7 +604,7 @@ def format_dxbf_message(
 
     name = f'[B0b]{dxbf.file_name}[X]'
 
-    text = split_string(dxbf.cattrs['text'].decode(), 5)
+    text = break_string(dxbf.cattrs['text'].decode(), 5)
     colorized_text = colorize(text)
 
     if text == colorized_text:
