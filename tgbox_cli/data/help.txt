@@ -1,18 +1,18 @@
-[YELLOW]TGBOX-CLI README[YELLOW]
+[Y0br]TGBOX-CLI README[X]
     Hi and Welcome to the short TGBOX-CLI README! This file
     intended to help you to get info about this program.
 
-[WHITE]What is a TGBOX?[WHITE]
+[W0b]What is TGBOX?[X]
     TGBOX (TelegramBox) is a non-official API to the encrypted
     cloud storage around the Telegram messenger written on
     a Python programming language by me, author of this
     CLI app! In sake of a DRY principle, we will not cover
     here API documentation. If you wonder what is a TGBOX
     in depth, then feel free to check the docs:
-        [BLUE]tgbox.readthedocs.io/en/latest/index.html[BLUE]
-        [BLUE]github.com/NonProjects/tgbox[BLUE]
+        [B0b]tgbox.readthedocs.io/en/latest/index.html[X]
+        [B0b]github.com/NonProjects/tgbox[X]
 
-[WHITE]What should you know about CLI design[WHITE]
+[W0b]What should you know about CLI design[X]
     The CLI (or a Command-Line Interface) is an interface
     that operates with the text input, mostly from the
     user. Unlike the GUI (which is a Graphical Interface),
@@ -21,9 +21,9 @@
     your mouse! Using a CMD may seem kinda hard for a green
     users, so if you one of those, -- take a time to read
     about CLI and Terminals right from the Wikipedia:
-        [BLUE]en.wikipedia.org/wiki/Command-line_interface[BLUE]
+        [B0b]en.wikipedia.org/wiki/Command-line_interface[X]
 
-[WHITE]Working with TGBOX-CLI[WHITE]
+[W0b]Working with TGBOX-CLI[X]
     TGBOX-CLI App (as .EXE or just with Python) internally
     doesn't change while working with -- all data is stored
     inside the produced by the API files (LocalBox), so you
@@ -35,32 +35,32 @@
 
     The Local database (LocalBox) stores encrypted by your
     key data. Feel free to save it in a place that can't
-    be trusted. [RED]Make sure to use a good encryption key[RED].
+    be trusted. [R0b]Make sure to use a good encryption key[X].
 
 
-[WHITE]ENVIRONMENT VARIABLES[WHITE]
+[W0b]ENVIRONMENT VARIABLES[X]
     As many CLI applications, TGBOX-CLI supports some environment
-    variables. You can set them in your CMD with the "[MAGENTA]set[MAGENTA]" (Windows)
-    or "[MAGENTA]export[MAGENTA]" (UNIX) commands. See more on Wikipedia:
-        [BLUE]en.wikipedia.org/wiki/Environment_variable#Syntax[BLUE]
+    variables. You can set them in your CMD with the "[M0b]set[X]" (Windows)
+    or "[M0b]export[X]" (UNIX) commands. See more on Wikipedia:
+        [B0b]en.wikipedia.org/wiki/Environment_variable#Syntax[X]
 
     TGBOX-CLI supports the next environment variables:
-        [BRIGHT_WHITE]http_proxy[BRIGHT_WHITE] (or [BRIGHT_WHITE]https_proxy[BRIGHT_WHITE]): setup Proxy (Google for format)
-        [BRIGHT_WHITE]TGBOX_CLI_SHOW_PASSWORD[BRIGHT_WHITE]: any value will disable hidden input
-        [BRIGHT_WHITE]TGBOX_CLI_DEBUG[BRIGHT_WHITE]: any value will enable full error Traceback
-        [BRIGHT_WHITE]TGBOX_CLI_NOCOLOR[BRIGHT_WHITE]: any value will disable colored output
-        [BRIGHT_WHITE]TGBOX_CLI_LOGFILE[BRIGHT_WHITE]: a full path to logging file
-        [BRIGHT_WHITE]TGBOX_CLI_LOGLEVEL[BRIGHT_WHITE]: setup logging level (DEBUG/INFO/...etc)
-        [BRIGHT_WHITE]TGBOX_CLI_SK[BRIGHT_WHITE]: SessionKey. Will be installed on initialization
+        [W1b]http_proxy[X] (or [W1b]https_proxy[X]): setup Proxy (Google for format)
+        [W1b]TGBOX_CLI_SHOW_PASSWORD[X]: any value will disable hidden input
+        [W1b]TGBOX_CLI_DEBUG[X]: any value will enable full error Traceback
+        [W1b]TGBOX_CLI_NOCOLOR[X]: any value will disable colored output
+        [W1b]TGBOX_CLI_LOGFILE[X]: a full path to logging file
+        [W1b]TGBOX_CLI_LOGLEVEL[X]: setup logging level (DEBUG/INFO/...etc)
+        [W1b]TGBOX_CLI_SK[X]: SessionKey. Will be installed on initialization
 
-    [BRIGHT_BLACK]! Ordinary users may only need the first var to set up Proxy[BRIGHT_BLACK]
-    [BRIGHT_BLACK]  and TGBOX_CLI_SHOW_PASSWORD to make input visible[BRIGHT_BLACK]
+    [X1b]! Ordinary users may only need the first var to set up Proxy[X]
+    [X1b]  and TGBOX_CLI_SHOW_PASSWORD to make input visible[X]
 
-[WHITE]COMMANDS & USAGE[WHITE]
-    [BRIGHT_BLACK]! Write a [BRIGHT_BLACK][WHITE]tgbox-cli.exe[WHITE] [BRIGHT_BLACK]if you have .EXE file[BRIGHT_BLACK]
+[W0b]COMMANDS & USAGE[X]
+    [X1b]! Write a [X][W0b]tgbox-cli.exe[X] [X1b]if you have .EXE file[X]
 
     Try to run a TGBOX-CLI without arguments:
-        [BRIGHT_WHITE]tgbox-cli[BRIGHT_WHITE]
+        [W1b]tgbox-cli[X]
 
     As a result, you should see a list of commands. If
     you see an error with text something like "Sorry,
@@ -68,25 +68,25 @@
     a folder with executable, open CMD in it and run
     & try once again.
 
-    You can use a [GREEN]--help[GREEN] option with every command
+    You can use a [G0b]--help[X] option with every command
     to get detailed information about them. Let's
-    take a look at first command: the [BLUE]cli-init[BLUE],
+    take a look at first command: the [B0b]cli-init[X],
     which activates environment for a TGBOX-CLI app:
-        [BRIGHT_WHITE]tgbox-cli cli-init --help[BRIGHT_WHITE]
+        [W1b]tgbox-cli cli-init --help[X]
 
-    [BRIGHT_BLACK]! Use a --help every time when you don't understand or[BRIGHT_BLACK]
-    [BRIGHT_BLACK]  forgot some command. Fall to this README for examples.[BRIGHT_BLACK]
+    [X1b]! Use a --help every time when you don't understand or[X]
+    [X1b]  forgot some command. Fall to this README for examples.[X]
 
-    Some [BLUE]commands[BLUE] will require you to specify [GREEN]options[GREEN],
+    Some [B0b]commands[X] will require you to specify [G0b]options[X],
     some will prompt you if you don't specify them.
 
-    [BRIGHT_BLACK]! Press CTRL+C to stop any command and return to shell.[BRIGHT_BLACK]
+    [X1b]! Press CTRL+C to stop any command and return to shell.[X]
 
-    [WHITE]QUICK INTRO[WHITE]
-        [MAGENTA]|||||| Pure Start ||||||[MAGENTA]
+    [W0b]QUICK INTRO[X]
+        [M0b]|||||| Pure Start ||||||[X]
 
-        Start with a [BLUE]cli-init[BLUE]:
-            [BRIGHT_WHITE]tgbox-cli cli-init[BRIGHT_WHITE]
+        Start with a [B0b]cli-init[X]:
+            [W1b]tgbox-cli cli-init[X]
 
         This will give you commands for session initialization.
         Write to your terminal proposed ones. Session will
@@ -94,699 +94,695 @@
         enter it every time. Your session will be destroyed
         when you will close your command line.
 
-        [RED]We encrypt your Box keys and some other sensitive[RED]
-        [RED]information used in session with a TGBOX_CLI_SK key. It[RED]
-        [RED]is stored in the environment variables, so ANY program[RED]
-        [RED]you will run in initialized CMD may receive a FULL[RED]
-        [RED]access to all your keys. To prevent this, always use[RED]
-        [RED]a *new* command line instance and DON'T use anything[RED]
-        [RED]except the TGBOX-CLI and system tools in initialized CMD.[RED]
+        [R0b]We encrypt your Box keys and some other sensitive[X]
+        [R0b]information used in session with a TGBOX_CLI_SK key. It[X]
+        [R0b]is stored in the environment variables, so ANY program[X]
+        [R0b]you will run in initialized CMD may receive a FULL[X]
+        [R0b]access to all your keys. To prevent this, always use[X]
+        [R0b]a *new* command line instance and DON'T use anything[X]
+        [R0b]except the TGBOX-CLI and system tools in initialized CMD.[X]
 
-        [BRIGHT_BLACK]This is unlikely to happen, but such attack can be done.[BRIGHT_BLACK]
+        [X1b]This is unlikely to happen, but such attack can be done.[X]
 
-        [RED]Make sure you TRUST the TGBOX-CLI build before going further[RED]
+        [R0b]Make sure you TRUST the TGBOX-CLI build before going further[X]
 
-        [MAGENTA]|||||| Connecting Account ||||||[MAGENTA]
+        [M0b]|||||| Connecting Account ||||||[X]
 
         Didn't create any Box? Connect your Telegram account:
-            [BRIGHT_WHITE]tgbox-cli account-connect[BRIGHT_WHITE]
+            [W1b]tgbox-cli account-connect[X]
 
         This command will prompt you for phone number linked to
         your Telegram account, login code, and password.
 
-        You can specify custom [WHITE]API_ID[WHITE] and [WHITE]API_HASH[WHITE] on this command
-        with ([GREEN]--api-id[GREEN] & [GREEN]--api-hash[GREEN]) if you want or need to.
+        You can specify custom [W0b]API_ID[X] and [W0b]API_HASH[X] on this command
+        with ([G0b]--api-id[X] & [G0b]--api-hash[X]) if you want or need to.
 
         You can connect as many accounts as you want,
         as well as switch between them with the simple
-        [BLUE]account-switch[BLUE] command.
+        [B0b]account-switch[X] command.
 
-        [YELLOW]You can disable TGBOX-CLI session at any time via[YELLOW]
-        [YELLOW]Telegram Settings -> Devices if you will need it.[YELLOW]
+        [Y0b]You can disable TGBOX-CLI session at any time via[X]
+        [Y0b]Telegram Settings -> Devices if you will need it.[X]
 
-        [MAGENTA]|||||| Making Box ||||||[MAGENTA]
+        [M0b]|||||| Making Box ||||||[X]
 
         You already connected an account? Well, it's time to make your
-        first Box with the new [BLUE]box-make[BLUE] command! Try this:
-            [BRIGHT_WHITE]tgbox-cli box-make[BRIGHT_WHITE]
+        first Box with the new [B0b]box-make[X] command! Try this:
+            [W1b]tgbox-cli box-make[X]
 
-        [BLUE]box-make[BLUE] command without any [GREEN]options[GREEN] will prompt you
+        [B0b]box-make[X] command without any [G0b]options[X] will prompt you
         firstly for the name of your new Box. Let's try to specify
-        it with [GREEN]option[GREEN], so you can understand how it works:
-            [BRIGHT_WHITE]tgbox-cli box-make --box-name=MyBox[BRIGHT_WHITE]
+        it with [G0b]option[X], so you can understand how it works:
+            [W1b]tgbox-cli box-make --box-name=MyBox[X]
 
-        This will omit "Box name" prompt. Many [GREEN]options[GREEN] can be
-        [WHITE]long[WHITE] (with a [WHITE]two[WHITE] dashes [GREEN]--[GREEN]) and [WHITE]short[WHITE] ([WHITE]one[WHITE] dash [GREEN]-[GREEN]) at
-        the same time. With a [GREEN]--help[GREEN] on [BLUE]box-make[BLUE] we can see that
-        we can write a [GREEN]--box-name[GREEN] as [GREEN]-b[GREEN]:
-            [BRIGHT_WHITE]tgbox-cli box-make -b=MyBox[BRIGHT_WHITE]
+        This will omit "Box name" prompt. Many [G0b]options[X] can be
+        [W0b]long[X] (with a [W0b]two[X] dashes [G0b]--[X]) and [W0b]short[X] ([W0b]one[X] dash [G0b]-[X]) at
+        the same time. With a [G0b]--help[X] on [B0b]box-make[X] we can see that
+        we can write a [G0b]--box-name[X] as [G0b]-b[X]:
+            [W1b]tgbox-cli box-make -b=MyBox[X]
 
-        [BRIGHT_BLACK]In this README we will write all options in a long variant,[BRIGHT_BLACK]
-        [BRIGHT_BLACK]I believe that this will be easier to learn. Keep in mind[BRIGHT_BLACK]
-        [BRIGHT_BLACK]that you can express them in a short way too![BRIGHT_BLACK]
+        [X1b]In this README we will write all options in a long variant,[X]
+        [X1b]I believe that this will be easier to learn. Keep in mind[X]
+        [X1b]that you can express them in a short way too![X]
 
         In the next step, the TGBOX-CLI will offer you a randomly
         generated passphrase. You can accept it or specify your
-        own. If your choice is a second option, then [RED]make sure
-        to specify a strong encryption password[RED], because your
-        LocalBox will store a [RED]Telegram session[RED] and file info. The
-        key generation process will require you to give a [RED]1GB of RAM[RED]
+        own. If your choice is a second option, then [R0b]make sure
+        to specify a strong encryption password[X], because your
+        LocalBox will store a [R0b]Telegram session[X] and file info. The
+        key generation process will require you to give a [R0b]1GB of RAM[X]
         for a couple of seconds. You can decrease the amount or make it
-        even bigger with the [BLUE]box-make[BLUE] command [GREEN]options[GREEN]. Setting
-        [YELLOW]lower amounts of MB per generation will make brute-forcing[YELLOW]
-        [YELLOW]a more easy deal[YELLOW], change it only if you're understand
-        this. [YELLOW]Make sure to have a free RAM[YELLOW] if you're having an old
+        even bigger with the [B0b]box-make[X] command [G0b]options[X]. Setting
+        [Y0b]lower amounts of MB per generation will make brute-forcing[X]
+        [Y0b]a more easy deal[X], change it only if you're understand
+        this. [Y0b]Make sure to have a free RAM[X] if you're having an old
         machine, because this may freeze it down until reboot.
 
-        As a result of [BLUE]box-make[BLUE] command, you should receive a
+        As a result of [B0b]box-make[X] command, you should receive a
         LocalBox file on your computer and private channel (
         the RemoteBox) on your Telegram account. You don't
         need to directly work with RemoteBox at all. All you
         need is just connect your LocalBox and execute the
-        [BLUE]commands[BLUE]. As well as with accounts, you can list,
+        [B0b]commands[X]. As well as with accounts, you can list,
         connect more than one and switch your Boxes. See a
-        [BRIGHT_WHITE]tgbox-cli --help[BRIGHT_WHITE] for a list of available [BLUE]commands[BLUE].
+        [W1b]tgbox-cli --help[X] for a list of available [B0b]commands[X].
 
-        Later you will need to use a [BLUE]box-open[BLUE] to open
+        Later you will need to use a [B0b]box-open[X] to open
         your LocalBox and access files. This one is easy,
         try to close your shell, open it again and connect
         your LocalBox, then go further.
 
-        [MAGENTA]|||||| Uploading Files ||||||[MAGENTA]
+        [M0b]|||||| Uploading Files ||||||[X]
 
         It's time to upload our first file. Let's see how:
-            [BRIGHT_WHITE]tgbox-cli file-upload path/to/your/file[BRIGHT_WHITE]
+            [W1b]tgbox-cli file-upload path/to/your/file[X]
 
-        Path here is a [CYAN]target[CYAN]. Add as much targets as you want:
-            [BRIGHT_WHITE]tgbox-cli file-upload TARGET_1 TARGET_2 ...[BRIGHT_WHITE]
+        Path here is a [C0b]target[X]. Add as much targets as you want:
+            [W1b]tgbox-cli file-upload TARGET_1 TARGET_2 ...[X]
 
-        Argument [CYAN]target[CYAN] will allow you to specify a path(s) to
+        Argument [C0b]target[X] will allow you to specify a path(s) to
         a file(s) that will be prepared, encrypted and pushed to
         your RemoteBox channel. This will work not only for a
-        file, but for [WHITE]directories too[WHITE]! You can specify a path
+        file, but for [W0b]directories too[X]! You can specify a path
         to a folder and CLI will upload all dirs/files from it.
 
-        [YELLOW]Please note that uploading one big file is always better[YELLOW]
-        [YELLOW]than a thousand of small[YELLOW] because we're working around the
-        Telegram messenger, and [WHITE]not[WHITE] over the real file server. You
+        [Y0b]Please note that uploading one big file is always better[X]
+        [Y0b]than a thousand of small[X] because we're working around the
+        Telegram messenger, and [W0b]not[X] over the real file server. You
         may end up with a Box that will be really hard to work on
         if your channel will contain i.e. 100,000 files or even more
-        [BRIGHT_BLACK](Limit on messages is 1M. Do not treat this as challenge :)[BRIGHT_BLACK]
+        [X1b](Limit on messages is 1M. Do not treat this as challenge :)[X]
         |
-        [YELLOW]If you have a really big amount of small files[YELLOW], --
-        [YELLOW]consider to ZIP them firstly[YELLOW], then upload.
+        [Y0b]If you have a really big amount of small files[X], --
+        [Y0b]consider to ZIP them firstly[X], then upload.
 
         We can also attach a special attributes -- CAttrs (or
         the "CustomAttributes") to a file before uploading:
-            [BRIGHT_WHITE]tgbox-cli file-upload Scripts/ --cattrs="tag: code"[BRIGHT_WHITE]
+            [W1b]tgbox-cli file-upload Scripts/ --cattrs="tag: code"[X]
 
         This will add CAttr with key "tag" and value "code"
         to every file from the folder Scripts/ on upload,
-        so you can later search for them with a [BLUE]command[BLUE].
+        so you can later search for them with a [B0b]command[X].
 
-        [WHITE]Please note[WHITE] that CAttrs should be separated by the "[WHITE]|[WHITE]"
-        symbol. For example: [WHITE]"tag: image | message: It's pretty!"[WHITE]
+        [W0b]Please note[X] that CAttrs should be separated by the "[W0b]|[X]"
+        symbol. For example: [W0b]"tag: image | message: It's pretty!"[X]
 
         If the file was already pushed to RemoteBox and was changed
-        since then ([WHITE]in size[WHITE]), the [BLUE]file-upload[BLUE] will [WHITE]auto update[WHITE]
-        (make a [WHITE]full re-upload[WHITE] of) it. You can disable this by
-        specifying [GREEN]--no-update[GREEN] flag on [BLUE]file-upload[BLUE]. There is
-        also the [GREEN]--force-update[GREEN] flag, which will force to
-        update every [CYAN]target[CYAN] file on upload.
+        since then ([W0b]in size[X]), the [B0b]file-upload[X] will [W0b]auto update[X]
+        (make a [W0b]full re-upload[X] of) it. You can disable this by
+        specifying [G0b]--no-update[X] flag on [B0b]file-upload[X]. There is
+        also the [G0b]--force-update[X] flag, which will force to
+        update every [C0b]target[X] file on upload.
 
-        You can use [CYAN]filters[CYAN] to control which files will be uploaded
-        to your Box. [BLUE]file-upload[BLUE] has [WHITE]eight[WHITE] [CYAN]filters[CYAN] in total. For
-        example, to upload [WHITE]only[WHITE] images from specified path you
+        You can use [C0b]filters[X] to control which files will be uploaded
+        to your Box. [B0b]file-upload[X] has [W0b]eight[X] [C0b]filters[X] in total. For
+        example, to upload [W0b]only[X] images from specified path you
         can use this command (example):
-            [BRIGHT_WHITE]tgbox-cli file-upload Music/ +i mime=image[BRIGHT_WHITE]
+            [W1b]tgbox-cli file-upload Music/ +i mime=image[X]
 
-        See next, [MAGENTA]Searching Files[MAGENTA] chapter to master
-        [CYAN]filters[CYAN] usage. Please note that in [BLUE]file-upload[BLUE],
-        [CYAN]they[CYAN] should be placed [WHITE]after[WHITE] TARGET and [WHITE]always[WHITE]
-        include either [CYAN]+i[CYAN] ([CYAN]++include[CYAN]) or [CYAN]+e[CYAN] ([CYAN]++exclude[CYAN]).
+        See next, [M0b]Searching Files[X] chapter to master
+        [C0b]filters[X] usage. Please note that in [B0b]file-upload[X],
+        [C0b]they[X] should be placed [W0b]after[X] TARGET and [W0b]always[X]
+        include either [C0b]+i[X] ([C0b]++include[X]) or [C0b]+e[X] ([C0b]++exclude[X]).
 
         Those who want to control file uploading at expert
-        level should know about [WHITE]balancing[WHITE]. In a theory, we
+        level should know about [W0b]balancing[X]. In a theory, we
         can upload simultaneously as many files as we want,
-        but in reality the Telegram servers [WHITE]will not like[WHITE]
+        but in reality the Telegram servers [W0b]will not like[X]
         thousands of requests per second, which means only
         one -- the flood wait error. To omit this, we limit
         the total size of files uploaded at the same time
-        by the [GREEN]--max-bytes[GREEN] option, and the total amount by
-        the [GREEN]--max-workers[GREEN]. Algorithm is simple: we will
+        by the [G0b]--max-bytes[X] option, and the total amount by
+        the [G0b]--max-workers[X]. Algorithm is simple: we will
         iterate over files (if directory specified) and
-        decrement the [GREEN]--max-bytes[GREEN] by file size, then
-        decrement by one the [GREEN]--max-workers[GREEN]. Upload list
-        will expand until [GREEN]--max-workers[GREEN] or [GREEN]--max-bytes[GREEN]
-        values > 0, otherwise launch [BLUE]file-upload[BLUE] process.
-            By default, [GREEN]--max-bytes[GREEN]=[WHITE]200MB[WHITE] and the
-        [GREEN]--max-workers[GREEN]=[WHITE]10[WHITE]; as [BLUE]file-upload[BLUE] should push
-        to remote at least one file, -- it [WHITE]will accept[WHITE]
-        target which bytesize is > than [GREEN]--max-bytes[GREEN].
+        decrement the [G0b]--max-bytes[X] by file size, then
+        decrement by one the [G0b]--max-workers[X]. Upload list
+        will expand until [G0b]--max-workers[X] or [G0b]--max-bytes[X]
+        values > 0, otherwise launch [B0b]file-upload[X] process.
+            By default, [G0b]--max-bytes[X]=[W0b]200MB[X] and the
+        [G0b]--max-workers[X]=[W0b]10[X]; as [B0b]file-upload[X] should push
+        to remote at least one file, -- it [W0b]will accept[X]
+        target which bytesize is > than [G0b]--max-bytes[X].
 
-        [MAGENTA]|||||| Searching Files ||||||[MAGENTA]
+        [M0b]|||||| Searching Files ||||||[X]
 
         After you upload some files, you may list them, try:
-            [BRIGHT_WHITE]tgbox-cli file-search[BRIGHT_WHITE]
+            [W1b]tgbox-cli file-search[X]
 
-        [BLUE]file-search[BLUE] without any [CYAN]filters[CYAN] will return you an
+        [B0b]file-search[X] without any [C0b]filters[X] will return you an
         interactive list of all files that was uploaded to
-        your Box, however, using [CYAN]them[CYAN] will allow you to
-        [WHITE]search[WHITE] for specified files only. See this:
-            [BRIGHT_WHITE]tgbox-cli file-search mime=audio max_size=10MB[BRIGHT_WHITE]
+        your Box, however, using [C0b]them[X] will allow you to
+        [W0b]search[X] for specified files only. See this:
+            [W1b]tgbox-cli file-search mime=audio max_size=10MB[X]
 
-        Such [CYAN]filters[CYAN] will search [WHITE]only[WHITE] for audio files (by [CYAN]mime[CYAN]
-        type) which size is < than 10MB ([CYAN]max_size[CYAN]). The [CYAN]filters[CYAN]
-        [WHITE]isn't[WHITE] [GREEN]options[GREEN] and [WHITE]shouldn't[WHITE] start with dashes. [WHITE]By default[WHITE]
-        search works in the "[WHITE]include state[WHITE]": file [WHITE]must match the[WHITE]
-        [WHITE]specified filters[WHITE] to be returned, however, there is also
-        an "[WHITE]exclude state[WHITE]": [WHITE]matched files isn't returned[WHITE]. You can
-        switch this "states" with a [CYAN]special flag[CYAN] that starts with
-        the two plus symbols -- [CYAN]++include[CYAN] ([CYAN]+i[CYAN]) and [CYAN]++exclude[CYAN] ([CYAN]+e[CYAN])
+        Such [C0b]filters[X] will search [W0b]only[X] for audio files (by [C0b]mime[X]
+        type) which size is < than 10MB ([C0b]max_size[X]). The [C0b]filters[X]
+        [W0b]isn't[X] [G0b]options[X] and [W0b]shouldn't[X] start with dashes. [W0b]By default[X]
+        search works in the "[W0b]include state[X]": file [W0b]must match the[X]
+        [W0b]specified filters[X] to be returned, however, there is also
+        an "[W0b]exclude state[X]": [W0b]matched files isn't returned[X]. You can
+        switch this "states" with a [C0b]special flag[X] that starts with
+        the two plus symbols -- [C0b]++include[X] ([C0b]+i[X]) and [C0b]++exclude[X] ([C0b]+e[X])
         |
-        A file should be matched by [WHITE]all[WHITE] [CYAN]filters[CYAN] to be returned
-        (works like [RED]AND[RED]), after one mismatch file will be skipped.
+        A file should be matched by [W0b]all[X] [C0b]filters[X] to be returned
+        (works like [R0b]AND[X]), after one mismatch file will be skipped.
         |
         This will return all audio files except the FLAC:
-            [BRIGHT_WHITE]tgbox-cli file-search mime=audio ++exclude mime=x-flac[BRIGHT_WHITE]
+            [W1b]tgbox-cli file-search mime=audio ++exclude mime=x-flac[X]
 
-        The [WHITE]most powerful[WHITE] [CYAN]filter[CYAN] is the one named [CYAN]scope[CYAN]. The TGBOX built
-        in a way that to search for files we need to iterate [WHITE]over whole[WHITE]
+        The [W0b]most powerful[X] [C0b]filter[X] is the one named [C0b]scope[X]. The TGBOX built
+        in a way that to search for files we need to iterate [W0b]over whole[X]
         local Box, decrypt file's attributes and compare them with your
-        [CYAN]filters[CYAN]. While this isn't a problem for small Box, the ones who
-        have a monster-size ([WHITE]many small uploads[WHITE]) containers may end up
-        waiting for minute (or [WHITE]longer[WHITE]) to complete search process.
+        [C0b]filters[X]. While this isn't a problem for small Box, the ones who
+        have a monster-size ([W0b]many small uploads[X]) containers may end up
+        waiting for minute (or [W0b]longer[X]) to complete search process.
         |
-        The TGBOX [WHITE]effectually[WHITE] storing abstract directories that code
+        The TGBOX [W0b]effectually[X] storing abstract directories that code
         makes from every unique file path of every file you uploaded;
-        so we can make a [WHITE]quick fetch[WHITE] of all files in specified
-        directory. That's what the "[CYAN]scope[CYAN]" do.
+        so we can make a [W0b]quick fetch[X] of all files in specified
+        directory. That's what the "[C0b]scope[X]" do.
         |
-        Let's imagine that you have a [WHITE]*many*[WHITE] files in your Box. You
-        want to find a nice track by name "[WHITE]Spit[WHITE]" of amazing singer,
-        [WHITE]Poppy[WHITE]. You totally know that it has the word "[WHITE]Spit[WHITE]" in
+        Let's imagine that you have a [W0b]*many*[X] files in your Box. You
+        want to find a nice track by name "[W0b]Spit[X]" of amazing singer,
+        [W0b]Poppy[X]. You totally know that it has the word "[W0b]Spit[X]" in
         name and also you're sure that it's somewhere in the
-        [WHITE]/home/user/Music/[WHITE] directory (has this file path).
+        [W0b]/home/user/Music/[X] directory (has this file path).
         |
-        You can make the next request to the [BLUE]file-search[BLUE] command:
-            [BRIGHT_WHITE]tgbox-cli file-search file_name=Spit scope=/home/user/Music[BRIGHT_WHITE]
+        You can make the next request to the [B0b]file-search[X] command:
+            [W1b]tgbox-cli file-search file_name=Spit scope=/home/user/Music[X]
 
-        This will search for files which file path is [WHITE]/home/user/Music[WHITE],
-        thus, [WHITE]will omit[WHITE] all other directories that you don't want. All
-        sub-directories of [WHITE]/home/user/Music[WHITE] will be [WHITE]also searched on[WHITE].
+        This will search for files which file path is [W0b]/home/user/Music[X],
+        thus, [W0b]will omit[X] all other directories that you don't want. All
+        sub-directories of [W0b]/home/user/Music[X] will be [W0b]also searched on[X].
 
-        Except the [CYAN]scope[CYAN], you can perform fast search by specifying
-        [CYAN]min_id[CYAN], [CYAN]max_id[CYAN], or [CYAN]id[CYAN] filters. [WHITE]You can duplicate[WHITE] [CYAN]filters[CYAN]:
-            [BRIGHT_WHITE]tgbox-cli file-search id=35 id=46[BRIGHT_WHITE]
+        Except the [C0b]scope[X], you can perform fast search by specifying
+        [C0b]min_id[X], [C0b]max_id[X], or [C0b]id[X] filters. [W0b]You can duplicate[X] [C0b]filters[X]:
+            [W1b]tgbox-cli file-search id=35 id=46[X]
 
-        [YELLOW]See[YELLOW] [BRIGHT_WHITE]tgbox-cli file-search --help[BRIGHT_WHITE] [YELLOW]for all supported filters.[YELLOW]
+        [Y0b]See[X] [W1b]tgbox-cli file-search --help[X] [Y0b]for all supported filters.[X]
 
-        [MAGENTA]|||||| Downloading Files ||||||[MAGENTA]
+        [M0b]|||||| Downloading Files ||||||[X]
 
         File downloading is often a simple routine. See this:
-            [BRIGHT_WHITE]tgbox-cli file-download max_id=100 +e mime=video[BRIGHT_WHITE]
+            [W1b]tgbox-cli file-download max_id=100 +e mime=video[X]
 
-        The [BLUE]file-download[BLUE] will search a target files by [CYAN]filters[CYAN]
-        (like [BLUE]file-search[BLUE]) and download them to the [WHITE]DownloadsTGBOX[WHITE]
-        folder, [WHITE]preserving[WHITE] the actual file path. The command above
-        will download all files that [WHITE]ID is < 100[WHITE] & [WHITE]mime type of[WHITE]
-        [WHITE]which is not a video[WHITE]. This is only an example, [BLUE]file-download[BLUE]
-        support all of the [CYAN]filters[CYAN] that support [BLUE]file-search[BLUE].
+        The [B0b]file-download[X] will search a target files by [C0b]filters[X]
+        (like [B0b]file-search[X]) and download them to the [W0b]DownloadsTGBOX[X]
+        folder, [W0b]preserving[X] the actual file path. The command above
+        will download all files that [W0b]ID is < 100[X] & [W0b]mime type of[X]
+        [W0b]which is not a video[X]. This is only an example, [B0b]file-download[X]
+        support all of the [C0b]filters[X] that support [B0b]file-search[X].
 
-        You can specify [GREEN]--locate[GREEN] flag to open downloaded file
+        You can specify [G0b]--locate[X] flag to open downloaded file
         in a file explorer (system default), as well as the
-        [GREEN]--show[GREEN] to open it (by the system default app by the
+        [G0b]--show[X] to open it (by the system default app by the
         mime type). The last can be useful, i.e., to watch big
-        video while it's being downloaded. [YELLOW]Make sure to use[YELLOW]
-        [YELLOW]it on a single download[YELLOW], otherwise it can be a [WHITE]mess[WHITE].
+        video while it's being downloaded. [Y0b]Make sure to use[X]
+        [Y0b]it on a single download[X], otherwise it can be a [W0b]mess[X].
 
-        [BLUE]file-download[BLUE] support [WHITE]balancing[WHITE] via [GREEN]--max-bytes[GREEN] and
-        the [GREEN]--max-workers[GREEN] options. See the end of the
-        [MAGENTA]Uploading Files[MAGENTA] chapter to master this.
+        [B0b]file-download[X] support [W0b]balancing[X] via [G0b]--max-bytes[X] and
+        the [G0b]--max-workers[X] options. See the end of the
+        [M0b]Uploading Files[X] chapter to master this.
 
         If your download was interrupted for some reason then
-        [BLUE]file-download[BLUE] will [WHITE]auto download[WHITE] missing blocks. You
-        can also specify the [GREEN]--offset[GREEN] if necessary.
+        [B0b]file-download[X] will [W0b]auto download[X] missing blocks. You
+        can also specify the [G0b]--offset[X] if necessary.
 
-        [MAGENTA]|||||| Removing Files ||||||[MAGENTA]
+        [M0b]|||||| Removing Files ||||||[X]
 
-        You can easily remove uploaded files by [CYAN]filters[CYAN]:
-            [BRIGHT_WHITE]tgbox-cli file-remove mime=image +e file_name=2023[BRIGHT_WHITE]
+        You can easily remove uploaded files by [C0b]filters[X]:
+            [W1b]tgbox-cli file-remove mime=image +e file_name=2023[X]
 
-        The command in this example will [WHITE]delete[WHITE] all images
-        from your [WHITE]Local and Remote[WHITE] boxes except those who
-        have a "2023" in a file name. Sure, [BLUE]file-remove[BLUE]
-        support all of the [CYAN]filters[CYAN] described before. You
-        can also remove files [WHITE]from the LocalBox only[WHITE] by
-        using the [GREEN]--local[GREEN] flag and force TGBOX-CLI to
-        [WHITE]ask you[WHITE] for each file by the [GREEN]--ask-before-remove[GREEN].
+        The command in this example will [W0b]delete[X] all images
+        from your [W0b]Local and Remote[X] boxes except those who
+        have a "2023" in a file name. Sure, [B0b]file-remove[X]
+        support all of the [C0b]filters[X] described before. You
+        can also remove files [W0b]from the LocalBox only[X] by
+        using the [G0b]--local[X] flag and force TGBOX-CLI to
+        [W0b]ask you[X] for each file by the [G0b]--ask-before-remove[X].
 
-        [MAGENTA]|||||| Changing File attributes ||||||[MAGENTA]
+        [M0b]|||||| Changing File attributes ||||||[X]
 
         The default file attributes (not CAttrs) is the
-        [WHITE]mime[WHITE], [WHITE]file_name[WHITE], [WHITE]file_path[WHITE], ... etc. Probably the
+        [W0b]mime[X], [W0b]file_name[X], [W0b]file_path[X], ... etc. Probably the
         most interesting is the last two, as you may want
-        to [WHITE]change name or path[WHITE] of some file(s). This can
-        be easily done via [BLUE]file-attr-edit[BLUE] command:
-            [BRIGHT_WHITE]tgbox-cli file-attr-edit mime=image -a\[BRIGHT_WHITE]
-                [BRIGHT_WHITE]file_path=/home/non/Pictures[BRIGHT_WHITE]
+        to [W0b]change name or path[X] of some file(s). This can
+        be easily done via [B0b]file-attr-edit[X] command:
+            [W1b]tgbox-cli file-attr-edit mime=image -a\[X]
+                [W1b]file_path=/home/non/Pictures[X]
 
-        As you can see, selecting is done by [CYAN]filters[CYAN]. We
-        specify attribute with the [GREEN]--attribute[GREEN] ([GREEN]-a[GREEN])
-        option. The example above will [WHITE]change[WHITE] the
-        file path of every image in your Box [WHITE]to[WHITE]
-        [WHITE]/home/non/Pictures[WHITE] path. We can say that
-        this is something like "[WHITE]move to[WHITE]" operation.
+        As you can see, selecting is done by [C0b]filters[X]. We
+        specify attribute with the [G0b]--attribute[X] ([G0b]-a[X])
+        option. The example above will [W0b]change[X] the
+        file path of every image in your Box [W0b]to[X]
+        [W0b]/home/non/Pictures[X] path. We can say that
+        this is something like "[W0b]move to[X]" operation.
 
-        [BRIGHT_BLACK]! The same can be done with the "file_name"[BRIGHT_BLACK]
+        [X1b]! The same can be done with the "file_name"[X]
 
-        [YELLOW]Please note[YELLOW] that we [WHITE]can not[WHITE] change file after it
+        [Y0b]Please note[X] that we [W0b]can not[X] change file after it
         was uploaded, so we store your updates encrypted
-        in the Telegram File "[WHITE]caption[WHITE]". It has limit of
-        [WHITE]~2KB[WHITE] and [WHITE]~4KB[WHITE] for Telegram [WHITE]Premium[WHITE] users.
+        in the Telegram File "[W0b]caption[X]". It has limit of
+        [W0b]~2KB[X] and [W0b]~4KB[X] for Telegram [W0b]Premium[X] users.
 
-    [WHITE]EXTENDED USAGE[WHITE]
-        [MAGENTA]|||||| Box Sharing ||||||[MAGENTA]
+    [W0b]EXTENDED USAGE[X]
+        [M0b]|||||| Box Sharing ||||||[X]
 
-        Let's assume that we have two friends: the [RED]A[RED]lice
-        and [CYAN]B[CYAN]ob. [RED]Alice[RED] wants to share her Box with [CYAN]Bob[CYAN].
+        Let's assume that we have two friends: the [R0b]A[X]lice
+        and [C0b]B[X]ob. [R0b]Alice[X] wants to share her Box with [C0b]Bob[X].
 
-        [WHITE]Step one[WHITE]: [RED]Alice[RED] [WHITE]should add[WHITE] [CYAN]Bob[CYAN] to her RemoteBox
-        [WHITE]Telegram channel[WHITE] and [YELLOW]optionally[YELLOW] grant some admin
-        permissions, so [CYAN]Bob[CYAN] [WHITE]will be able to upload files[WHITE]
+        [W0b]Step one[X]: [R0b]Alice[X] [W0b]should add[X] [C0b]Bob[X] to her RemoteBox
+        [W0b]Telegram channel[X] and [Y0b]optionally[X] grant some admin
+        permissions, so [C0b]Bob[X] [W0b]will be able to upload files[X]
         by himself and not download-only. This will be
-        done [WHITE]outside of TGBOX-CLI[WHITE], by the [WHITE]Telegram app[WHITE];
-        [BRIGHT_BLACK]|[BRIGHT_BLACK]
-        [WHITE]Step two[WHITE] [BRIGHT_BLACK](after Alice added Bob to her RemoteBox)[BRIGHT_BLACK]:
-        [CYAN]Bob[CYAN] will need to use a [BLUE]box-list[BLUE] with [GREEN]--remote[GREEN] to
-        list & find [RED]Alice[RED]'s shiny Box. This command will
-        return numbered [WHITE]list of all RemoteBoxes[WHITE] found on
-        account. [CYAN]Bob[CYAN] [WHITE]will need to take a number[WHITE] of the
-        corresponding [RED]Alice[RED]'s [WHITE]RemoteBox[WHITE] to go further;
-        [BRIGHT_BLACK]|[BRIGHT_BLACK]
-        [WHITE]Step three[WHITE]: [CYAN]Bob[CYAN] will need to [WHITE]make a RequestKey[WHITE]
-        to [RED]Alice[RED]'s RemoteBox. This can be easily done via
-        [BLUE]box-request[BLUE] command. Previously obtained number
-        should be specified [WHITE]as the[WHITE] [GREEN]--number[GREEN]. [CYAN]Bob[CYAN] [WHITE]will[WHITE]
-        [WHITE]share received RequestKey with the[WHITE] [RED]Alice[RED];
-        [BRIGHT_BLACK]|[BRIGHT_BLACK]
-        [WHITE]Step four[WHITE]: [RED]A[RED] will make [WHITE]a ShareKey[WHITE] with the [CYAN]B[CYAN]'s
-        [WHITE]RequestKey and the[WHITE] [BLUE]box-share[BLUE] command. Key of [CYAN]B[CYAN]
-        must be specified as [GREEN]--requestkey[GREEN] option. [RED]A[RED]
-        [WHITE]will share[WHITE] resulted ShareKey with the [CYAN]B[CYAN];
-        [BRIGHT_BLACK]|[BRIGHT_BLACK]
-        [WHITE]Step five[WHITE]: [CYAN]B[CYAN] [WHITE]will use ShareKey and[WHITE] [BLUE]box-clone[BLUE]
-        command [WHITE]to clone RemoteBox[WHITE] and make a LocalBox;
-        ShareKey must be specified as [GREEN]--key[GREEN] and the
-        number of RemoteBox as [GREEN]--number[GREEN].
-        [BRIGHT_BLACK]*[BRIGHT_BLACK]
-        [GREEN]Done![GREEN]
+        done [W0b]outside of TGBOX-CLI[X], by the [W0b]Telegram app[X];
+        [X1b]|[X]
+        [W0b]Step two[X] [X1b](after Alice added Bob to her RemoteBox)[X]:
+        [C0b]Bob[X] will need to use a [B0b]box-list[X] with [G0b]--remote[X] to
+        list & find [R0b]Alice[X]'s shiny Box. This command will
+        return numbered [W0b]list of all RemoteBoxes[X] found on
+        account. [C0b]Bob[X] [W0b]will need to take a number[X] of the
+        corresponding [R0b]Alice[X]'s [W0b]RemoteBox[X] to go further;
+        [X1b]|[X]
+        [W0b]Step three[X]: [C0b]Bob[X] will need to [W0b]make a RequestKey[X]
+        to [R0b]Alice[X]'s RemoteBox. This can be easily done via
+        [B0b]box-request[X] command. Previously obtained number
+        should be specified [W0b]as the[X] [G0b]--number[X]. [C0b]Bob[X] [W0b]will[X]
+        [W0b]share received RequestKey with the[X] [R0b]Alice[X];
+        [X1b]|[X]
+        [W0b]Step four[X]: [R0b]A[X] will make [W0b]a ShareKey[X] with the [C0b]B[X]'s
+        [W0b]RequestKey and the[X] [B0b]box-share[X] command. Key of [C0b]B[X]
+        must be specified as [G0b]--requestkey[X] option. [R0b]A[X]
+        [W0b]will share[X] resulted ShareKey with the [C0b]B[X];
+        [X1b]|[X]
+        [W0b]Step five[X]: [C0b]B[X] [W0b]will use ShareKey and[X] [B0b]box-clone[X]
+        command [W0b]to clone RemoteBox[X] and make a LocalBox;
+        ShareKey must be specified as [G0b]--key[X] and the
+        number of RemoteBox as [G0b]--number[X].
+        [X1b]*[X]
+        [G0b]Done![X]
 
-        Real Box encryption key (the [WHITE]MainKey[WHITE]) is safely
-        encrypted with the end-to-end [WHITE]ECDH[WHITE] algorithm, so
-        [RED]Alice[RED] and [CYAN]Bob[CYAN] [YELLOW]can exchange[YELLOW] [WHITE]ShareKey[WHITE] and [WHITE]RequestKey[WHITE]
-        [YELLOW]via insecure canals[YELLOW] & [WHITE]only[WHITE] [CYAN]B[CYAN] will be able to use
-        ShareKey received from [RED]A[RED] to clone RemoteBox.
+        Real Box encryption key (the [W0b]MainKey[X]) is safely
+        encrypted with the end-to-end [W0b]ECDH[X] algorithm, so
+        [R0b]Alice[X] and [C0b]Bob[X] [Y0b]can exchange[X] [W0b]ShareKey[X] and [W0b]RequestKey[X]
+        [Y0b]via insecure canals[X] & [W0b]only[X] [C0b]B[X] will be able to use
+        ShareKey received from [R0b]A[X] to clone RemoteBox.
 
-        [MAGENTA]|||||| Box Syncing ||||||[MAGENTA]
+        [M0b]|||||| Box Syncing ||||||[X]
 
-        Box needs to be synced [WHITE]if[WHITE] it's used by multiply
-        peoples & [WHITE]if[WHITE] at least one upload files. This can be
-        done with the [BLUE]box-sync[BLUE] command. [WHITE]By default[WHITE], TGBOX-CLI
-        will try to use a [CYAN]Fast Sync[CYAN]: the synchronization
-        [WHITE]from the[WHITE] Telegram Channel [WHITE]Admin Log[WHITE]; obviously
-        this will require You [WHITE]to have admin rights[WHITE]; or,
-        to be more specific, You must be [WHITE]at least[WHITE]
-        [WHITE]Admin with zero rights[WHITE] (all rights off). Ask
+        Box needs to be synced [W0b]if[X] it's used by multiply
+        peoples & [W0b]if[X] at least one upload files. This can be
+        done with the [B0b]box-sync[X] command. [W0b]By default[X], TGBOX-CLI
+        will try to use a [C0b]Fast Sync[X]: the synchronization
+        [W0b]from the[X] Telegram Channel [W0b]Admin Log[X]; obviously
+        this will require You [W0b]to have admin rights[X]; or,
+        to be more specific, You must be [W0b]at least[X]
+        [W0b]Admin with zero rights[X] (all rights off). Ask
         the Box owner to make you such Admin. Note
-        that you need to sync [WHITE]within 48 hours[WHITE] after
+        that you need to sync [W0b]within 48 hours[X] after
         the file was uploaded, because later Log will be cleared.
 
-        Alternatively, you can make a [CYAN]Deep Sync[CYAN]. It
-        can be enabled by specifying the [GREEN]--deep[GREEN] flag.
+        Alternatively, you can make a [C0b]Deep Sync[X]. It
+        can be enabled by specifying the [G0b]--deep[X] flag.
 
-        The [BLUE]box-sync[BLUE] [GREEN]--deep[GREEN] without additional options
-        will check [WHITE]every file[WHITE] in RemoteBox and compare it
-        with one from LocalBox. Typically, we [WHITE]don't[WHITE]
+        The [B0b]box-sync[X] [G0b]--deep[X] without additional options
+        will check [W0b]every file[X] in RemoteBox and compare it
+        with one from LocalBox. Typically, we [W0b]don't[X]
         need a full synchronization, because it can be
-        [WHITE]really[WHITE] slow and useless. We can track the state of
-        our LocalBox and RemoteBox with the [BLUE]file-last-id[BLUE]
+        [W0b]really[X] slow and useless. We can track the state of
+        our LocalBox and RemoteBox with the [B0b]file-last-id[X]
         command. If your remote is ahead, use a
-        [GREEN]--start-from-id[GREEN] on [BLUE]box-sync[BLUE] and specify it as
+        [G0b]--start-from-id[X] on [B0b]box-sync[X] and specify it as
         last file ID in your LocalBox. This will
         download all info about the latest pushed files.
 
-        [MAGENTA]|||||| File Sharing ||||||[MAGENTA]
+        [M0b]|||||| File Sharing ||||||[X]
 
-        Taking into account the previous example of [MAGENTA]Box Sharing[MAGENTA],
-        let's assume that this time [RED]Alice[RED] wants to share one of
-        the files with her well-known friend, [CYAN]Bob[CYAN]. Every file in
-        TGBOX has its own, [WHITE]unique[WHITE] FileKey, which is a result of
-        SHA256 over MainKey and FileSalt, so [RED]Alice[RED] can easily
-        disclose encrypted files from her Box [WHITE]without[WHITE] fear that
-        this will give some information about [WHITE]secret[WHITE] MainKey to [CYAN]Bob[CYAN];
+        Taking into account the previous example of [M0b]Box Sharing[X],
+        let's assume that this time [R0b]Alice[X] wants to share one of
+        the files with her well-known friend, [C0b]Bob[X]. Every file in
+        TGBOX has its own, [W0b]unique[X] FileKey, which is a result of
+        SHA256 over MainKey and FileSalt, so [R0b]Alice[X] can easily
+        disclose encrypted files from her Box [W0b]without[X] fear that
+        this will give some information about [W0b]secret[X] MainKey to [C0b]Bob[X];
 
-        To share file, [RED]Alice[RED] & [CYAN]Bob[CYAN] should go through these steps:
-        [BRIGHT_BLACK]*[BRIGHT_BLACK]
-        [WHITE]Step one[WHITE]: [RED]Alice[RED] need to decide which file she wants to share
-        with [CYAN]Bob[CYAN], then, [WHITE]forward it[WHITE] to [CYAN]Bob[CYAN] from her RemoteBox. She
-        can use [BLUE]file-forward[BLUE] command or do it from Telegram;
-        [BRIGHT_BLACK]|[BRIGHT_BLACK]
-        [WHITE]Step two[WHITE]: [CYAN]Bob[CYAN] will need to forward received from [RED]Alice[RED] file
+        To share file, [R0b]Alice[X] & [C0b]Bob[X] should go through these steps:
+        [X1b]*[X]
+        [W0b]Step one[X]: [R0b]Alice[X] need to decide which file she wants to share
+        with [C0b]Bob[X], then, [W0b]forward it[X] to [C0b]Bob[X] from her RemoteBox. She
+        can use [B0b]file-forward[X] command or do it from Telegram;
+        [X1b]|[X]
+        [W0b]Step two[X]: [C0b]Bob[X] will need to forward received from [R0b]Alice[X] file
         to his RemoteBox (within Telegram), then use the TGBOX-CLI
-        command [BLUE]file-search[BLUE] with [GREEN]--non-imported[GREEN] to list file of [RED]A[RED];
-        [BRIGHT_BLACK]|[BRIGHT_BLACK]
-        [WHITE]Step three[WHITE]: the [BLUE]file-search[BLUE] [GREEN]--non-imported[GREEN] will list file
-        with the already created [WHITE]RequestKey[WHITE]. [CYAN]Bob[CYAN] will need
-        to copy it and send to [RED]Alice[RED];
-        [BRIGHT_BLACK]|[BRIGHT_BLACK]
-        [WHITE]Step four[WHITE]: with [CYAN]Bob[CYAN]'s RequestKey, [RED]Alice[RED] will use a
-        [BLUE]file-share[BLUE] command with the [GREEN]--requestkey[GREEN] option
-        specified. This will give a [WHITE]ShareKey[WHITE], which
-        [RED]Alice[RED] will send to [CYAN]Bob[CYAN];
-        [BRIGHT_BLACK]|[BRIGHT_BLACK]
-        [WHITE]Step five[WHITE]: with ShareKey from [RED]Alice[RED], [CYAN]Bob[CYAN] will be
+        command [B0b]file-search[X] with [G0b]--non-imported[X] to list file of [R0b]A[X];
+        [X1b]|[X]
+        [W0b]Step three[X]: the [B0b]file-search[X] [G0b]--non-imported[X] will list file
+        with the already created [W0b]RequestKey[X]. [C0b]Bob[X] will need
+        to copy it and send to [R0b]Alice[X];
+        [X1b]|[X]
+        [W0b]Step four[X]: with [C0b]Bob[X]'s RequestKey, [R0b]Alice[X] will use a
+        [B0b]file-share[X] command with the [G0b]--requestkey[X] option
+        specified. This will give a [W0b]ShareKey[X], which
+        [R0b]Alice[X] will send to [C0b]Bob[X];
+        [X1b]|[X]
+        [W0b]Step five[X]: with ShareKey from [R0b]Alice[X], [C0b]Bob[X] will be
         able to decrypt and import target file by the
-        [BLUE]file-import[BLUE] command, [GREEN]--key[GREEN] and [GREEN]--id[GREEN] options.
-        [BRIGHT_BLACK]*[BRIGHT_BLACK]
-        [GREEN]Done![GREEN]
+        [B0b]file-import[X] command, [G0b]--key[X] and [G0b]--id[X] options.
+        [X1b]*[X]
+        [G0b]Done![X]
 
-        If you want to import file from other Box, [WHITE]make sure[WHITE]
-        [WHITE]not to lose your LocalBox[WHITE] (DB file), because it's
+        If you want to import file from other Box, [W0b]make sure[X]
+        [W0b]not to lose your LocalBox[X] (DB file), because it's
         the only place where we store imported file keys. You
-        will need to [WHITE]request for file again to restore it[WHITE].
+        will need to [W0b]request for file again to restore it[X].
 
-        [MAGENTA]|||||| Directory Sharing ||||||[MAGENTA]
+        [M0b]|||||| Directory Sharing ||||||[X]
 
-        Instead of sharing multiply files separately, [RED]Alice[RED] can
-        share with [CYAN]Bob[CYAN] an [WHITE]entire Directory[WHITE]. This is pretty
-        similar to the [MAGENTA]File Sharing[MAGENTA], but make use of the two
-        new commands: the [BLUE]dir-forward[BLUE] & [BLUE]dir-share[BLUE].
+        Instead of sharing multiply files separately, [R0b]Alice[X] can
+        share with [C0b]Bob[X] an [W0b]entire Directory[X]. This is pretty
+        similar to the [M0b]File Sharing[X], but make use of the two
+        new commands: the [B0b]dir-forward[X] & [B0b]dir-share[X].
 
-        The TGBOX Protocol [WHITE]can not share subdirectories[WHITE]. So,
-        for example, if [RED]Alice[RED] decides to share all arts
-        from her abstract Box folder [WHITE]/home/alice/Arts[WHITE], then
+        The TGBOX Protocol [W0b]can not share subdirectories[X]. So,
+        for example, if [R0b]Alice[X] decides to share all arts
+        from her abstract Box folder [W0b]/home/alice/Arts[X], then
         using the next commands will only affect files that
-        placed [WHITE]directly[WHITE] in [WHITE]/home/alice/Arts[WHITE] folder. Files
-        from the (i.e) [WHITE]/home/alice/Arts[WHITE][BRIGHT_BLACK]/Cats[BRIGHT_BLACK] will be ignored.
+        placed [W0b]directly[X] in [W0b]/home/alice/Arts[X] folder. Files
+        from the (i.e) [W0b]/home/alice/Arts[X][X1b]/Cats[X] will be ignored.
 
-        [YELLOW]Every nested directory should be shared separately.[YELLOW]
+        [Y0b]Every nested directory should be shared separately.[X]
 
-        So, [RED]Alice[RED] has a directory [WHITE]/home/alice/Arts[WHITE] with
+        So, [R0b]Alice[X] has a directory [W0b]/home/alice/Arts[X] with
         many arts in it. Making a ShareKey for each file and
-        sharing it separately (as in [MAGENTA]File Sharing[MAGENTA]) can be
-        really annoying. See a use of the [BLUE]dir-share[BLUE] command:
+        sharing it separately (as in [M0b]File Sharing[X]) can be
+        really annoying. See a use of the [B0b]dir-share[X] command:
 
-        [WHITE]Step one[WHITE]: [RED]Alice[RED] is sure about dir she wants to share,
-        that is [WHITE]/home/alice/Arts[WHITE]. To share all files from it,
-        she will invoke [BLUE]dir-forward[BLUE] command. This command
-        requires the [GREEN]--directory[GREEN] and [GREEN]--chat[GREEN] options. The
-        First one is obvious, the second should be a [WHITE]Telegram[WHITE]
-        [WHITE]chat[WHITE] to forward. [RED]Alice[RED] can specify it as [CYAN]Bob[CYAN]'s
-        [WHITE]@username[WHITE] (in this case, [CYAN]Bob[CYAN] will need to forward
-        all received files to his Box by himself) or [CYAN]Bob[CYAN]
-        can invite [RED]Alice[RED] to his [WHITE]Box[WHITE] and grant her
-        Admin rights (only "[WHITE]Post Messages[WHITE]" right will
-        be enough, in this case [RED]Alice[RED] will be only able
-        to post, not edit or delete files of [CYAN]Bob[CYAN]), so
-        [RED]Alice[RED] can [WHITE]forward directly[WHITE] to [WHITE]Box[WHITE] of [CYAN]Bob[CYAN]. If
-        [CYAN]Bob[CYAN]'s [WHITE]RemoteBox[WHITE] (Channel) is a private one, [RED]Alice[RED]
-        can specify [GREEN]--chat[GREEN] as [WHITE]RemoteBox name[WHITE] with the
-        [GREEN]--chat-as-name[GREEN] option. For example:
-            [BRIGHT_WHITE]tgbox-cli dir-forward --chat BobBox --chat-as-name[BRIGHT_WHITE]
+        [W0b]Step one[X]: [R0b]Alice[X] is sure about dir she wants to share,
+        that is [W0b]/home/alice/Arts[X]. To share all files from it,
+        she will invoke [B0b]dir-forward[X] command. This command
+        requires the [G0b]--directory[X] and [G0b]--chat[X] options. The
+        First one is obvious, the second should be a [W0b]Telegram[X]
+        [W0b]chat[X] to forward. [R0b]Alice[X] can specify it as [C0b]Bob[X]'s
+        [W0b]@username[X] (in this case, [C0b]Bob[X] will need to forward
+        all received files to his Box by himself) or [C0b]Bob[X]
+        can invite [R0b]Alice[X] to his [W0b]Box[X] and grant her
+        Admin rights (only "[W0b]Post Messages[X]" right will
+        be enough, in this case [R0b]Alice[X] will be only able
+        to post, not edit or delete files of [C0b]Bob[X]), so
+        [R0b]Alice[X] can [W0b]forward directly[X] to [W0b]Box[X] of [C0b]Bob[X]. If
+        [C0b]Bob[X]'s [W0b]RemoteBox[X] (Channel) is a private one, [R0b]Alice[X]
+        can specify [G0b]--chat[X] as [W0b]RemoteBox name[X] with the
+        [G0b]--chat-as-name[X] option. For example:
+            [W1b]tgbox-cli dir-forward --chat BobBox --chat-as-name[X]
             --------------------------------------------------
-            This will search for ([WHITE]first[WHITE]) Channel with "BobBox"
+            This will search for ([W0b]first[X]) Channel with "BobBox"
             name and will forward all target dir files to it;
-        [BRIGHT_BLACK]*[BRIGHT_BLACK]
-        [WHITE]Step two[WHITE]: [RED]Alice[RED] successfully forwarded her files
-        to [CYAN]Bob[CYAN]'s [WHITE]RemoteBox[WHITE]. Now [CYAN]Bob[CYAN] will need to use a
-        [BLUE]file-search[BLUE] command with [GREEN]--non-imported[GREEN] flag and
-        take [WHITE]RequestKey[WHITE] for [YELLOW]the latest one[YELLOW] (with the
-        [YELLOW]biggest ID[YELLOW]) and send it to [RED]Alice[RED] in any way;
-        [BRIGHT_BLACK]*[BRIGHT_BLACK]
-        [WHITE]Step three[WHITE]: Now [RED]Alice[RED] has a [WHITE]RequestKey[WHITE] from
-        [CYAN]Bob[CYAN]. She will use the [BLUE]dir-share[BLUE] command, set
-        [GREEN]--requestkey[GREEN] ([GREEN]-r[GREEN]) and [GREEN]--directory[GREEN] ([GREEN]-d[GREEN]) options
-        and then will send the resulted [WHITE]ShareKey[WHITE] to
-        [CYAN]Bob[CYAN] (insecure canals are [WHITE]OK[WHITE], as [WHITE]RequestKey[WHITE])
-        [BRIGHT_BLACK]*[BRIGHT_BLACK]
-        [WHITE]Step four[WHITE]: with [WHITE]ShareKey[WHITE] from [RED]Alice[RED], [CYAN]Bob[CYAN] can
-        make a [WHITE]bunch import[WHITE]. He will use [BLUE]file-import[BLUE]
-        command in the same way as in [MAGENTA]File Sharing[MAGENTA], by
-        specifying [GREEN]--key[GREEN] and [GREEN]--id[GREEN], the only difference
-        will be addition of [GREEN]--propagate[GREEN] flag. This
-        will tell to [WHITE]CLI[WHITE] that [CYAN]Bob[CYAN] wants to import
-        file [WHITE]from most recent to oldest[WHITE] until
+        [X1b]*[X]
+        [W0b]Step two[X]: [R0b]Alice[X] successfully forwarded her files
+        to [C0b]Bob[X]'s [W0b]RemoteBox[X]. Now [C0b]Bob[X] will need to use a
+        [B0b]file-search[X] command with [G0b]--non-imported[X] flag and
+        take [W0b]RequestKey[X] for [Y0b]the latest one[X] (with the
+        [Y0b]biggest ID[X]) and send it to [R0b]Alice[X] in any way;
+        [X1b]*[X]
+        [W0b]Step three[X]: Now [R0b]Alice[X] has a [W0b]RequestKey[X] from
+        [C0b]Bob[X]. She will use the [B0b]dir-share[X] command, set
+        [G0b]--requestkey[X] ([G0b]-r[X]) and [G0b]--directory[X] ([G0b]-d[X]) options
+        and then will send the resulted [W0b]ShareKey[X] to
+        [C0b]Bob[X] (insecure canals are [W0b]OK[X], as [W0b]RequestKey[X])
+        [X1b]*[X]
+        [W0b]Step four[X]: with [W0b]ShareKey[X] from [R0b]Alice[X], [C0b]Bob[X] can
+        make a [W0b]bunch import[X]. He will use [B0b]file-import[X]
+        command in the same way as in [M0b]File Sharing[X], by
+        specifying [G0b]--key[X] and [G0b]--id[X], the only difference
+        will be addition of [G0b]--propagate[X] flag. This
+        will tell to [W0b]CLI[X] that [C0b]Bob[X] wants to import
+        file [W0b]from most recent to oldest[X] until
         the first import error is encountered.
-        [BRIGHT_BLACK]*[BRIGHT_BLACK]
-        [GREEN]Done![GREEN]
+        [X1b]*[X]
+        [G0b]Done![X]
 
-        [WHITE]Additional Information[WHITE]
-        [WHITE]----------------------[WHITE]
-        [WHITE]1[WHITE]/
-        In a [MAGENTA]File Sharing[MAGENTA] chapter we were making a [WHITE]ShareKey[WHITE]
-        of the [WHITE]FileKey[WHITE], -- the unique Key, which can decrypt
-        [WHITE]only one file[WHITE]. Here we share the [WHITE]DirectoryKey[WHITE], this
-        is a Key from which we're [WHITE]making FileKeys[WHITE]. Every
-        unique Directory [WHITE]has its own DirectoryKey[WHITE], thus,
-        [WHITE]should be shared separately[WHITE]. By making a [WHITE]ShareKey[WHITE]
-        of [WHITE]DirectoryKey[WHITE], [RED]Giver[RED] [YELLOW]grants access to every[YELLOW]
-        [YELLOW]existing AND future file that will be attached[YELLOW]
-        [YELLOW]to this directory[YELLOW] to [CYAN]Requester[CYAN] (if [CYAN]Requester[CYAN] has
-        direct access to [RED]Giver[RED]'s [WHITE]RemoteBox[WHITE] contents). If
-        you don't want this, use [BLUE]file-share[BLUE] command instead.
+        [W0b]Additional Information[X]
+        [W0b]----------------------[X]
+        [W0b]1[X]/
+        In a [M0b]File Sharing[X] chapter we were making a [W0b]ShareKey[X]
+        of the [W0b]FileKey[X], -- the unique Key, which can decrypt
+        [W0b]only one file[X]. Here we share the [W0b]DirectoryKey[X], this
+        is a Key from which we're [W0b]making FileKeys[X]. Every
+        unique Directory [W0b]has its own DirectoryKey[X], thus,
+        [W0b]should be shared separately[X]. By making a [W0b]ShareKey[X]
+        of [W0b]DirectoryKey[X], [R0b]Giver[X] [Y0b]grants access to every[X]
+        [Y0b]existing AND future file that will be attached[X]
+        [Y0b]to this directory[X] to [C0b]Requester[X] (if [C0b]Requester[X] has
+        direct access to [R0b]Giver[X]'s [W0b]RemoteBox[X] contents). If
+        you don't want this, use [B0b]file-share[X] command instead.
         |
-        See a [WHITE]TGBOX docs[WHITE] for more info about [WHITE]Protocol[WHITE].
+        See a [W0b]TGBOX docs[X] for more info about [W0b]Protocol[X].
 
-        [WHITE]2[WHITE]/
-        The [BLUE]dir-forward[BLUE] is a some kind of [WHITE]syntactic sugar[WHITE]
-        over the [BLUE]file-forward[BLUE] command. It is in [WHITE]CLI[WHITE] to
-        make a [RED]Giver[RED]'s routine easier. As TGBOX Protocol
-        [WHITE]doesn't support sharing subdirectories[WHITE], one [WHITE]should[WHITE]
-        [WHITE]omit[WHITE] forwarding all nested folders. We achieve this
-        by using the [CYAN]non_recursive_scope[CYAN] filter. See this:
-            [BRIGHT_WHITE]tgbox-cli file-forward scope=/home/user/folder\[BRIGHT_WHITE]
-                [BRIGHT_WHITE]non_recursive_scope=True --chat @username[BRIGHT_WHITE]
+        [W0b]2[X]/
+        The [B0b]dir-forward[X] is a some kind of [W0b]syntactic sugar[X]
+        over the [B0b]file-forward[X] command. It is in [W0b]CLI[X] to
+        make a [R0b]Giver[X]'s routine easier. As TGBOX Protocol
+        [W0b]doesn't support sharing subdirectories[X], one [W0b]should[X]
+        [W0b]omit[X] forwarding all nested folders. We achieve this
+        by using the [C0b]non_recursive_scope[X] filter. See this:
+            [W1b]tgbox-cli file-forward scope=/home/user/folder\[X]
+                [W1b]non_recursive_scope=True --chat @username[X]
 
-    [WHITE]THE TOOLS[WHITE]
-        [MAGENTA]|||||| Changing Defaults ||||||[MAGENTA]
+    [W0b]THE TOOLS[X]
+        [M0b]|||||| Changing Defaults ||||||[X]
 
-        The TGBOX protocol has some [WHITE]inbuilt defaults[WHITE] that you may
-        want to change. For example, there is [BRIGHT_BLUE]METADATA_MAX[BRIGHT_BLUE]
-        default, which defines [WHITE]the max bytesize of the metadata[WHITE];
-        or [BRIGHT_BLUE]FILE_PATH_MAX[BRIGHT_BLUE], which specify [WHITE]the max length of file[WHITE]
-        [WHITE]path[WHITE]. You probably [YELLOW]don't need to change them[YELLOW], because
-        it [YELLOW]may break compatibility[YELLOW] with Boxes of other people:
-        for example, to share file, recipient [WHITE]will need[WHITE] to have
-        [WHITE]the same[WHITE] (or more) METADATA_MAX/FILE_PATH_MAX.
+        The TGBOX protocol has some [W0b]inbuilt defaults[X] that you may
+        want to change. For example, there is [B1b]METADATA_MAX[X]
+        default, which defines [W0b]the max bytesize of the metadata[X];
+        or [B1b]FILE_PATH_MAX[X], which specify [W0b]the max length of file[X]
+        [W0b]path[X]. You probably [Y0b]don't need to change them[X], because
+        it [Y0b]may break compatibility[X] with Boxes of other people:
+        for example, to share file, recipient [W0b]will need[X] to have
+        [W0b]the same[X] (or more) METADATA_MAX/FILE_PATH_MAX.
 
-        By default, [BRIGHT_BLUE]METADATA_MAX[BRIGHT_BLUE]=[WHITE]1000000[WHITE] (1MB) and the
-        [BRIGHT_BLUE]FILE_PATH_MAX[BRIGHT_BLUE]=[WHITE]4096[WHITE] (4KiB) which is more than
+        By default, [B1b]METADATA_MAX[X]=[W0b]1000000[X] (1MB) and the
+        [B1b]FILE_PATH_MAX[X]=[W0b]4096[X] (4KiB) which is more than
         enough for typical usage. However, if you
-        [WHITE]really[WHITE] want to increase them, you can use the
-        [BLUE]box-default[BLUE] command, see this:
-            [BRIGHT_WHITE]tgbox-cli box-default METADATA_MAX=1677721[BRIGHT_WHITE]
+        [W0b]really[X] want to increase them, you can use the
+        [B0b]box-default[X] command, see this:
+            [W1b]tgbox-cli box-default METADATA_MAX=1677721[X]
 
-        The command above will change [BRIGHT_BLUE]METADATA_MAX[BRIGHT_BLUE] to the
-        [WHITE]max allowed[WHITE] by TGBOX protocol value -- [WHITE]16MiB[WHITE]-1. This
+        The command above will change [B1b]METADATA_MAX[X] to the
+        [W0b]max allowed[X] by TGBOX protocol value -- [W0b]16MiB[X]-1. This
         will allow you to attach some crazy-big CAtrrs &
-        [YELLOW]will disable[YELLOW] file sharing with peoples which
-        Box has [BRIGHT_BLUE]METADATA_MAX[BRIGHT_BLUE] lower than yours. Typically
-        you [WHITE]don't want this[WHITE] as it's almost useless.
+        [Y0b]will disable[X] file sharing with peoples which
+        Box has [B1b]METADATA_MAX[X] lower than yours. Typically
+        you [W0b]don't want this[X] as it's almost useless.
 
-        There is also [BRIGHT_BLUE]DOWNLOAD_PATH[BRIGHT_BLUE], [BRIGHT_BLUE]DEF_NO_FOLDER[BRIGHT_BLUE] &
-        [BRIGHT_BLUE]DEF_UNK_FOLDER[BRIGHT_BLUE] defaults. The [BRIGHT_BLUE]DOWNLOAD_PATH[BRIGHT_BLUE]
-        define [WHITE]the default path to which files from[WHITE]
-        [WHITE]RemoteBox will be downloaded onto your machine[WHITE];
-        the [BRIGHT_BLUE]DEF_NO_FOLDER[BRIGHT_BLUE] define [WHITE]default abstract[WHITE]
-        [WHITE]folder which will be attached to file on[WHITE]
-        [WHITE]import from other Box[WHITE] if [GREEN]--file-path[GREEN] option
-        is not specified; [BRIGHT_BLUE]DEF_UNK_FOLDER[BRIGHT_BLUE] is [WHITE]the[WHITE]
-        [WHITE]folder to which file will be downloaded[WHITE] if
-        [GREEN]--hide-folder[GREEN] flag was specified on the
-        TGBOX-CLI [BLUE]file-download[BLUE] command.
+        There is also [B1b]DOWNLOAD_PATH[X], [B1b]DEF_NO_FOLDER[X] &
+        [B1b]DEF_UNK_FOLDER[X] defaults. The [B1b]DOWNLOAD_PATH[X]
+        define [W0b]the default path to which files from[X]
+        [W0b]RemoteBox will be downloaded onto your machine[X];
+        the [B1b]DEF_NO_FOLDER[X] define [W0b]default abstract[X]
+        [W0b]folder which will be attached to file on[X]
+        [W0b]import from other Box[X] if [G0b]--file-path[X] option
+        is not specified; [B1b]DEF_UNK_FOLDER[X] is [W0b]the[X]
+        [W0b]folder to which file will be downloaded[X] if
+        [G0b]--hide-folder[X] flag was specified on the
+        TGBOX-CLI [B0b]file-download[X] command.
 
-        Probably, the [WHITE]only[WHITE] useful for end-users one
-        is the [BRIGHT_BLUE]DOWNLOAD_PATH[BRIGHT_BLUE] default. You can change
-        it from [WHITE]DownloadsTGBOX[WHITE] folder to any other:
-            [BRIGHT_WHITE]tgbox-cli box-default DOWNLOAD_PATH=Downloads[BRIGHT_WHITE]
+        Probably, the [W0b]only[X] useful for end-users one
+        is the [B1b]DOWNLOAD_PATH[X] default. You can change
+        it from [W0b]DownloadsTGBOX[X] folder to any other:
+            [W1b]tgbox-cli box-default DOWNLOAD_PATH=Downloads[X]
 
-        [MAGENTA]|||||| Logging & Log Files ||||||[MAGENTA]
+        [M0b]|||||| Logging & Log Files ||||||[X]
 
-        The TGBOX & TGBOX-CLI can write [YELLOW]Warnings[YELLOW] and [RED]Errors[RED], as well
-        as [BRIGHT_WHITE]Information[BRIGHT_WHITE] occurred on the usage. By default, TGBOX-CLI
-        Log Level is the [YELLOW]Warning[YELLOW] (all [YELLOW]Warning[YELLOW]+ events will be written
-        to the Log file, other [WHITE]ignored[WHITE]), however, you can easily
-        change it with the [BRIGHT_BLUE]TGBOX_CLI_LOGLEVEL[BRIGHT_BLUE] environment variable
-        as stated in the [WHITE]beginning of this help file[WHITE]. The log files
+        The TGBOX & TGBOX-CLI can write [Y0b]Warnings[X] and [R0b]Errors[X], as well
+        as [W1b]Information[X] occurred on the usage. By default, TGBOX-CLI
+        Log Level is the [Y0b]Warning[X] (all [Y0b]Warning[X]+ events will be written
+        to the Log file, other [W0b]ignored[X]), however, you can easily
+        change it with the [B1b]TGBOX_CLI_LOGLEVEL[X] environment variable
+        as stated in the [W0b]beginning of this help file[X]. The log files
         can help you to locate error and is very important for
-        developing any apps [BRIGHT_BLACK](especially buggy TGBOX-CLI one:)[BRIGHT_BLACK], so
-        you're welcomed to report "[WHITE]things that don't work[WHITE]" on
-        the [WHITE]Issues[WHITE] tab of official TGBOX-CLI GitHub page:
-            [BLUE]github.com/NotStatilko/tgbox-cli/issues[BLUE]
+        developing any apps [X1b](especially buggy TGBOX-CLI one:)[X], so
+        you're welcomed to report "[W0b]things that don't work[X]" on
+        the [W0b]Issues[X] tab of official TGBOX-CLI GitHub page:
+            [B0b]github.com/NotStatilko/tgbox-cli/issues[X]
 
-        There are some commands to manage Logging file: [BLUE]logfile-open[BLUE]
+        There are some commands to manage Logging file: [B0b]logfile-open[X]
         will open Log file with the default system's text editor
-        app, [BLUE]logfile-size[BLUE] will print the total size of Log file,
-        the [BLUE]logfile-wipe[BLUE] will clear it, and [BLUE]logfile-send[BLUE] will
-        allow you to send logfile to [WHITE]any[WHITE] Telegram chat. Log file
-        [WHITE]will never store any sensitive data[WHITE] (feel free to check
-        it). Also, size of Log file [WHITE]may rise over time[WHITE]. Use
+        app, [B0b]logfile-size[X] will print the total size of Log file,
+        the [B0b]logfile-wipe[X] will clear it, and [B0b]logfile-send[X] will
+        allow you to send logfile to [W0b]any[X] Telegram chat. Log file
+        [W0b]will never store any sensitive data[X] (feel free to check
+        it). Also, size of Log file [W0b]may rise over time[X]. Use
         the already mentioned command to completely empty it.
 
-        [MAGENTA]|||||| Info Commands & Directory List ||||||[MAGENTA]
+        [M0b]|||||| Info Commands & Directory List ||||||[X]
 
-        [WHITE]Info Commands[WHITE]
-        [WHITE]-------------[WHITE]
+        [W0b]Info Commands[X]
+        [W0b]-------------[X]
 
-        There are some information commands: the [BLUE]box-info[BLUE] will
+        There are some information commands: the [B0b]box-info[X] will
         give you comprehensive information about your Local
-        and Remote boxes; [BLUE]account-info[BLUE] will show information
-        about Telegram account you currently use ([GREEN]--show-phone[GREEN]
-        flag can be used [WHITE]to unhide[WHITE] phone number); and [BLUE]cli-info[BLUE]
-        will show you information about your [WHITE]current build[WHITE]
-        and [WHITE]fast modules[WHITE] of the TGBOX-CLI application.
+        and Remote boxes; [B0b]account-info[X] will show information
+        about Telegram account you currently use ([G0b]--show-phone[X]
+        flag can be used [W0b]to unhide[X] phone number); and [B0b]cli-info[X]
+        will show you information about your [W0b]current build[X]
+        and [W0b]fast modules[X] of the TGBOX-CLI application.
 
-        [WHITE]Directory List[WHITE]
-        [WHITE]--------------[WHITE]
+        [W0b]Directory List[X]
+        [W0b]--------------[X]
 
-        With [BLUE]dir-list[BLUE] command you can list [WHITE]all[WHITE] directories
+        With [B0b]dir-list[X] command you can list [W0b]all[X] directories
         that your LocalBox contains. This can be useful
         to remind you about some absolute file path
-        that you can use for the [CYAN]scope[CYAN] filter.
+        that you can use for the [C0b]scope[X] filter.
 
-        [BRIGHT_BLACK]PRO TIP: Combine it with the grep![BRIGHT_BLACK]
+        [X1b]PRO TIP: Combine it with the grep![X]
 
-        [MAGENTA]|||||| Chat inside your Box ||||||[MAGENTA]
+        [M0b]|||||| Chat inside your Box ||||||[X]
 
-        [WHITE]Version 1.3[WHITE] of TGBOX-CLI introduces the new feature:
-        [WHITE]Chat inside your Box[WHITE]! It can be created/opened with
-        the new command: [BLUE]chat-open[BLUE]. Chat is [WHITE]not[WHITE] a part of
+        [W0b]Version 1.3[X] of TGBOX-CLI introduces the new feature:
+        [W0b]Chat inside your Box[X]! It can be created/opened with
+        the new command: [B0b]chat-open[X]. Chat is [W0b]not[X] a part of
         the TGBOX Protocol, rather Proof of Concept which I
         wanted to implement a long time ago.
 
-        [WHITE]How does Chat work?[WHITE] It's simple! When user creates
-        new Chat we form the "[WHITE]CONFIG[WHITE]" file and attach some
-        CAttrs to it (i.e [WHITE]Chat name[WHITE] / [WHITE]Description[WHITE]). Actual
-        file contains [WHITE]zero[WHITE] bytes. We upload this file under
-        the [WHITE]__BOX_CHAT__/__CONFIG__[WHITE] Directory. Obviously,
-        later we will have chance to [WHITE]change[WHITE] Chat CONFIG
-        via manipulating CAttrs with [BLUE]file-attr-edit[BLUE].
+        [W0b]How does Chat work?[X] It's simple! When user creates
+        new Chat we form the "[W0b]CONFIG[X]" file and attach some
+        CAttrs to it (i.e [W0b]Chat name[X] / [W0b]Description[X]). Actual
+        file contains [W0b]zero[X] bytes. We upload this file under
+        the [W0b]__BOX_CHAT__/__CONFIG__[X] Directory. Obviously,
+        later we will have chance to [W0b]change[X] Chat CONFIG
+        via manipulating CAttrs with [B0b]file-attr-edit[X].
 
-        When user "[WHITE]send Message[WHITE]" to Chat, we form a zero-
+        When user "[W0b]send Message[X]" to Chat, we form a zero-
         bytes File with random name and attach CAttrs
-        to it (i.e [WHITE]Text[WHITE], [WHITE]Author[WHITE], etc). We will upload
+        to it (i.e [W0b]Text[X], [W0b]Author[X], etc). We will upload
         this file under directory which will contain
-        [CYAN]Topic[CYAN] and [CYAN]Date[CYAN]. Both of this [WHITE]can[WHITE] be changed by
-        User. By default, [CYAN]Topic[CYAN] is "[CYAN]Main[CYAN]" and [CYAN]Date[CYAN] is
-        [WHITE]current date[WHITE] in a format of [CYAN]%Y/%m/%d[CYAN] (i.e [CYAN]2024/06/23[CYAN]).
+        [C0b]Topic[X] and [C0b]Date[X]. Both of this [W0b]can[X] be changed by
+        User. By default, [C0b]Topic[X] is "[C0b]Main[X]" and [C0b]Date[X] is
+        [W0b]current date[X] in a format of [C0b]%Y/%m/%d[X] (i.e [C0b]2024/06/23[X]).
 
         Absolute Directory of Message will be the next:
-         [WHITE]__BOX_CHAT__/__CHAT__/Main/2024/06/23[WHITE]. As you
-         can expect, [BLUE]chat-open[BLUE] will be able to show
-         messages only for selected [CYAN]Topic[CYAN] or [CYAN]Date[CYAN]:
-            [BRIGHT_WHITE]tgbox-cli chat-open --topic Music[BRIGHT_WHITE]
-            [BRIGHT_WHITE]tgbox-cli chat-open --date 2024/06/23[BRIGHT_WHITE]
-            [BRIGHT_WHITE]tgbox-cli chat-open --date 2024/06[BRIGHT_WHITE]
-            [BRIGHT_WHITE]tgbox-cli chat-open --date 2024[BRIGHT_WHITE]
+         [W0b]__BOX_CHAT__/__CHAT__/Main/2024/06/23[X]. As you
+         can expect, [B0b]chat-open[X] will be able to show
+         messages only for selected [C0b]Topic[X] or [C0b]Date[X]:
+            [W1b]tgbox-cli chat-open --topic Music[X]
+            [W1b]tgbox-cli chat-open --date 2024/06/23[X]
+            [W1b]tgbox-cli chat-open --date 2024/06[X]
+            [W1b]tgbox-cli chat-open --date 2024[X]
 
-        If no Messages found in your [CYAN]Topic[CYAN], -- you can send
-        one and [WHITE]start conversation[WHITE] here! Another user will
-        get it after pressing [WHITE]ENTER[WHITE] key or automatically
-        after some time if "[WHITE]Auto Mode[WHITE]" was selected.
+        If no Messages found in your [C0b]Topic[X], -- you can send
+        one and [W0b]start conversation[X] here! Another user will
+        get it after pressing [W0b]ENTER[X] key or automatically
+        after some time if "[W0b]Auto Mode[X]" was selected.
 
-        By default, TGBOX-CLI [WHITE]will hide[WHITE] the Files under the
-        [WHITE]__BOX_CHAT__[WHITE] directory (i.e in [BLUE]file-search[BLUE] or [BLUE]dir-list[BLUE])
-        however, [WHITE]you can request them[WHITE] explicitly
-            [BRIGHT_WHITE]tgbox-cli dir-list --show-box-chat[BRIGHT_WHITE]
-            [BRIGHT_WHITE]tgbox-cli file-search scope=__BOX_CHAT__[BRIGHT_WHITE]
+        By default, TGBOX-CLI [W0b]will hide[X] the Files under the
+        [W0b]__BOX_CHAT__[X] directory (i.e in [B0b]file-search[X] or [B0b]dir-list[X])
+        however, [W0b]you can request them[X] explicitly
+            [W1b]tgbox-cli dir-list --show-box-chat[X]
+            [W1b]tgbox-cli file-search scope=__BOX_CHAT__[X]
 
-        As [WHITE]__BOX_CHAT__[WHITE] contents is just a [WHITE]typical files[WHITE],
-        you can use all "[BLUE]file-*[BLUE]" commands on them.
+        As [W0b]__BOX_CHAT__[X] contents is just a [W0b]typical files[X],
+        you can use all "[B0b]file-*[X]" commands on them.
 
-        [YELLOW]Please note[YELLOW] that "Box Chat" is just [WHITE]a way of[WHITE]
-        [WHITE]representing files[WHITE], [YELLOW]not[YELLOW] a really full & Secure
-        E2E Chat. It [YELLOW]can't replace[YELLOW] Secret Chat of Telegram
+        [Y0b]Please note[X] that "Box Chat" is just [W0b]a way of[X]
+        [W0b]representing files[X], [Y0b]not[X] a really full & Secure
+        E2E Chat. It [Y0b]can't replace[X] Secret Chat of Telegram
         or any other Secure messaging platform!!!
 
-        [MAGENTA]|||||| Hidden Commands ||||||[MAGENTA]
+        [M0b]|||||| Hidden Commands ||||||[X]
 
         The TGBOX-CLI has a few hidden commands. For example,
-        there is [BLUE]sk-gen[BLUE], which generates [WHITE]SessionKey[WHITE] used to save
-        the state of the current CLI session. The [BLUE]sk-gen[BLUE] is presented on the
-        list of commands in the [BLUE]cli-init[BLUE]. There is also [BLUE]phrase-gen[BLUE],
-        which generates a number of [GREEN]--words[GREEN] that can be used as
-        Box phrase (-> [WHITE]make_basekey[WHITE] -> [WHITE]BaseKey[WHITE]).
+        there is [B0b]sk-gen[X], which generates [W0b]SessionKey[X] used to save
+        the state of the current CLI session. The [B0b]sk-gen[X] is presented on the
+        list of commands in the [B0b]cli-init[X]. There is also [B0b]phrase-gen[X],
+        which generates a number of [G0b]--words[X] that can be used as
+        Box phrase (-> [W0b]make_basekey[X] -> [W0b]BaseKey[X]).
 
-        The most interesting (for developers :) one is the [BLUE]python[BLUE]
-        command. It can start an [WHITE]Interactive Python Interpreter[WHITE] with
-        the TGBOX-CLI [WHITE]globals()[WHITE]. You can use this command to make
-        direct access to the [WHITE]DecryptedLocalBox[WHITE] or [WHITE]DecryptedRemoteBox[WHITE]
-        objects (via [WHITE]Objects[WHITE] variable) and [WHITE]manually[WHITE] do things to TGBOX.
+        The most interesting (for developers :) one is the [B0b]python[X]
+        command. It can start an [W0b]Interactive Python Interpreter[X] with
+        the TGBOX-CLI [W0b]globals()[X]. You can use this command to make
+        direct access to the [W0b]DecryptedLocalBox[X] or [W0b]DecryptedRemoteBox[X]
+        objects (via [W0b]Objects[X] variable) and [W0b]manually[X] do things to TGBOX.
         |
-        The [BLUE]python[BLUE] command also allows users to [WHITE]execute some scripts[WHITE]
-        written for the TGBOX-CLI. With [GREEN]--execute[GREEN] option you can
-        specify a path to a Python file. [RED]NEVER EXECUTE SCRIPTS THAT[RED]
-        [RED]YOU PERSONALLY DON'T UNDERSTAND OR DON'T TRUST[RED].
+        The [B0b]python[X] command also allows users to [W0b]execute some scripts[X]
+        written for the TGBOX-CLI. With [G0b]--execute[X] option you can
+        specify a path to a Python file. [R0b]NEVER EXECUTE SCRIPTS THAT[X]
+        [R0b]YOU PERSONALLY DON'T UNDERSTAND OR DON'T TRUST[X].
 
-        Make a [WHITE]script.py[WHITE] file and fill it with this code:
+        Make a [W0b]script.py[X] file and fill it with this code:
 
-        [BRIGHT_BLACK]# ======================================== #[BRIGHT_BLACK]
-        [BRIGHT_BLACK]# box-info --bytesize-total implementation #[BRIGHT_BLACK]
+        [X1b]# ======================================== #[X]
+        [X1b]# box-info --bytesize-total implementation #[X]
 
-        dlb = Objects.dlb [BRIGHT_BLACK]# python command has built-in link to[BRIGHT_BLACK]
-                          [BRIGHT_BLACK]# the click.get_current_context().obj[BRIGHT_BLACK]
-        total_bytes = [BRIGHT_RED]0[BRIGHT_RED]
-        [RED]for[RED] dlbf [RED]in[RED] sync_async_gen(dlb.files()):
+        dlb = Objects.dlb [X1b]# python command has built-in link to[X]
+                          [X1b]# the click.get_current_context().obj[X]
+        total_bytes = [R1b]0[X]
+        [R0b]for[X] dlbf [R0b]in[X] sync_async_gen(dlb.files()):
             total_bytes += dlbf.size
 
-        [MAGENTA]print[MAGENTA](format_bytes(total_bytes))
+        [M0b]print[X](format_bytes(total_bytes))
 
-        [BRIGHT_BLACK]# The 'python' command has all functions of TGBOX-CLI,[BRIGHT_BLACK]
-        [BRIGHT_BLACK]# i.e, format_bytes func here is from tgbox_cli.tools[BRIGHT_BLACK]
+        [X1b]# The 'python' command has all functions of TGBOX-CLI,[X]
+        [X1b]# i.e, format_bytes func here is from tgbox_cli.tools[X]
 
-        [BRIGHT_BLACK]# ======================================== #[BRIGHT_BLACK]
+        [X1b]# ======================================== #[X]
 
-        Then, execute a [BLUE]python[BLUE] command as follows:
-            [BRIGHT_WHITE]tgbox-cli python --execute script.py[BRIGHT_WHITE]
+        Then, execute a [B0b]python[X] command as follows:
+            [W1b]tgbox-cli python --execute script.py[X]
 
-        Firstly, the python command with [GREEN]--execute[GREEN] specified will
-        [YELLOW]warn[YELLOW] you. Again, [YELLOW]NEVER[YELLOW] run code you [YELLOW]DON'T[YELLOW] trust. Secondly,
+        Firstly, the python command with [G0b]--execute[X] specified will
+        [Y0b]warn[X] you. Again, [Y0b]NEVER[X] run code you [Y0b]DON'T[X] trust. Secondly,
         the TGBOX-CLI will save the code from file in the constant-
-        function [WHITE]EXEC_SCRIPT[WHITE]. To run it, write [WHITE]EXEC_SCRIPT()[WHITE].
+        function [W0b]EXEC_SCRIPT[X]. To run it, write [W0b]EXEC_SCRIPT()[X].
 
-        The code above will [WHITE]calculate the total size of your Box[WHITE]
-        [WHITE]in bytes[WHITE], then format it and print to your terminal.
+        The code above will [W0b]calculate the total size of your Box[X]
+        [W0b]in bytes[X], then format it and print to your terminal.
 
-        You can [WHITE]disable[WHITE] Interactive Interpreter and run code directly:
-            [BRIGHT_WHITE]tgbox-cli python --execute script.py --non-interactive[BRIGHT_WHITE]
+        You can [W0b]disable[X] Interactive Interpreter and run code directly:
+            [W1b]tgbox-cli python --execute script.py --non-interactive[X]
 
-        I believe this can make a TGBOX-CLI more flexible. [BRIGHT_CYAN]With great[BRIGHT_CYAN]
-        [BRIGHT_CYAN]power comes great responsibility[BRIGHT_CYAN]. [WHITE]Never[WHITE] hurt peoples that
-        don't know what they do. Peoples, [WHITE]know[WHITE] what you do.
+        I believe this can make a TGBOX-CLI more flexible. [C1b]With great[X]
+        [C1b]power comes great responsibility[X]. [W0b]Never[X] hurt peoples that
+        don't know what they do. Peoples, [W0b]know[X] what you do.
 
-[WHITE]THE END & THANKS[WHITE]
-    This is it! A finish of this README text! I hope [WHITE]this[WHITE] will
-    give you some useful understanding of this CLI app usage,
-    so you can use it on expert level! Thanks to You, the
-    human in front of this screen! (Don't tell me you're
-    an AI robot, I don't believe in fairy tales;)
+[W0b]THE END & THANKS[X]
+    This is it! A finish of this README text! I hope it gave
+    you some meaningful understanding on how to use this CLI app
+    so you can use it on expert level now!
 
-    Thanks to all involved projects, on which
-    TGBOX and its CLI version were built: the
-    Telegram, Telethon, Crypto libs devs, the
-    AIOSqlite devs and *MANY* others. See full
-    list of projects TGBOX use on the GitHub
-    page: [BLUE]github.com/NonProjects/tgbox[BLUE]
+    Thanks to You, the human in front of this Terminal!
+    Without You my code is [W1b]absolutely useless[X].
 
-    Thanks to all people who inspire me,
-    and *BIG* thanks to the [WHITE]HEROES[WHITE] from the
-    [YELLOW]UKRAINIAN[YELLOW] [BLUE]ARMY[BLUE]. I [WHITE]don't[WHITE] think this
-    project will be possible without
-    their [WHITE]amazing[WHITE] resistance.
+    Thanks to all involved projects, on which TGBOX and its CLI
+    version were built: the Telegram, Telethon, Crypto libs devs,
+    the AIOSqlite devs and *MANY* others. See full list of projects
+    TGBOX use on the GitHub page: [B0b]github.com/NonProjects/tgbox[X]
 
-    If you find this app useful, then,
-    please, consider [WHITE]TO DONATE FOR[WHITE]
-    [YELLOW]ARMY[YELLOW] [WHITE]OF[WHITE] [BLUE]UKRAINE[BLUE]: see [BLUE]u24.gov.ua[BLUE]
+    Thanks to all people who inspire me, and *BIG* thanks to the
+    [W0b]HEROES[X] from the [Y0br]UKRAINIAN[X] [B0br]ARMY[X]. I [W0b]don't[X] think this
+    project would be possible without their [W0b]amazing[X] resistance.
 
-    Regards. [BRIGHT_BLACK]The Non.[BRIGHT_BLACK]
+    If you find this app useful, then, please, consider
+    [W0b]TO DONATE FOR[X] [Y0br]ARMY[X] [W1b]OF[X] [B0br]UKRAINE[X]: see [B0b]u24.gov.ua[X]
+
+    Regards. [X1bli]The Non.[X] [X0bli](Try Ozzy Osbourne)[X]

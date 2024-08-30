@@ -3,10 +3,10 @@ import tgbox
 
 from typing import Union
 from copy import deepcopy
-from itertools import cycle
 
 from typing import AsyncGenerator
 from urllib3.util import parse_url
+from re import finditer as re_finditer
 
 from base64 import urlsafe_b64encode
 from shutil import get_terminal_size
@@ -18,37 +18,127 @@ from pathlib import Path
 from os.path import expandvars
 from os import system as os_system
 
+# ---------------------------------------------- #
+# Started from the CLI v1.4 we will use slightly
+# different approach to colors. Now, color codes
+# are named after first letter of Color name (
+# except Black, it's code is 'X', because there
+# is already Blue, which code is defined as 'B')
+# and the next number will define if it's
+# a regular (0) or a bright (1) variant.
+# ---------------------------------------------- #
+AVAILABLE_COLORS = {
+ 'B0': 'blue',
+ 'B1': 'bright_blue',
+ 'C0': 'cyan',
+ 'C1': 'bright_cyan',
+ 'G0': 'green',
+ 'G1': 'bright_green',
+ 'M0': 'magenta',
+ 'M1': 'bright_magenta',
+ 'R0': 'red',
+ 'R1': 'bright_red',
+ 'W0': 'white',
+ 'W1': 'bright_white',
+ 'X0': 'black',
+ 'X1': 'bright_black',
+ 'Y0': 'yellow',
+ 'Y1': 'bright_yellow'
+}
+# ---------------------------------------------- #
+# We can also suffix Color codes with 'b' (Bold)
+# or 'i' (Italic), so colorize() func will know
+# what exactly we want. E.g: C0b is a regular
+# cyan with bold formatting. M1i is a bright
+# magenta with italic formatting. W0il is a
+# regular italic white which will blink.
+# ---------------------------------------------- #
+# In string, we will need to specify color as
+# follows (e.g): [R0i]Italic red![X]
+# ---------------------------------------------- #
+_color_formattings = {
+ 'i': 'italic',
+ 'b': 'bold',
+ 'd': 'dim',
+ 'u': 'underline',
+ 'o': 'overline',
+ 'r': 'reverse',
+ 'l': 'blink',
+ 'g': 'bg',
+ 's': 'strikethrough'
+}
+_COLOR_SEARCH_PATTERN = r'\[[A-Z][0-9][a-z]*\]'
 
-AVAILABLE_COLORS = [
-    'red','cyan','blue','green',
-    'white','yellow','magenta',
-    'bright_black','bright_red',
-    'bright_magenta', 'bright_blue',
-    'bright_cyan', 'bright_white',
-    'bright_yellow', 'bright_green'
-]
-def color(text: Union[str, bytes]) -> Union[str, bytes]:
+def _get_color_params(color_code: str) -> tuple:
+    """
+    Will return formatting params for click.style.
+
+    Arguments:
+        color_code, str:
+            Color code. I.e "X1ls"
+    """
+    params = {}
+    for formatting in color_code[2:]:
+        if formatting in _color_formattings:
+            format_n = _color_formattings[formatting]
+
+            if format_n not in params:
+                params[format_n] = True
+
+    color = AVAILABLE_COLORS.get(color_code[:2], None)
+    return (color, params)
+
+def colorize(text: str) -> str:
     """
     Will color special formatted parts of text to the
-    specified color. [RED]This will be red[RED], [BLUE]
-    and this is blue[BLUE]. Color should be in uppercase
-    and should be in the tools.AVAILABLE_COLORS list
-    and should be supported by the click.style function.
+    specified color. [R1]This will be red[X], [B0]
+    and this is blue[X]. Color should be in the
+    tools.AVAILABLE_COLORS list and should be
+    supported by the click.style function.
+
+    This "Color Codes" support different format
+    types that you can apped after color code
+    (e.g X1 -- bright_black). For example,
+    'b' is bold, and 'i' is italic. 'l' will
+    blink. Full code is "X1bil". Try this:
+
+    echo(colorize('[X1bil]Black Sabbath[X]'))
+
+    See source code of 'tools.py' for more details
+    on formatting. Typical users typically would
+    not use this function directly.
     """
-    NOCOLOR = '\x1b[0m'
+    color_codes = {}
+    for color_code in re_finditer(_COLOR_SEARCH_PATTERN, text):
+        if color_code not in color_codes:
+            color_code = color_code.group().lstrip('[').rstrip(']')
+            color_codes[color_code] = None
 
-    available = {
-        ccolor.upper(): click.style('%', fg=ccolor, bold=True).rstrip(NOCOLOR)[:-1]
-        for ccolor in AVAILABLE_COLORS
-    }
-    for color_, ansi_code in available.items():
-        # State 0 is color, state 1 is NOCOLOR
-        state = cycle(range(2))
+    invalid_codes = []
+    for c in color_codes:
+        params = _get_color_params(c)
 
-        while f'[{color_}]' in text:
-            current = NOCOLOR if next(state) else ansi_code
-            text = text.replace(f'[{color_}]', current, 1)
+        if params[0]:
+            color_codes[c] = params
+        else:
+            invalid_codes.append(c)
 
+    for invalid_code in invalid_codes:
+        color_codes.pop(invalid_code)
+
+    del invalid_codes
+
+    for color_code, params in color_codes.items():
+        ansi = click.style(
+            text = '',
+            fg = params[0],
+            reset = False,
+            **params[1]
+        )
+        text = text.replace(f'[{color_code}]', ansi)
+
+    text = text.replace('[X]', '\x1b[0m')
+    text = text.replace('[\X]', '[X]') # If was escaped
     return text
 
 class Progress:
@@ -81,13 +171,13 @@ class Progress:
             block_total = str(self.counter.count).zfill(4)
 
             self.counter.counter_format = '{desc}{desc_pad}' +\
-                color(f'[{block_total} [WHITE]Chunks[WHITE] [GREEN]DONE[GREEN]],') +\
-                ' {elapsed} ' + color('[WHITE]Elapsed[WHITE]')
+                colorize(f'[{block_total} [W0b]Chunks[X] [G0b]DONE[X]],') +\
+                ' {elapsed} ' + colorize('[W0b]Elapsed[X]')
 
         elif self.last_id: # If .update_2
-            self.counter.counter_format = color('[WHITE]@[WHITE] ') + '{count:d} ' +\
-                color('[WHITE]Files[WHITE] [GREEN]SYNCED[GREEN], ') + '{elapsed} ' +\
-                color('[WHITE]Elapsed[WHITE], {rate:.0f} [WHITE]Files[WHITE]/second')
+            self.counter.counter_format = colorize('[W0b]@[X] ') + '{count:d} ' +\
+                colorize('[W0b]Files[X] [G0b]SYNCED[X], ') + '{elapsed} ' +\
+                colorize('[W0b]Elapsed[X], {rate:.0f} [W0b]Files[X]/second')
 
         if self.counter:
             self.counter.update()
@@ -343,37 +433,37 @@ def format_dxbf(
     salt = urlsafe_b64encode(dxbf.file_salt.salt).decode()
 
     if dxbf.imported:
-        idsalt = f'[[BRIGHT_BLUE]{str(dxbf.id)}[BRIGHT_BLUE]:'
+        idsalt = f'[[B1b]{str(dxbf.id)}[X]:'
     else:
-        idsalt = f'[[BRIGHT_RED]{str(dxbf.id)}[BRIGHT_RED]:'
+        idsalt = f'[[R1b]{str(dxbf.id)}[X]:'
 
-    idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
+    idsalt += f'[X1b]{salt[:12]}[X]]'
 
     try:
         name = click.format_filename(dxbf.file_name)
     except UnicodeDecodeError:
-        name = '[RED][Unable to display][RED]'
+        name = '[R0b][Unable to display][X]'
 
-    size = f'[GREEN]{format_bytes(dxbf.size)}[GREEN]'
+    size = f'[G0b]{format_bytes(dxbf.size)}[X]'
 
     if dxbf.duration:
         duration = str(timedelta(seconds=round(dxbf.duration,2)))
-        duration = f' [CYAN]({duration.split(".")[0]})[CYAN]'
+        duration = f' [C0b]({duration.split(".")[0]})[X]'
     else:
         duration = ''
 
     if hasattr(dxbf, '_updated_at_time'):
         time = datetime.fromtimestamp(dxbf._updated_at_time)
-        time = f"* Updated at [CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN] "
+        time = f"* Updated at [C0b]{time.strftime('%d/%m/%y, %H:%M:%S')}[X] "
     else:
         time = datetime.fromtimestamp(dxbf.upload_time)
-        time = f"* Uploaded at [CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN] "
+        time = f"* Uploaded at [C0b]{time.strftime('%d/%m/%y, %H:%M:%S')}[X] "
 
     version = f'v1.{dxbf.minor_version}' if dxbf.minor_version > 0 else 'ver N/A'
-    time += f'[BRIGHT_BLACK]({version})[BRIGHT_BLACK]\n'
+    time += f'[X1b]({version})[X]\n'
 
-    mimedur = f'[WHITE]{dxbf.mime}[WHITE]' if dxbf.mime else 'regular file'
-    if dxbf.preview: mimedur += '[BRIGHT_BLACK]*[BRIGHT_BLACK]'
+    mimedur = f'[W0b]{dxbf.mime}[X]' if dxbf.mime else 'regular file'
+    if dxbf.preview: mimedur += '[X1b]*[X]'
 
     mimedur += duration
 
@@ -395,7 +485,7 @@ def format_dxbf(
             tgbox.sync(dxbf.directory.lload(full=True))
             file_path = str(dxbf.directory)
         else:
-            file_path = '[RED][Unknown Folder][RED]'
+            file_path = '[R0b][Unknown Folder][X]'
             file_path_valid = False
 
     if file_path_valid:
@@ -406,11 +496,11 @@ def format_dxbf(
 
         if path_cached.exists():
             if path_cached.stat().st_size == dxbf.size:
-                name = f'[GREEN]{name}[GREEN]'
+                name = f'[G0b]{name}[X]'
             else:
-                name = f'[YELLOW]{name}[YELLOW]'
+                name = f'[Y0b]{name}[X]'
         else:
-            name = f'[WHITE]{name}[WHITE]'
+            name = f'[W0b]{name}[X]'
 
     formatted = (
        f'\nFile: {idsalt} {name}\n'
@@ -421,23 +511,23 @@ def format_dxbf(
         formatted += "* CustomAttributes:\n"
         n = 1
         for k,v in tuple(cattrs.items()):
-            color_ = 'GREEN' if n % 2 else 'YELLOW'
+            color_ = 'G0b' if n % 2 else 'Y0b'
             n += 1
 
             v = split_string(v, 6, symbol='>')
             v = v.replace('\n',f'[{color_}]\n[{color_}]')
 
             formatted += (
-                f'   [WHITE]{k}[WHITE]: '
+                f'   [W0b]{k}[X]: '
                 f'[{color_}]{v}[{color_}]\n'
             )
     formatted += time
 
     if isinstance(dxbf, tgbox.api.remote.DecryptedRemoteBoxFile)\
         and dxbf.sender:
-            formatted += f'* Author: [YELLOW]{dxbf.sender}[YELLOW]\n'
+            formatted += f'* Author: [Y0b]{dxbf.sender}[X]\n'
 
-    return color(formatted)
+    return colorize(formatted)
 
 
 def format_dxbf_message(
@@ -450,50 +540,50 @@ def format_dxbf_message(
     salt = urlsafe_b64encode(dxbf.file_salt.salt).decode()
 
     if dxbf.imported:
-        idsalt = f'[[BRIGHT_BLUE]{str(dxbf.id)}[BRIGHT_BLUE]:'
+        idsalt = f'[[B1b]{str(dxbf.id)}[X]:'
     else:
-        idsalt = f'[[BRIGHT_RED]{str(dxbf.id)}[BRIGHT_RED]:'
+        idsalt = f'[[R1b]{str(dxbf.id)}[X]:'
 
-    idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
+    idsalt += f'[X1b]{salt[:12]}[X]]'
 
     try:
         name = click.format_filename(dxbf.file_name)
     except UnicodeDecodeError:
-        name = '[RED][Unable to display][RED]'
+        name = '[R0b][Unable to display][X]'
 
     time = datetime.fromtimestamp(dxbf.upload_time)
-    time = f"* Sent at [CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN] "
+    time = f"* Sent at [C0b]{time.strftime('%d/%m/%y, %H:%M:%S')}[X] "
 
     version = f'v1.{dxbf.minor_version}' if dxbf.minor_version > 0 else 'ver N/A'
-    time += f'[BRIGHT_BLACK]({version})[BRIGHT_BLACK]'
+    time += f'[X1b]({version})[X]'
 
     if dxbf.file_path:
         file_path = str(dxbf.file_path)
-        topic = f'[YELLOW]{Path(file_path).parts[2]}[YELLOW]'
+        topic = f'[Y0b]{Path(file_path).parts[2]}[X]'
 
         date = Path(*Path(file_path).parts[3:])
-        date = f'[WHITE]{str(date)}[WHITE]'
+        date = f'[W0b]{str(date)}[X]'
     else:
         if hasattr(dxbf, 'directory'):
             tgbox.sync(dxbf.directory.lload(full=True))
-            topic = f'[YELLOW]{str(dxbf.directory.parts[2])}[YELLOW]'
+            topic = f'[Y0b]{str(dxbf.directory.parts[2])}[X]'
 
             date = Path(*dxbf.directory.parts[3:])
-            date = f'[WHITE]{str(date)}[WHITE]'
+            date = f'[W0b]{str(date)}[X]'
         else:
-            topic = '[RED][Unknown Topic][RED]'
+            topic = '[R0b][Unknown Topic][X]'
 
-    name = f'[BLUE]{dxbf.file_name}[BLUE]'
+    name = f'[B0b]{dxbf.file_name}[X]'
 
     text = split_string(dxbf.cattrs['text'].decode(), 5)
-    text = f'[WHITE]{text}[WHITE]'
+    text = f'[W0b]{text}[X]'
 
-    author = f'[YELLOW]{dxbf.cattrs["author"].decode()}[YELLOW]'
-    author += f' [BRIGHT_BLACK]({dxbf.cattrs["author_id"].decode()})[BRIGHT_BLACK]'
+    author = f'[Y0b]{dxbf.cattrs["author"].decode()}[X]'
+    author += f' [X1b]({dxbf.cattrs["author_id"].decode()})[X]'
 
     formatted = (
        f'\n {idsalt} {name} ({topic}:{date})\n'
        f' * Author: {author}\n'
-       f' {time}\n |\n [WHITE]@[WHITE] Message: {text}'
+       f' {time}\n |\n [W0b]@[X] Message: {text}'
     )
-    return color(formatted)
+    return colorize(formatted)

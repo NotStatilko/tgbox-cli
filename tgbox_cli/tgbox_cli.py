@@ -90,7 +90,7 @@ else:
     TGBOX_CLI_NOCOLOR = bool(getenv('TGBOX_CLI_NOCOLOR'))
 
     # tools.color with a click.echo function
-    echo = lambda t,**k: click.echo(color(t), **k, color=(not TGBOX_CLI_NOCOLOR))
+    echo = lambda t,**k: click.echo(colorize(t), **k, color=(not TGBOX_CLI_NOCOLOR))
 
     __version__ = f'{VERSION}_{tgbox.defaults.VERSION}'
     tgbox.api.utils.TelegramClient.__version__ = __version__
@@ -139,29 +139,29 @@ class CheckCTXFailed(click.exceptions.ClickException):
 def check_ctx(ctx, *, session=False, account=False, dlb=False, drb=False):
     if session and not ctx.obj.session:
         echo(
-            '[RED]You should run[RED] [WHITE]tgbox-cli '
-            'cli-init[WHITE] [RED]firstly.[RED]'
+            '[R0b]You should run[X] [W0b]tgbox-cli '
+            'cli-init[X] [R0b]firstly.[X]'
         )
         raise CheckCTXFailed('Failed on "session" requirement')
 
     if account and not ctx.obj.account:
         echo(
-          '[RED]You should run [RED][WHITE]tgbox-cli '
-          'account-connect [WHITE][RED]firstly.[RED]'
+          '[R0b]You should run [X][W0b]tgbox-cli '
+          'account-connect [X][R0b]firstly.[X]'
         )
         raise CheckCTXFailed('Failed on "account" requirement')
 
     if dlb and not ctx.obj.dlb:
         echo(
-            '[RED]You didn\'t connected box yet. Use[RED] '
-            '[WHITE]box-open[WHITE] [RED]command.[RED]'
+            '[R0b]You didn\'t connected box yet. Use[X] '
+            '[W0b]box-open[X] [R0b]command.[X]'
         )
         raise CheckCTXFailed('Failed on "dlb" requirement')
 
     if drb and not ctx.obj.drb:
         echo(
-            '[RED]You didn\'t connected box yet. Use[RED] '
-            '[WHITE]box-open[WHITE] [RED]command.[RED]'
+            '[R0b]You didn\'t connected box yet. Use[X] '
+            '[W0b]box-open[X] [R0b]command.[X]'
         )
         raise CheckCTXFailed('Failed on "drb" requirement')
 
@@ -218,32 +218,32 @@ class StructuredGroup(click.Group):
                 formatter.write_paragraph()
 
             if v.name == 'help':
-                COLOR = '[GREEN]'
+                COLOR = '[G0bl]'
 
             elif v.name == 'cli-init' and not session:
-                COLOR = '[YELLOW]'
+                COLOR = '[Y0b]'
 
             elif session and v.name in ('box-make', 'box-clone', 'box-list'):
                 conditions = (
                     session['CURRENT_ACCOUNT'] is not None,
                     session['CURRENT_BOX'] is None
                 )
-                COLOR = '[YELLOW]' if all(conditions) else '[WHITE]'
+                COLOR = '[Y0b]' if all(conditions) else '[W0b]'
 
             elif session and v.name in ('box-open', 'account-connect'):
                 conditions = (
                     session['CURRENT_BOX'] is None,
                     session['CURRENT_ACCOUNT'] is None,
                 )
-                COLOR = '[YELLOW]' if all(conditions) else '[WHITE]'
+                COLOR = '[Y0b]' if all(conditions) else '[W0b]'
             else:
-                COLOR = '[WHITE]'
+                COLOR = '[W0b]'
 
-            DOT = 'O' if COLOR != '[WHITE]' else 'o'
+            DOT = 'O' if COLOR != '[W0b]' else 'o'
             COLOR = '' if TGBOX_CLI_NOCOLOR else COLOR
 
-            text = color(
-                f'  {DOT}  {COLOR}{v.name}{COLOR} :: '
+            text = colorize(
+                f'  {DOT}  {COLOR}{v.name}[X] :: '
                 f'{v.get_short_help_str().strip()}'
             )
             formatter.write_text(text)
@@ -426,7 +426,7 @@ def select_remotebox(ctx, number: int, prefix: str):
                 break
 
     if not erb:
-        echo(f'[RED]RemoteBox by number={number} not found.[RED]')
+        echo(f'[R0b]RemoteBox by number={number} not found.[X]')
     else:
         return erb
 
@@ -455,7 +455,7 @@ def cli_init(ctx, bash, fish, zsh, win_cmd):
     """Get commands for initializing TGBOX-CLI"""
 
     if ctx.obj.session:
-        echo('[WHITE]CLI is already initialized.[WHITE]')
+        echo('[W0b]CLI is already initialized.[X]')
     else:
         if win_cmd or system() == 'Windows' and not any((bash, fish, zsh)):
             init_commands = (
@@ -492,7 +492,7 @@ def cli_init(ctx, bash, fish, zsh, win_cmd):
                     f'{autocomplete}')
 
             if cmd != 'fish':
-                echo('\n# [BLUE](Execute commands below if eval doesn\'t work)[BLUE]\n')
+                echo('\n# [B0b](Execute commands below if eval doesn\'t work)[X]\n')
                 eval_commands = (
                     f'export TGBOX_CLI_SK="$(tgbox-cli sk-gen)"'
                     f'{autocomplete}'
@@ -506,9 +506,9 @@ def cli_init(ctx, bash, fish, zsh, win_cmd):
                     f'{autocomplete}'
                 )
         echo(
-            '\n[YELLOW]Welcome to the TGBOX-CLI![YELLOW]\n\n'
+            '\n[Y0b]Welcome to the TGBOX-CLI![X]\n\n'
             'Copy & Paste commands below to your shell:\n\n'
-           f'[WHITE]{init_commands}[WHITE]\n'
+           f'[W0b]{init_commands}[X]\n'
         )
 
 @cli.command()
@@ -522,42 +522,42 @@ def cli_info():
             stdout=PIPE, stderr=None, check=True
         )
         ffmpeg_version = sp_result.stdout.split(b' ',3)[2].decode()
-        ffmpeg_version = f"[GREEN]YES[GREEN]([CYAN]v{ffmpeg_version}[CYAN])"
+        ffmpeg_version = f"[G0b]YES[X]([C0b]v{ffmpeg_version}[X])"
     except CalledProcessError:
-        ffmpeg_version = '[RED]UNKNOWN[RED]'
+        ffmpeg_version = '[R0b]UNKNOWN[X]'
     except:
-        ffmpeg_version = '[RED]NOT FOUND[RED]'
+        ffmpeg_version = '[R0b]NOT FOUND[X]'
 
     if tgbox.crypto.FAST_ENCRYPTION:
-        fast_encryption = f'[GREEN]YES[GREEN]([CYAN]v{CRYPTOGRAPHY_VERSION}[CYAN])'
+        fast_encryption = f'[G0b]YES[X]([C0b]v{CRYPTOGRAPHY_VERSION}[X])'
     else:
-        fast_encryption = '[RED]NO[RED]'
+        fast_encryption = '[R0b]NO[X]'
 
     if tgbox.crypto.FAST_TELETHON:
-        fast_telethon = f'[GREEN]YES[GREEN]([CYAN]v{CRYPTG_VERSION}[CYAN])'
+        fast_telethon = f'[G0b]YES[X]([C0b]v{CRYPTG_VERSION}[X])'
     else:
-        fast_telethon = '[RED]NO[RED]'
+        fast_telethon = '[R0b]NO[X]'
 
     sys_ver = sys_version.split('[', 1)[0].strip()
     logfile_name = 'STDOUT' if not logfile else logfile.name
 
     echo(
-        '\n# Copyright [WHITE](c) Non [github.com/NotStatilko][WHITE], the MIT License\n'
-        '# Author Email: [WHITE]thenonproton@protonmail.com[WHITE]\n\n'
+        '\n# Copyright [W0b](c) Non [github.com/NotStatilko][X], the MIT License\n'
+        '# Author Email: [W0b]thenonproton@protonmail.com[X]\n\n'
 
-        f'TGBOX-CLI Version: [YELLOW]{ver[0]}[YELLOW]\n'
-        f'TGBOX Version: [MAGENTA]{ver[1]}[MAGENTA]\n\n'
+        f'TGBOX-CLI Version: [Y0b]{ver[0]}[X]\n'
+        f'TGBOX Version: [M0b]{ver[1]}[X]\n\n'
 
-        f'PYTHON: [CYAN]{sys_ver}[CYAN]\n'
-        f'SYSTEM: [CYAN]{platform()}[CYAN]\n\n'
+        f'PYTHON: [C0b]{sys_ver}[X]\n'
+        f'SYSTEM: [C0b]{platform()}[X]\n\n'
 
         f'FFMPEG: {ffmpeg_version}\n'
         f'FAST_ENCRYPTION: {fast_encryption}\n'
         f'FAST_TELETHON: {fast_telethon}\n\n'
 
-        f'LOGGING: [YELLOW]{logging_level}[YELLOW]([WHITE]{logfile_name}[WHITE])\n'
+        f'LOGGING: [Y0b]{logging_level}[X]([W0b]{logfile_name}[X])\n'
     )
-    if getenv('BLACK_SABBATH'):
+    if getenv('X0b_SABBATH'):
         from time import sleep
 
         bs_ana = (
@@ -602,7 +602,7 @@ def account_connect(ctx, phone, api_id, api_hash):
     """Connect your Telegram account"""
 
     if any((api_id, api_hash)) and not all((api_id, api_hash)):
-        echo('[RED]You need to specify both, --api-id & --api-hash[RED]')
+        echo('[R0b]You need to specify both, --api-id & --api-hash[X]')
         return
 
     tc = tgbox.api.TelegramClient(
@@ -610,10 +610,10 @@ def account_connect(ctx, phone, api_id, api_hash):
         api_id=(api_id or API_ID),
         api_hash=(api_hash or API_HASH)
     )
-    echo('[CYAN]Connecting to Telegram...[CYAN]')
+    echo('[C0b]Connecting to Telegram...[X]')
     tgbox.sync(tc.connect())
 
-    echo('[CYAN]Sending code request...[CYAN]')
+    echo('[C0b]Sending code request...[X]')
     tgbox.sync(tc.send_code())
 
     code = click.prompt('Received code', type=int)
@@ -624,11 +624,11 @@ def account_connect(ctx, phone, api_id, api_hash):
         default = '',
         show_default = False
     )
-    echo('[CYAN]Trying to sign-in...[CYAN] ', nl=False)
+    echo('[C0b]Trying to sign-in...[X] ', nl=False)
     tgbox.sync(tc.log_in(code=code, password=password))
 
-    echo('[GREEN]Successful![GREEN]')
-    echo('[CYAN]Updating local data...[CYAN] ', nl=False)
+    echo('[G0b]Successful![X]')
+    echo('[C0b]Updating local data...[X] ', nl=False)
 
     tc_id = tgbox.sync(tc.get_me()).id
 
@@ -653,7 +653,7 @@ def account_connect(ctx, phone, api_id, api_hash):
 
             if other_tc_id == tc_id:
                 tgbox.sync(tc.log_out())
-                echo('[RED]Account already added[RED]')
+                echo('[R0b]Account already added[X]')
                 return
 
         for d_session in disconnected_sessions:
@@ -663,7 +663,7 @@ def account_connect(ctx, phone, api_id, api_hash):
         ctx.obj.session['CURRENT_ACCOUNT'] = len(ctx.obj.session['ACCOUNT_LIST']) - 1
 
     ctx.obj.session.commit()
-    echo('[GREEN]Successful![GREEN]')
+    echo('[G0b]Successful![X]')
 
 @cli.command()
 @click.option(
@@ -679,12 +679,12 @@ def account_disconnect(ctx, number, log_out):
     """Disconnect Account from Session"""
 
     if ctx.obj.session['CURRENT_ACCOUNT'] is None:
-        echo('[RED]You don\'t have any connected account.[RED]')
+        echo('[R0b]You don\'t have any connected account.[X]')
 
     elif number < 1 or number > len(ctx.obj.session['ACCOUNT_LIST']):
         echo(
-            f'[RED]There is no account #{number}. Use [RED]'
-             '[WHITE]account-list[WHITE] [RED]command.[RED]')
+            f'[R0b]There is no account #{number}. Use [X]'
+             '[W0b]account-list[X] [R0b]command.[X]')
     else:
         if log_out:
             tg_session = ctx.obj.session['ACCOUNT_LIST'][number-1]
@@ -701,10 +701,10 @@ def account_disconnect(ctx, number, log_out):
 
         if not ctx.obj.session['ACCOUNT_LIST']:
             ctx.obj.session['CURRENT_ACCOUNT'] = None
-            echo('[GREEN]Disconnected. No more accounts.[GREEN]')
+            echo('[G0b]Disconnected. No more accounts.[X]')
         else:
             ctx.obj.session['CURRENT_ACCOUNT'] = 0
-            echo('[GREEN]Disconnected & switched to the account #1[GREEN]')
+            echo('[G0b]Disconnected & switched to the account #1[X]')
 
         ctx.obj.session.commit()
 
@@ -715,12 +715,12 @@ def account_list(ctx):
 
     if ctx.obj.session['CURRENT_ACCOUNT'] is None:
         echo(
-            '[RED]You didn\'t connected any account yet. Use[RED] '
-            '[WHITE]account-connect[WHITE] [RED]command firstly.[RED]')
+            '[R0b]You didn\'t connected any account yet. Use[X] '
+            '[W0b]account-connect[X] [R0b]command firstly.[X]')
     else:
         echo(
-            '\n[WHITE]You\'re using account[WHITE] [RED]'
-           f'#{str(ctx.obj.session["CURRENT_ACCOUNT"] + 1)}[RED]\n'
+            '\n[W0b]You\'re using account[X] [R0b]'
+           f'#{str(ctx.obj.session["CURRENT_ACCOUNT"] + 1)}[X]\n'
         )
         disconnected_sessions = []
         for count, tg_session in enumerate(ctx.obj.session['ACCOUNT_LIST']):
@@ -734,10 +734,10 @@ def account_list(ctx):
                 info = tgbox.sync(tc.get_me())
 
                 name = f'@{info.username}' if info.username else info.first_name
-                echo(f'[WHITE]{count+1})[WHITE] [BLUE]{name}[BLUE] (id{info.id})')
+                echo(f'[W0b]{count+1})[X] [B0b]{name}[X] (id{info.id})')
             except AttributeError:
                 # If session was disconnected
-                echo(f'[WHITE]{count+1})[WHITE] [RED]disconnected, so removed[RED]')
+                echo(f'[W0b]{count+1})[X] [R0b]disconnected, so removed[X]')
                 disconnected_sessions.append(tg_session)
 
         for d_session in disconnected_sessions:
@@ -757,23 +757,23 @@ def account_switch(ctx, number):
 
     if ctx.obj.session['CURRENT_ACCOUNT'] is None:
         echo(
-            '[RED]You didn\'t connected any account yet. Use[RED] '
-            '[WHITE]account-connect[WHITE] [RED]command firstly.[RED]'
+            '[R0b]You didn\'t connected any account yet. Use[X] '
+            '[W0b]account-connect[X] [R0b]command firstly.[X]'
         )
     elif number < 1 or number > len(ctx.obj.session['ACCOUNT_LIST']):
         echo(
-            f'[RED]There is no account #{number}. Use [RED]'
-             '[WHITE]account-list[WHITE] [RED]command.[RED]'
+            f'[R0b]There is no account #{number}. Use [X]'
+             '[W0b]account-list[X] [R0b]command.[X]'
         )
     elif number-1 == ctx.obj.session['CURRENT_ACCOUNT']:
         echo(
-            '[YELLOW]You already on this account. See other with[YELLOW] '
-             '[WHITE]account-list[WHITE] [YELLOW]command.[YELLOW]')
+            '[Y0b]You already on this account. See other with[X] '
+             '[W0b]account-list[X] [Y0b]command.[X]')
     else:
         ctx.obj.session['CURRENT_ACCOUNT'] = number - 1
         ctx.obj.session.commit()
 
-        echo(f'[GREEN]You switched to account #{number}[GREEN]')
+        echo(f'[G0b]You switched to account #{number}[X]')
 
 @cli.command()
 @click.option(
@@ -787,24 +787,24 @@ def account_info(ctx, show_phone):
     me = tgbox.sync(ctx.obj.account.get_me())
 
     last_name = me.last_name if me.last_name else ''
-    full_name = f'[WHITE]{me.first_name} {last_name}[WHITE]'
+    full_name = f'[W0b]{me.first_name} {last_name}[X]'
 
     if show_phone:
-        phone = f'[WHITE]+{me.phone}[WHITE]'
+        phone = f'[W0b]+{me.phone}[X]'
     else:
-        phone = '[RED]<Was hidden>[RED]'
+        phone = '[R0b]<Was hidden>[X]'
 
     if me.premium:
-        premium = '[WHITE]yes[WHITE]'
+        premium = '[W0b]yes[X]'
     else:
-        premium = '[RED]no[RED]'
+        premium = '[R0b]no[X]'
 
     if me.username:
-        username = f'[WHITE]@{me.username}[WHITE]'
+        username = f'[W0b]@{me.username}[X]'
     else:
-        username = '[RED]<Not presented>[RED]'
+        username = '[R0b]<Not presented>[X]'
 
-    user_id = f'[WHITE]id{me.id}[WHITE]'
+    user_id = f'[W0b]id{me.id}[X]'
 
     echo(
         '\n ====== Current Account ====== \n\n'
@@ -863,12 +863,12 @@ def box_make(ctx, box_path, box_name, box_salt, phrase, s, n, p, r, l):
 
     if not phrase and click.confirm('Generate passphrase for you?'):
         phrase = tgbox.keys.Phrase.generate(6).phrase.decode()
-        echo(f'\nYour Phrase is [MAGENTA]{phrase}[MAGENTA]')
+        echo(f'\nYour Phrase is [M0b]{phrase}[X]')
 
         echo(
-            'Please, write it down [WHITE]on paper[WHITE] '
-            'and press [RED]Enter[RED]'
-            ', we will [RED]clear[RED] shell for you'
+            'Please, write it down [W0b]on paper[X] '
+            'and press [R0b]Enter[X]'
+            ', we will [R0b]clear[X] shell for you'
         )
         input(); clear_console()
 
@@ -876,7 +876,7 @@ def box_make(ctx, box_path, box_name, box_salt, phrase, s, n, p, r, l):
         phrase, phrase_repeat = 0, 1
         while phrase != phrase_repeat:
             if phrase != 0: # Init value
-                echo('[RED]Phrase mismatch! Try again[RED]\n')
+                echo('[R0b]Phrase mismatch! Try again[X]\n')
 
             phrase = click.prompt(
                 text = 'Phrase',
@@ -887,7 +887,7 @@ def box_make(ctx, box_path, box_name, box_salt, phrase, s, n, p, r, l):
                 hide_input = (not TGBOX_CLI_SHOW_PASSWORD)
             )
 
-    echo('[CYAN]Making BaseKey...[CYAN] ', nl=False)
+    echo('[C0b]Making BaseKey...[X] ', nl=False)
 
     if box_salt:
         box_salt = tgbox.crypto.BoxSalt(bytes.fromhex(box_salt))
@@ -897,20 +897,20 @@ def box_make(ctx, box_path, box_name, box_salt, phrase, s, n, p, r, l):
         salt=bytes.fromhex(s),
         n=n, p=p, r=r, dklen=l
     )
-    echo('[GREEN]Successful![GREEN]')
+    echo('[G0b]Successful![X]')
 
-    echo('[CYAN]Making RemoteBox...[CYAN] ', nl=False)
+    echo('[C0b]Making RemoteBox...[X] ', nl=False)
     erb = tgbox.sync(tgbox.api.make_remotebox(
         ctx.obj.account, box_name, box_salt=box_salt)
     )
-    echo('[GREEN]Successful![GREEN]')
+    echo('[G0b]Successful![X]')
 
-    echo('[CYAN]Making LocalBox...[CYAN] ', nl=False)
+    echo('[C0b]Making LocalBox...[X] ', nl=False)
     dlb = tgbox.sync(tgbox.api.make_localbox(
         erb, basekey, box_path=box_path, box_name=box_name))
-    echo('[GREEN]Successful![GREEN]')
+    echo('[G0b]Successful![X]')
 
-    echo('[CYAN]Updating local data...[CYAN] ', nl=False)
+    echo('[C0b]Updating local data...[X] ', nl=False)
 
     localbox_path = str(Path(dlb.tgbox_db.db_path).resolve())
 
@@ -922,7 +922,7 @@ def box_make(ctx, box_path, box_name, box_salt, phrase, s, n, p, r, l):
     tgbox.sync(erb.done())
     tgbox.sync(dlb.done())
 
-    echo('[GREEN]Successful![GREEN]')
+    echo('[G0b]Successful![X]')
 
 @cli.command()
 @click.option(
@@ -973,32 +973,32 @@ def box_make(ctx, box_path, box_name, box_salt, phrase, s, n, p, r, l):
 def box_open(ctx, box_path, phrase, s, n, p, r, l, no_switch):
     """Decrypt & connect existing LocalBox"""
 
-    echo('[CYAN]Making BaseKey...[CYAN] ', nl=False)
+    echo('[C0b]Making BaseKey...[X] ', nl=False)
 
     basekey = tgbox.keys.make_basekey(
         phrase.strip().encode(),
         salt=bytes.fromhex(s),
         n=n, p=p, r=r, dklen=l
     )
-    echo('[GREEN]Successful![GREEN]')
+    echo('[G0b]Successful![X]')
 
     box_path = box_path.resolve()
 
-    echo('[CYAN]Opening LocalBox...[CYAN] ', nl=False)
+    echo('[C0b]Opening LocalBox...[X] ', nl=False)
     try:
         dlb = tgbox.sync(tgbox.api.get_localbox(basekey, box_path))
     except tgbox.errors.AESError:
-        echo('[RED]Incorrect passphrase![RED]')
+        echo('[R0b]Incorrect passphrase![X]')
     else:
-        echo('[GREEN]Successful![GREEN]')
-        echo('[CYAN]Updating local data...[CYAN] ', nl=False)
+        echo('[G0b]Successful![X]')
+        echo('[C0b]Updating local data...[X] ', nl=False)
 
         localbox_path = str(Path(dlb.tgbox_db.db_path).resolve())
         box_data = [localbox_path, basekey.key]
 
         for other_box_data in ctx.obj.session['BOX_LIST']:
             if other_box_data == box_data:
-                echo('[RED]This Box is already opened[RED]')
+                echo('[R0b]This Box is already opened[X]')
                 break
         else:
             ctx.obj.session['BOX_LIST'].append(box_data)
@@ -1007,7 +1007,7 @@ def box_open(ctx, box_path, phrase, s, n, p, r, l, no_switch):
                 ctx.obj.session['CURRENT_BOX'] = len(ctx.obj.session['BOX_LIST']) - 1
 
             ctx.obj.session.commit()
-            echo('[GREEN]Successful![GREEN]')
+            echo('[G0b]Successful![X]')
 
         tgbox.sync(dlb.done())
 
@@ -1021,16 +1021,16 @@ def box_close(ctx, number):
     """Disconnect selected LocalBox from Session"""
 
     if number < 1 or number > len(ctx.obj.session['BOX_LIST']):
-        echo('[RED]Invalid number, see box-list[RED]')
+        echo('[R0b]Invalid number, see box-list[X]')
     else:
         ctx.obj.session['BOX_LIST'].pop(number-1)
 
         if not ctx.obj.session['BOX_LIST']:
             ctx.obj.session['CURRENT_BOX'] = None
-            echo('No more Boxes, use [WHITE]box-open[WHITE].')
+            echo('No more Boxes, use [W0b]box-open[X].')
         else:
             ctx.obj.session['CURRENT_BOX'] = 0
-            echo('[GREEN]Disconnected & switched to the Box #1[GREEN]')
+            echo('[G0b]Disconnected & switched to the Box #1[X]')
 
         ctx.obj.session.commit()
 
@@ -1045,19 +1045,19 @@ def box_switch(ctx, number):
 
     if number < 1 or number > len(ctx.obj.session['BOX_LIST']):
         echo(
-            f'[RED]There is no box #{number}. Use[RED] '
-             '[WHITE]box-list[WHITE] [RED]command.[RED]'
+            f'[R0b]There is no box #{number}. Use[X] '
+             '[W0b]box-list[X] [R0b]command.[X]'
         )
     elif number-1 == ctx.obj.session['CURRENT_BOX']:
         echo(
-            '[YELLOW]You already use this box. See other with[YELLOW] '
-            '[WHITE]box-list[WHITE] [YELLOW]command.[YELLOW]'
+            '[Y0b]You already use this box. See other with[X] '
+            '[W0b]box-list[X] [Y0b]command.[X]'
         )
     else:
         ctx.obj.session['CURRENT_BOX'] = number - 1
         ctx.obj.session.commit()
 
-        echo(f'[GREEN]You switched to box #{number}[GREEN]')
+        echo(f'[G0b]You switched to box #{number}[X]')
 
 @cli.command()
 @click.option(
@@ -1077,7 +1077,7 @@ def box_list(ctx, remote, prefix):
 
         count = 0
 
-        echo('[YELLOW]Searching...[YELLOW]')
+        echo('[Y0b]Searching...[X]')
         for chat in sync_async_gen(ctx.obj.account.iter_dialogs()):
             if prefix in chat.title and chat.is_channel:
                 erb = tgbox.api.EncryptedRemoteBox(chat, ctx.obj.account)
@@ -1089,27 +1089,27 @@ def box_list(ctx, remote, prefix):
 
                 count_id = str(count+1).zfill(2)
                 echo(
-                    f'[WHITE]{count_id}[WHITE]) [BLUE]{erb_name}[BLUE]'
-                    f'@[BRIGHT_BLACK]{erb_salt}[BRIGHT_BLACK]'
+                    f'[W0b]{count_id}[X]) [B0b]{erb_name}[X]'
+                    f'@[X1b]{erb_salt}[X]'
                 )
                 if erb_desc:
                     erb_desc = split_string(f'{erb_desc}', 4, '>')
-                    erb_desc = erb_desc.replace('\n','[YELLOW]\n[YELLOW]')
-                    echo(f'    Description: [YELLOW]{erb_desc}[YELLOW]')
+                    erb_desc = erb_desc.replace('\n','[Y0b]\n[X]')
+                    echo(f'    Description: [Y0b]{erb_desc}[X]')
                 count += 1
 
-        echo('[YELLOW]Done.[YELLOW]')
+        echo('[Y0b]Done.[X]')
     else:
         check_ctx(ctx, session=True)
 
         if ctx.obj.session['CURRENT_BOX'] is None:
             echo(
-                '[RED]You didn\'t opened any box yet. Use[RED] '
-                '[WHITE]box-open[WHITE] [RED]command firstly.[RED]')
+                '[R0b]You didn\'t opened any box yet. Use[X] '
+                '[W0b]box-open[X] [R0b]command firstly.[X]')
         else:
             echo(
-                '\n[WHITE]You\'re using Box[WHITE] '
-               f'[RED]#{str(ctx.obj.session["CURRENT_BOX"]+1)}[RED]\n'
+                '\n[W0b]You\'re using Box[X] '
+               f'[R0b]#{str(ctx.obj.session["CURRENT_BOX"]+1)}[X]\n'
             )
             lost_boxes, count = [], 0
 
@@ -1124,14 +1124,14 @@ def box_list(ctx, remote, prefix):
 
                     count_id = str(count+1).zfill(2)
                     echo(
-                        f'[WHITE]{count_id})[WHITE] [BLUE]{name}[BLUE]'
-                        f'@[BRIGHT_BLACK]{salt}[BRIGHT_BLACK]'
+                        f'[W0b]{count_id})[X] [B0b]{name}[X]'
+                        f'@[X1b]{salt}[X]'
                     )
                     tgbox.sync(dlb.done())
                 except FileNotFoundError:
                     echo(
-                       f'[WHITE]{count+1})[WHITE] [RED]{name} LocalBox '
-                        'file was moved, so disconnected.[RED]'
+                       f'[W0b]{count+1})[X] [R0b]{name} LocalBox '
+                        'file was moved, so disconnected.[X]'
                     )
                     lost_boxes.append([box_path, basekey])
 
@@ -1143,12 +1143,12 @@ def box_list(ctx, remote, prefix):
             if lost_boxes:
                 if not ctx.obj.session['BOX_LIST']:
                     ctx.obj.session['CURRENT_BOX'] = None
-                    echo('No more Boxes, use [WHITE]box-open[WHITE].')
+                    echo('No more Boxes, use [W0b]box-open[X].')
                 else:
                     ctx.obj.session['CURRENT_BOX'] = 0
                     echo(
                         'Switched to the first Box. Set other '
-                        'with [WHITE]box-switch[WHITE].'
+                        'with [W0b]box-switch[X].'
                     )
             ctx.obj.session.commit()
             echo('')
@@ -1199,12 +1199,12 @@ def box_sync(ctx, start_from_id, deep, timeout):
     """
     if start_from_id and not deep:
         echo(
-            '[WHITE]--start-from-id[WHITE] [RED]can be used only '
-            'with[RED] [WHITE]--deep[WHITE][RED]![RED]'
+            '[W0b]--start-from-id[X] [R0b]can be used only '
+            'with[X] [W0b]--deep[X][R0b]![X]'
         ); return
 
     if not deep:
-        progress_callback = lambda i,a: echo(f'* [WHITE]ID{i}[WHITE]: [CYAN]{a}[CYAN]')
+        progress_callback = lambda i,a: echo(f'* [W0b]ID{i}[X]: [C0b]{a}[X]')
     else:
         progress_callback = Progress(ctx.obj.enlighten_manager,
             'Synchronizing...').update_2
@@ -1220,9 +1220,9 @@ def box_sync(ctx, start_from_id, deep, timeout):
     try:
         tgbox.sync(box_sync_coro)
     except tgbox.errors.RemoteFileNotFound as e:
-        echo(f'[RED]{e}[RED]')
+        echo(f'[R0b]{e}[X]')
     else:
-        echo('[GREEN]Syncing complete.[GREEN]')
+        echo('[G0b]Syncing complete.[X]')
 
 @cli.command()
 @click.option(
@@ -1243,8 +1243,8 @@ def box_account_change(ctx, number):
     """
     if number < 1 or number > len(ctx.obj.session['ACCOUNT_LIST']):
         echo(
-            '[RED]Invalid account number! See[RED] '
-            '[WHITE]account-list[WHITE] [RED]command.[RED]')
+            '[R0b]Invalid account number! See[X] '
+            '[W0b]account-list[X] [R0b]command.[X]')
     else:
         tg_session = ctx.obj.session['ACCOUNT_LIST'][number-1]
 
@@ -1259,7 +1259,7 @@ def box_account_change(ctx, number):
             ctx.obj.session['BOX_LIST'][ctx.obj.session['CURRENT_BOX']][1]
         )
         tgbox.sync(ctx.obj.dlb.replace_session(basekey, tc))
-        echo('[GREEN]Session replaced successfully[GREEN]')
+        echo('[G0b]Session replaced successfully[X]')
 
 @cli.command()
 @click.option(
@@ -1310,7 +1310,7 @@ def box_request(number, phrase, s, n, p, r, l, prefix):
 
     echo(
         '\nSend this Key to the Box owner:\n'
-       f'    [WHITE]{reqkey.encode()}[WHITE]\n'
+       f'    [W0b]{reqkey.encode()}[X]\n'
     )
 
 @cli.command()
@@ -1329,14 +1329,14 @@ def box_share(ctx, requestkey):
 
     if not requestkey:
         echo(
-            '\n[RED]You didn\'t specified requestkey.\n   You '
-            'will receive decryption key IN PLAIN\n[RED]'
+            '\n[R0b]You didn\'t specified requestkey.\n   You '
+            'will receive decryption key IN PLAIN\n[X]'
         )
         if not click.confirm('Are you TOTALLY sure?'):
             return
     echo(
         '\nSend this Key to the Box requester:\n'
-       f'    [WHITE]{sharekey.encode()}[WHITE]\n'
+       f'    [W0b]{sharekey.encode()}[X]\n'
     )
 
 @cli.command()
@@ -1401,14 +1401,14 @@ def box_clone(
     except tgbox.errors.IncorrectKey:
         pass
 
-    echo('\n[CYAN]Making BaseKey...[CYAN] ', nl=False)
+    echo('\n[C0b]Making BaseKey...[X] ', nl=False)
 
     basekey = tgbox.keys.make_basekey(
         phrase.strip().encode(),
         salt=bytes.fromhex(s),
         n=n, p=p, r=r, dklen=l
     )
-    echo('[GREEN]Successful![GREEN]')
+    echo('[G0b]Successful![X]')
 
     if key is None:
         key = basekey
@@ -1428,21 +1428,21 @@ def box_clone(
             ctx.obj.enlighten_manager, 'Cloning...').update_2
         )
     )
-    echo('\n[CYAN]Updating local data...[CYAN] ', nl=False)
+    echo('\n[C0b]Updating local data...[X] ', nl=False)
 
     localbox_path = str(Path(dlb.tgbox_db.db_path).resolve())
     box_data = [localbox_path, basekey.key]
 
     for other_box_data in ctx.obj.session['BOX_LIST']:
         if other_box_data == box_data:
-            echo('[RED]This Box is already opened[RED]')
+            echo('[R0b]This Box is already opened[X]')
             break
     else:
         ctx.obj.session['BOX_LIST'].append(box_data)
         ctx.obj.session['CURRENT_BOX'] = len(ctx.obj.session['BOX_LIST']) - 1
 
         ctx.obj.session.commit()
-        echo('[GREEN]Successful![GREEN]')
+        echo('[G0b]Successful![X]')
 
     tgbox.sync(dlb.done())
     tgbox.sync(drb.done())
@@ -1465,9 +1465,9 @@ def box_default(ctx, defaults):
         try:
             key, value = default.split('=',1)
             tgbox.sync(ctx.obj.dlb.defaults.change(key, value))
-            echo(f'[GREEN]Successfully changed {key} to {value}[GREEN]')
+            echo(f'[G0b]Successfully changed {key} to {value}[X]')
         except AttributeError:
-            echo(f'[RED]Default {key} doesn\'t exist, skipping[RED]')
+            echo(f'[R0b]Default {key} doesn\'t exist, skipping[X]')
 
 @cli.command()
 @click.option(
@@ -1487,64 +1487,64 @@ def box_info(ctx, bytesize_total):
             total_bytes += dlbf.size
             current_file_count += 1
 
-            total_formatted = f'[BLUE]{format_bytes(total_bytes)}[BLUE]'
+            total_formatted = f'[B0b]{format_bytes(total_bytes)}[X]'
 
             if current_file_count == total_files:
-                current_file = f'[GREEN]{current_file_count}[GREEN]'
+                current_file = f'[G0b]{current_file_count}[X]'
             else:
-                current_file = f'[YELLOW]{current_file_count}[YELLOW]'
+                current_file = f'[Y0b]{current_file_count}[X]'
 
             echo_text = (
-                f'@ Total [WHITE]Box[WHITE] size is {total_formatted}'
-                f'({total_bytes}) [{current_file}/[GREEN]{total_files}[GREEN]]   \r'
+                f'@ Total [W0b]Box[X] size is {total_formatted}'
+                f'({total_bytes}) [{current_file}/[G0b]{total_files}[X]]   \r'
             )
             echo(echo_text, nl=False)
 
         echo('\n')
     else:
         box_name = tgbox.sync(ctx.obj.drb.get_box_name())
-        box_name = f'[WHITE]{box_name}[WHITE]'
+        box_name = f'[W0b]{box_name}[X]'
 
-        box_id = f'[WHITE]id{ctx.obj.drb.box_channel_id}[WHITE]'
+        box_id = f'[W0b]id{ctx.obj.drb.box_channel_id}[X]'
 
         total_local = tgbox.sync(ctx.obj.dlb.get_files_total())
         total_remote = tgbox.sync(ctx.obj.drb.get_files_total())
 
         if total_local != total_remote:
-            status = f'[RED]Out of sync! ({total_local}L/{total_remote}R)[RED]'
+            status = f'[R0b]Out of sync! ({total_local}L/{total_remote}R)[X]'
         else:
-            status = '[GREEN]Seems synchronized[GREEN]'
+            status = '[G0b]Seems synchronized[X]'
 
-        total_local = f'[WHITE]{total_local}[WHITE]'
-        total_remote = f'[WHITE]{total_remote}[WHITE]'
+        total_local = f'[W0b]{total_local}[X]'
+        total_remote = f'[W0b]{total_remote}[X]'
 
         if ctx.obj.drb.box_channel.username:
-            public_link = f'[WHITE]@{ctx.obj.drb.box_channel.username}[WHITE]'
+            public_link = f'[W0b]@{ctx.obj.drb.box_channel.username}[X]'
         else:
-            public_link = '[RED]<Not presented>[RED]'
+            public_link = '[R0b]<Not presented>[X]'
 
         if ctx.obj.drb.box_channel.restricted:
-            restricted = f'[RED]yes: {ctx.obj.drb.box_channel.restriction_reason}[RED]'
+            restricted = f'[R0b]yes: {ctx.obj.drb.box_channel.restriction_reason}[X]'
         else:
-            restricted = '[WHITE]no[WHITE]'
+            restricted = '[W0b]no[X]'
 
-        box_path = f'[WHITE]{ctx.obj.dlb.tgbox_db.db_path.name}[WHITE]'
+        box_path = f'[W0b]{ctx.obj.dlb.tgbox_db.db_path.name}[X]'
 
         local_box_date = datetime.fromtimestamp(ctx.obj.dlb.box_cr_time).strftime('%d/%m/%Y')
-        local_date_created = f'[WHITE]{local_box_date}[WHITE]'
+        local_date_created = f'[W0b]{local_box_date}[X]'
 
         remote_box_date = tgbox.sync(ctx.obj.drb.tc.get_messages(
             ctx.obj.drb.box_channel, ids=1)
         )
         remote_box_date = remote_box_date.date.strftime('%d/%m/%Y')
-        remote_date_created = f'[WHITE]{remote_box_date}[WHITE]'
+        remote_date_created = f'[W0b]{remote_box_date}[X]'
 
         box_description = tgbox.sync(ctx.obj.drb.get_box_description())
         if box_description:
             box_description = split_string(box_description, 15, symbol='>')
-            box_description = box_description.replace('\n','[YELLOW]\n[YELLOW]')
+            box_description = box_description.replace('\n','[Y0b]\n[X]')
         else:
-            box_description = '[RED]<Not presented>[RED]'
+            box_description = '[R0b]<Not presented>[X]'
 
         rights_interested = {
             'post_messages' : 'Upload files',
@@ -1554,20 +1554,20 @@ def box_info(ctx, bytesize_total):
             'add_admins': 'Add admins'
         }
         if ctx.obj.drb.box_channel.admin_rights:
-            rights = ' (+) [GREEN]Fast sync files[GREEN]\n'
+            rights = ' (+) [G0b]Fast sync files[X]\n'
         else:
-            rights = ' (-) [RED]Fast sync files[RED]\n'
+            rights = ' (-) [R0b]Fast sync files[X]\n'
 
-        rights += ' (+) [GREEN]Download files[GREEN]\n'
+        rights += ' (+) [G0b]Download files[X]\n'
 
         for k,v in rights_interested.items():
             if ctx.obj.drb.box_channel.admin_rights and\
                 getattr(ctx.obj.drb.box_channel.admin_rights, k):
                     right_status = '(+)' # User has such right
-                    right = f'[GREEN]{v}[GREEN]'
+                    right = f'[G0b]{v}[X]'
             else:
                 right_status = '(-)' # User hasn't such right
-                right = f'[RED]{v}[RED]'
+                right = f'[R0b]{v}[X]'
 
             rights += f' {right_status} {right}\n'
 
@@ -1575,7 +1575,7 @@ def box_info(ctx, bytesize_total):
             '\n ====== Current Box (remote) ======\n\n'
 
             f'| Box name: {box_name}\n'
-            f'| Description: [YELLOW]{box_description}[YELLOW]\n'
+            f'| Description: [Y0b]{box_description}[X]\n'
             f'| Public link: {public_link}\n'
             f'| ID: {box_id}\no\n'
             f'| Date created: {remote_date_created}\n'
@@ -1607,41 +1607,41 @@ def box_delete(ctx):
     files_total = tgbox.sync(ctx.obj.drb.get_files_total())
 
     warning_message = (
-        '    [RED]WARNING! You are trying to COMPLETELY REMOVE your\n'
+        '    [R0b]WARNING! You are trying to COMPLETELY REMOVE your\n'
        f'    CURRENT SELECTED Box with {files_total} FILES IN IT. After this\n'
         '    operation, you WILL NOT BE ABLE to recover or download\n'
         '    your files IN ANY WAY. If you wish to remove (for some\n'
        f'    strange case) only LocalBox then remove the "{dlb_box_name}"\n'
         '    file on your Computer. This command will remove the Local &\n'
-        '    Remote BOTH. Proceed only if you TOTALLY understand this![RED]'
+        '    Remote BOTH. Proceed only if you TOTALLY understand this![X]'
     )
     echo('\n' + warning_message)
 
     echo(
-       f'\n@ Please enter [YELLOW]{drb_box_name}[YELLOW] to '
-        '[RED]DESTROY[RED] your Box or press [BLUE]CTRL+C[BLUE] to abort'
+       f'\n@ Please enter [Y0b]{drb_box_name}[X] to '
+        '[R0b]DESTROY[X] your Box or press [B0b]CTRL+C[X] to abort'
     )
     user_input = click.prompt('\nBox name')
 
     if user_input == drb_box_name:
-        echo('You typed Box name [RED]correctly[RED].\n')
+        echo('You typed Box name [R0b]correctly[X].\n')
 
         if click.confirm('The last question: are you sure?'):
-            echo('\n[CYAN]Closing you LocalBox...[CYAN] ', nl=False)
+            echo('\n[C0b]Closing you LocalBox...[X] ', nl=False)
             ctx.invoke(box_close, number=ctx.obj.session['CURRENT_BOX']+1)
 
-            echo('[CYAN]Completely removing your LocalBox...[CYAN] ', nl=False)
+            echo('[C0b]Completely removing your LocalBox...[X] ', nl=False)
             tgbox.sync(ctx.obj.dlb.delete())
-            echo('[GREEN]Successful![GREEN]')
+            echo('[G0b]Successful![X]')
 
-            echo('[CYAN]Completely removing your RemoteBox...[CYAN] ', nl=False)
+            echo('[C0b]Completely removing your RemoteBox...[X] ', nl=False)
             tgbox.sync(ctx.obj.drb.delete())
-            echo('[GREEN]Successful![GREEN]')
+            echo('[G0b]Successful![X]')
         else:
-            echo('\nYou [RED]didn\'t agreed[RED]. [YELLOW]Aborting[YELLOW].')
+            echo('\nYou [R0b]didn\'t agreed[X]. [Y0b]Aborting[X].')
 
     else:
-        echo(f'\nYou typed [WHITE]{user_input}[WHITE], which is incorrect. [YELLOW]Aborting.[YELLOW]')
+        echo(f'\nYou typed [W0b]{user_input}[X], which is incorrect. [Y0b]Aborting.[X]')
 
 # ========================================================= #
 # = Local & Remote BoxFile management commands ============ #
@@ -1809,7 +1809,7 @@ def file_upload(
                 file_action = (ctx.obj.drb.update_file, {'rbf': drbf})
         else:
             # Ignore upload if file exists and wasn't changed
-            echo(f'[YELLOW]| File {file} is already uploaded. Skipping...[YELLOW]')
+            echo(f'[Y0b]| File {file} is already uploaded. Skipping...[X]')
             return
 
         if cattrs is None: # CAttrs not specified
@@ -1830,11 +1830,11 @@ def file_upload(
                 skip_fingerprint_check = True
             )
         except tgbox.errors.LimitExceeded as e:
-            echo(f'[YELLOW]{file}: {e} Skipping...[YELLOW]')
+            echo(f'[Y0b]{file}: {e} Skipping...[X]')
             return
 
         except PermissionError:
-            echo(f'[RED]{file} is not readable! Skipping...[RED]')
+            echo(f'[R0b]{file} is not readable! Skipping...[X]')
             return
 
         progressbar = Progress(ctx.obj.enlighten_manager, file.name)
@@ -1847,14 +1847,14 @@ def file_upload(
 
     for path in target:
         if not path.exists():
-            echo(f'[RED]@ Target "{path}" doesn\'t exists! Skipping...[RED]')
+            echo(f'[R0b]@ Target "{path}" doesn\'t exists! Skipping...[X]')
             continue
 
         if path.is_dir():
             try:
                 next(path.iterdir())
             except (FileNotFoundError, PermissionError, OSError):
-                echo(f'[RED]@ Target "{path}" is not readable! Skipping...[RED]')
+                echo(f'[R0b]@ Target "{path}" is not readable! Skipping...[X]')
                 continue
 
         if path.is_dir():
@@ -1862,7 +1862,7 @@ def file_upload(
         else:
             iter_over = (path,)
 
-        echo(f'[CYAN]@ Working on[CYAN] [WHITE]{str(path.absolute())}[WHITE] ...')
+        echo(f'[C0b]@ Working on[X] [W0b]{str(path.absolute())}[X] ...')
 
         # Will be used if --calculate specified
         target_files, target_files_bs = 0, 0
@@ -1871,10 +1871,10 @@ def file_upload(
         for current_path in iter_over:
             try:
                 if current_path.is_dir():
-                    echo(f'[CYAN]@ Working on[CYAN] [WHITE]{str(current_path)}[WHITE] ...')
+                    echo(f'[C0b]@ Working on[X] [W0b]{str(current_path)}[X] ...')
                     continue
             except (FileNotFoundError, PermissionError, OSError) as e:
-                echo(f'[RED]x Not Working on. {e}. Skipping...[RED]')
+                echo(f'[R0b]x Not Working on. {e}. Skipping...[X]')
                 continue
 
             if filters:
@@ -1902,7 +1902,7 @@ def file_upload(
                             abs_path = str(current_path.absolute()) # File absolute Path
 
                     except (FileNotFoundError, PermissionError, OSError) as e:
-                        echo(f'[RED]x {e}. Skipping...[RED]')
+                        echo(f'[R0b]x {e}. Skipping...[X]')
                         yield_result[0] = False; break
 
                     for filter_file_path in filter['file_path']:
@@ -1984,16 +1984,16 @@ def file_upload(
 
                 if not all(yield_result):
                     echo(
-                        f'[YELLOW]x Target "{current_path}" is '
-                        'ignored by filters! Skipping...[YELLOW]'
+                        f'[Y0b]x Target "{current_path}" is '
+                        'ignored by filters! Skipping...[X]'
                     )
                     continue
 
             if calculate:
                 if not current_path.exists():
                     echo(
-                       f'[RED]@ Target "{current_path}" doesn\'t '
-                        'exists! Skipping...[RED]')
+                       f'[R0b]@ Target "{current_path}" doesn\'t '
+                        'exists! Skipping...[X]')
                     continue
 
                 cp_st_size = current_path.stat().st_size
@@ -2002,8 +2002,8 @@ def file_upload(
                 target_files_bs_f = format_bytes(target_files_bs)
 
                 echo_text = (
-                    f'@ Total [WHITE]targets found [WHITE]([YELLOW]{target_files}[YELLOW]) '
-                    f'size is [BLUE]{target_files_bs_f}[BLUE]({target_files_bs})   \r'
+                    f'@ Total [W0b]targets found [X]([Y0b]{target_files}[X]) '
+                    f'size is [B0b]{target_files_bs_f}[X]({target_files_bs})   \r'
                 )
                 echo(echo_text, nl=False)
                 echo(' ' * 60 + '\r', nl=False)
@@ -2020,7 +2020,7 @@ def file_upload(
                     try:
                         _upload(to_upload)
                     except tgbox.errors.NotEnoughRights as e:
-                        echo(f'\n[RED]{e}[RED]')
+                        echo(f'\n[R0b]{e}[X]')
                         return
 
                     current_workers = max_workers - 1
@@ -2037,7 +2037,7 @@ def file_upload(
             try:
                 _upload(to_upload)
             except tgbox.errors.NotEnoughRights as e:
-                echo(f'\n[RED]{e}[RED]')
+                echo(f'\n[R0b]{e}[X]')
 
         if calculate and target_files:
             echo(' ' * 60 + '\r', nl=True)
@@ -2172,9 +2172,9 @@ def file_search(
             sf.ex_filters['file_path'].append('__BOX_CHAT__')
 
     except IndexError: # Incorrect filters format
-        echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
+        echo('[R0b]Incorrect filters! Make sure to use format filter=value[X]')
     except KeyError as e: # Unknown filters
-        echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
+        echo(f'[R0b]Filter "{e.args[0]}" doesn\'t exists[X]')
     else:
         def bfi_gen(search_file_gen):
             for bfi in sync_async_gen(search_file_gen):
@@ -2188,22 +2188,22 @@ def file_search(
                 cache_preview=False,
                 return_imported_as_erbf=True
             )
-            echo('[YELLOW]\nSearching, press CTRL+C to stop...[YELLOW]')
+            echo('[Y0b]\nSearching, press CTRL+C to stop...[X]')
 
             for xrbf in sync_async_gen(iter_over):
                 if type(xrbf) is tgbox.api.EncryptedRemoteBoxFile:
                     time = datetime.fromtimestamp(xrbf.upload_time)
-                    time = f"[CYAN]{time.strftime('%d/%m/%y, %H:%M:%S')}[CYAN]"
+                    time = f"[C0b]{time.strftime('%d/%m/%y, %H:%M:%S')}[X]"
 
                     salt = urlsafe_b64encode(xrbf.file_salt.salt).decode()
-                    idsalt = f'[[BRIGHT_RED]{str(xrbf.id)}[BRIGHT_RED]:'
-                    idsalt += f'[BRIGHT_BLACK]{salt[:12]}[BRIGHT_BLACK]]'
+                    idsalt = f'[[R1b]{str(xrbf.id)}[X]:'
+                    idsalt += f'[X1b]{salt[:12]}[X]]'
 
-                    size = f'[GREEN]{format_bytes(xrbf.file_size)}[GREEN]'
-                    name = '[RED][N/A: No FileKey available][RED]'
+                    size = f'[G0b]{format_bytes(xrbf.file_size)}[X]'
+                    name = '[R0b][N/A: No FileKey available][X]'
 
                     req_key = xrbf.get_requestkey(ctx.obj.dlb._mainkey).encode()
-                    req_key = f'[WHITE]{req_key}[WHITE]'
+                    req_key = f'[W0b]{req_key}[X]'
 
                     formatted = (
                        f"""\nFile: {idsalt} {name}\n"""
@@ -2226,11 +2226,11 @@ def file_search(
                 total_bytes += dlbf.size
                 current_file_count += 1
 
-                total_formatted = f'[BLUE]{format_bytes(total_bytes)}[BLUE]'
-                current_file = f'[YELLOW]{current_file_count}[YELLOW]'
+                total_formatted = f'[B0b]{format_bytes(total_bytes)}[X]'
+                current_file = f'[Y0b]{current_file_count}[X]'
 
                 echo_text = (
-                    f'@ Total [WHITE]files found [WHITE]({current_file}) '
+                    f'@ Total [W0b]files found [X]({current_file}) '
                     f'size is {total_formatted}({total_bytes})   \r'
                 )
                 echo(echo_text, nl=False)
@@ -2409,9 +2409,9 @@ def file_download(
     try:
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
-        echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
+        echo('[R0b]Incorrect filters! Make sure to use format filter=value[X]')
     except KeyError as e: # Unknown filters
-        echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
+        echo(f'[R0b]Filter "{e.args[0]}" doesn\'t exists[X]')
     else:
         current_workers = max_workers
         current_bytes = max_bytes
@@ -2464,11 +2464,11 @@ def file_download(
                             file_name = '.'.join(file_name.split('.')[:-1])
 
                             if force_remote:
-                                echo(f'[YELLOW]{file_name} doesn\'t have preview. Skipping.[YELLOW]')
+                                echo(f'[Y0b]{file_name} doesn\'t have preview. Skipping.[X]')
                             else:
                                 echo(
-                                    f'[YELLOW]{file_name} doesn\'t have preview. Try '
-                                     '-r flag. Skipping.[YELLOW]'
+                                    f'[Y0b]{file_name} doesn\'t have preview. Try '
+                                     '-r flag. Skipping.[X]'
                                 )
                             continue
 
@@ -2479,16 +2479,16 @@ def file_download(
                             click.launch(str(outfile), locate)
 
                         echo(
-                            f'[WHITE]{file_name}[WHITE] preview downloaded '
-                            f'to [WHITE]{str(downloads)}[WHITE]')
+                            f'[W0b]{file_name}[X] preview downloaded '
+                            f'to [W0b]{str(downloads)}[X]')
                     else:
                         if not force_remote: # box is DecryptedLocalBox
                             dxbf = tgbox.sync(ctx.obj.drb.get_file(dxbf.id))
 
                         if not dxbf:
                             echo(
-                                f'[YELLOW]There is no file with ID={dxbf.id} in '
-                                 'RemoteBox. Skipping.[YELLOW]'
+                                f'[Y0b]There is no file with ID={dxbf.id} in '
+                                 'RemoteBox. Skipping.[X]'
                             )
                             continue
 
@@ -2497,14 +2497,14 @@ def file_download(
 
                         if not redownload and outfile.exists():
                             if outfile_size == dxbf.size:
-                                echo(f'[GREEN]{str(outfile)} downloaded. Skipping...[GREEN]')
+                                echo(f'[G0b]{str(outfile)} downloaded. Skipping...[X]')
                                 continue
                             else:
                                 if offset:
                                     echo(
-                                       f'[YELLOW]{str(outfile)} is partially downloaded and '
+                                       f'[Y0b]{str(outfile)} is partially downloaded and '
                                         'you specified offset. This will corrupt file. Drop the '
-                                        'offset or remove file from your computer. Skipping...[YELLOW]'
+                                        'offset or remove file from your computer. Skipping...[X]'
                                     )
                                     continue
 
@@ -2516,7 +2516,7 @@ def file_download(
                                 offset, write_mode = outfile.stat().st_size, 'ab+'
 
                         if offset % 4096 or offset % 524288:
-                            echo('[RED]Offset must be divisible by 4096 and by 524288.[RED]')
+                            echo('[R0b]Offset must be divisible by 4096 and by 524288.[X]')
                             continue
 
                         current_workers -= 1
@@ -2587,7 +2587,7 @@ def file_share(ctx, requestkey, id):
     dlbf = tgbox.sync(ctx.obj.dlb.get_file(id=id))
 
     if not dlbf:
-        echo(f'[RED]There is no file in LocalBox by ID {id}[RED]')
+        echo(f'[R0b]There is no file in LocalBox by ID {id}[X]')
     else:
         requestkey = requestkey if not requestkey\
             else tgbox.keys.Key.decode(requestkey)
@@ -2596,14 +2596,14 @@ def file_share(ctx, requestkey, id):
 
         if not requestkey:
             echo(
-                '\n[RED]You didn\'t specified requestkey.\n   You '
-                'will receive decryption key IN PLAIN[RED]\n'
+                '\n[R0b]You didn\'t specified requestkey.\n   You '
+                'will receive decryption key IN PLAIN[X]\n'
             )
             if not click.confirm('Are you TOTALLY sure?'):
                 return
         echo(
             '\nSend this Key to the Box requester:\n'
-           f'    [WHITE]{sharekey.encode()}[WHITE]\n'
+           f'    [W0b]{sharekey.encode()}[X]\n'
         )
 
 @cli.command()
@@ -2635,15 +2635,15 @@ def file_import(ctx, key, id, propagate, file_path):
         id, return_imported_as_erbf=True))
 
     if not erbf:
-        echo(f'[RED]There is no file in RemoteBox by ID {id}[RED]')
+        echo(f'[R0b]There is no file in RemoteBox by ID {id}[X]')
 
     elif isinstance(erbf, tgbox.api.remote.DecryptedRemoteBoxFile):
-        echo(f'[RED]File ID{id} is already decrypted. Did you mistyped ID?[RED]')
+        echo(f'[R0b]File ID{id} is already decrypted. Did you mistyped ID?[X]')
     else:
         try:
             key = tgbox.keys.Key.decode(key)
         except tgbox.errors.IncorrectKey:
-            echo('[RED]Specified Key is invalid[RED]')
+            echo('[R0b]Specified Key is invalid[X]')
             return
 
         if isinstance(key, tgbox.keys.ShareKey):
@@ -2662,11 +2662,11 @@ def file_import(ctx, key, id, propagate, file_path):
             await ctx.obj.dlb.import_file(drbf, file_path)
             echo(format_dxbf(drbf), nl=False); return drbf
 
-        echo('\n[YELLOW]Searching for files to import[YELLOW]...')
+        echo('\n[Y0b]Searching for files to import[X]...')
 
         # Import first found EncryptedRemoteBoxFile
         if not tgbox.sync(_import_wrap(erbf)):
-            echo('[RED]Can not decrypt. Specified Key is invalid[RED]')
+            echo('[R0b]Can not decrypt. Specified Key is invalid[X]')
             return
 
         if propagate:
@@ -2703,10 +2703,10 @@ def file_last_id(ctx, remote):
 
     if remote:
         lfid = tgbox.sync(ctx.obj.drb.get_last_file_id())
-        echo(f'ID of last uploaded to [WHITE]RemoteBox[WHITE] file is [YELLOW]{lfid}[YELLOW]')
+        echo(f'ID of last uploaded to [W0b]RemoteBox[X] file is [Y0b]{lfid}[X]')
     else:
         lfid = tgbox.sync(ctx.obj.dlb.get_last_file_id())
-        echo(f'ID of last saved to [WHITE]LocalBox[WHITE] file is [YELLOW]{lfid}[YELLOW]')
+        echo(f'ID of last saved to [W0b]LocalBox[X] file is [Y0b]{lfid}[X]')
 
 
 @cli.command()
@@ -2815,14 +2815,14 @@ def file_remove(
     try:
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
-        echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
+        echo('[R0b]Incorrect filters! Make sure to use format filter=value[X]')
     except KeyError as e: # Unknown filters
-        echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
+        echo(f'[R0b]Filter "{e.args[0]}" doesn\'t exists[X]')
     else:
         if not filters:
             echo(
-                '\n[RED]You didn\'t specified any search filter.\n   This '
-                'will [WHITE]REMOVE ALL FILES[WHITE] in your Box[RED]\n'
+                '\n[R0b]You didn\'t specified any search filter.\n   This '
+                'will [X]REMOVE ALL FILES[W0b] in your Box[X]\n'
             )
             if not click.confirm('Are you TOTALLY sure?'):
                 return
@@ -2832,7 +2832,7 @@ def file_remove(
         if ask_before_remove:
             for dlbf in sync_async_gen(to_remove):
                 file_path = str(Path(dlbf.file_path) / dlbf.file_name)
-                echo(f'@ [RED]Removing[RED] [WHITE]Box[WHITE]({file_path})')
+                echo(f'@ [R0b]Removing[X] [W0b]Box[X]({file_path})')
 
                 while True:
                     echo('')
@@ -2856,15 +2856,15 @@ def file_remove(
                     elif choice.lower() in ('exit','e'):
                         return
                     else:
-                        echo('[RED]Invalid choice, try again[RED]')
+                        echo('[R0b]Invalid choice, try again[X]')
         else:
-            echo('\n[YELLOW]Searching for LocalBox files[YELLOW]...')
+            echo('\n[Y0b]Searching for LocalBox files[X]...')
             to_remove = [dlbf for dlbf in sync_async_gen(to_remove)]
 
             if not to_remove:
-                echo('[YELLOW]No files to remove was found.[YELLOW]')
+                echo('[Y0b]No files to remove was found.[X]')
             else:
-                echo(f'[WHITE]Removing[WHITE] [RED]{len(to_remove)}[RED] [WHITE]files[WHITE]...')
+                echo(f'[W0b]Removing[X] [R0b]{len(to_remove)}[X] [W0b]files[X]...')
 
                 delete_files = ctx.obj.dlb.delete_files(
                     *to_remove, rb=(None if local_only else ctx.obj.drb),
@@ -2872,7 +2872,7 @@ def file_remove(
                 )
                 tgbox.sync(delete_files)
 
-                echo('[GREEN]Done.[GREEN]')
+                echo('[G0b]Done.[X]')
 
 @cli.command()
 @click.argument('filters', nargs=-1)
@@ -2963,9 +2963,9 @@ def file_open(ctx, filters, locate, propagate, continuously):
     try:
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
-        echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
+        echo('[R0b]Incorrect filters! Make sure to use format filter=value[X]')
     except KeyError as e: # Unknown filters
-        echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
+        echo(f'[R0b]Filter "{e.args[0]}" doesn\'t exists[X]')
     else:
         to_open = ctx.obj.dlb.search_file(sf)
 
@@ -3084,24 +3084,24 @@ def file_forward(ctx, filters, chat, chat_is_name):
     """
     if not filters:
         echo(
-            '\n[RED]You didn\'t specified any filter.\n   This '
-            'will forward EVERY file from your Box[RED]\n'
+            '\n[R0b]You didn\'t specified any filter.\n   This '
+            'will forward EVERY file from your Box[X]\n'
         )
         if not click.confirm('Are you TOTALLY sure?'):
             return
     try:
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
-        echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
+        echo('[R0b]Incorrect filters! Make sure to use format filter=value[X]')
     except KeyError as e: # Unknown filters
-        echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
+        echo(f'[R0b]Filter "{e.args[0]}" doesn\'t exists[X]')
     else:
         try:
             chat_name = chat
             chat = tgbox.sync(ctx.obj.account.get_entity(chat))
         except (UsernameNotOccupiedError, UsernameInvalidError, ValueError):
             if not chat_is_name:
-                echo(f'[YELLOW]Can\'t find specified chat "{chat}"[YELLOW]')
+                echo(f'[Y0b]Can\'t find specified chat "{chat}"[X]')
                 return
 
             for dialogue in sync_async_gen(ctx.obj.account.iter_dialogs()):
@@ -3109,7 +3109,7 @@ def file_forward(ctx, filters, chat, chat_is_name):
                     chat_name = dialogue.title.split(': ',1)[-1]
                     chat = dialogue; break
             else:
-                echo(f'[YELLOW]Can\'t find specified chat "{chat}"[YELLOW]')
+                echo(f'[Y0b]Can\'t find specified chat "{chat}"[X]')
                 return
 
         to_forward = ctx.obj.dlb.search_file(sf)
@@ -3124,9 +3124,9 @@ def file_forward(ctx, filters, chat, chat_is_name):
             tgbox.sync(forward)
 
             for dlbf in stack:
-                echo(f'[GREEN]ID{dlbf.id}: {dlbf.file_name}: was forwarded to {chat_name}[GREEN]')
+                echo(f'[G0b]ID{dlbf.id}: {dlbf.file_name}: was forwarded to {chat_name}[X]')
 
-        echo('[YELLOW]\nSearching files to forward...[YELLOW]\n')
+        echo('[Y0b]\nSearching files to forward...[X]\n')
 
         for dlbf in sync_async_gen(to_forward):
             if len(FORWARD_STACK) == FORWARD_WHEN:
@@ -3238,14 +3238,14 @@ def file_attr_edit(ctx, filters, attribute, local_only):
     try:
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
-        echo('[RED]Incorrect filters! Make sure to use format filter=value[RED]')
+        echo('[R0b]Incorrect filters! Make sure to use format filter=value[X]')
     except KeyError as e: # Unknown filters
-        echo(f'[RED]Filter "{e.args[0]}" doesn\'t exists[RED]')
+        echo(f'[R0b]Filter "{e.args[0]}" doesn\'t exists[X]')
     else:
         if not filters:
             echo(
-                '\n[RED]You didn\'t specified any search filter.\n   This '
-                'will [WHITE]change attrs for all files[WHITE] in your Box[RED]\n'
+                '\n[R0b]You didn\'t specified any search filter.\n   This '
+                'will [X]change attrs for all files[W0b] in your Box[X]\n'
             )
             if not click.confirm('Are you TOTALLY sure?'):
                 return
@@ -3282,8 +3282,8 @@ def file_attr_edit(ctx, filters, attribute, local_only):
                 sleep(TIMEOUT)
 
             echo(
-                f'([WHITE]{dlbf.id}[WHITE]) {dlbf.file_name} '
-                f'<= [YELLOW]{attribute}[YELLOW]')
+                f'([W0b]{dlbf.id}[X]) {dlbf.file_name} '
+                f'<= [Y0b]{attribute}[X]')
 
         if dxbf_to_update:
             tgbox.sync(gather(*dxbf_to_update))
@@ -3306,9 +3306,9 @@ def dir_list(ctx, cleanup, show_box_chat):
     """List all directories in LocalBox"""
 
     if cleanup:
-        echo('\n[WHITE]@ Cleanup in process, please wait...[WHITE]')
+        echo('\n[W0b]@ Cleanup in process, please wait...[X]')
         tgbox.sync(ctx.obj.dlb.remove_empty_directories())
-        echo('[GREEN]Done.[GREEN]\n')
+        echo('[G0b]Done.[X]\n')
 
     dirs = ctx.obj.dlb.contents(ignore_files=True)
 
@@ -3341,7 +3341,7 @@ def dir_forward(ctx, directory, chat, chat_is_name):
     dlbd = tgbox.sync(ctx.obj.dlb.get_directory(directory.strip()))
 
     if not dlbd:
-        echo(f'[RED]There is no dir "{directory}" in LocalBox.[RED]')
+        echo(f'[R0b]There is no dir "{directory}" in LocalBox.[X]')
     else:
         filters = [f'scope={directory}', 'non_recursive_scope=True']
         ctx.invoke(file_forward, filters=filters, chat=chat, chat_is_name=chat_is_name)
@@ -3362,7 +3362,7 @@ def dir_share(ctx, requestkey, directory):
     dlbd = tgbox.sync(ctx.obj.dlb.get_directory(directory.strip()))
 
     if not dlbd:
-        echo(f'[RED]There is no dir "{directory}" in LocalBox.[RED]')
+        echo(f'[R0b]There is no dir "{directory}" in LocalBox.[X]')
     else:
         requestkey = requestkey if not requestkey \
             else tgbox.keys.Key.decode(requestkey)
@@ -3371,14 +3371,14 @@ def dir_share(ctx, requestkey, directory):
 
         if not requestkey:
             echo(
-                '\n[RED]You didn\'t specified requestkey.\n   You '
-                'will receive decryption key IN PLAIN[RED]\n'
+                '\n[R0b]You didn\'t specified requestkey.\n   You '
+                'will receive decryption key IN PLAIN[X]\n'
             )
             if not click.confirm('Are you TOTALLY sure?'):
                 return
         echo(
             '\nSend this Key to the Box requester:\n'
-            f'    [WHITE]{sharekey.encode()}[WHITE]\n'
+            f'    [W0b]{sharekey.encode()}[X]\n'
         )
 
 # ========================================================= #
@@ -3404,19 +3404,19 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
     chat_dir = tgbox.sync(ctx.obj.dlb.get_directory('__BOX_CHAT__'))
     if not chat_dir:
         echo(
-            '\n[YELLOW]@ Currently we don\'t know about Chat in this Box. Did '
-            'you tried[YELLOW] [WHITE]box-sync[WHITE][YELLOW]? If YES '
-            'and you want to create it, type Y. If NO, type N and try sync.[YELLOW]\n'
+            '\n[Y0b]@ Currently we don\'t know about Chat in this Box. Did '
+            'you tried[X] [W0b]box-sync[X][Y0b]? If YES '
+            'and you want to create it, type Y. If NO, type N and try sync.[X]\n'
         )
         if not click.confirm('Type your choice and press Enter'):
             return
 
-        echo('\n[WHITE]@ We need to configure Box chat firstly.[WHITE]\n')
+        echo('\n[W0b]@ We need to configure Box chat firstly.[X]\n')
 
         chat_name = click.prompt('Chat name')
         description = click.prompt('Chat description', default='No Description.')
 
-        echo('\n[WHITE]@ Uploading configuration...[WHITE]\n')
+        echo('\n[W0b]@ Uploading configuration...[X]\n')
 
         file = BytesIO(b'')
         file.name = 'MAIN'
@@ -3442,30 +3442,30 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
         config = tgbox.sync(tgbox.tools.anext(config))
     except StopAsyncIteration:
         echo(
-            '[YELLOW]\n@ It seems that there is already Chat folder on '
-            'your Box, but it does not have CONFIG. Did you tried[YELLOW] '
-            '[WHITE]box-sync[WHITE][YELLOW]? If yes, and you want to erase ALL '
-            'old Chat data type Y, otherwise type N.[YELLOW]\n')
+            '[Y0b]\n@ It seems that there is already Chat folder on '
+            'your Box, but it does not have CONFIG. Did you tried[X] '
+            '[W0b]box-sync[X][Y0b]? If yes, and you want to erase ALL '
+            'old Chat data type Y, otherwise type N.[X]\n')
 
         if not click.confirm('Do you want to erase old Chat data and make new?'):
             echo(
-                '\n[WHITE]@ Okay, skip! You can also use "dir-list --cleanup '
+                '\n[W0b]@ Okay, skip! You can also use "dir-list --cleanup '
                 '--show-box-chat" several times to remove "__BOX_CHAT__" '
-                'directory.[WHITE]\n')
+                'directory.[X]\n')
             return
 
         else:
-            echo('\n[WHITE]@ Removing Chat messages (If any)[WHITE]')
+            echo('\n[W0b]@ Removing Chat messages (If any)[X]')
 
             ctx.invoke(file_remove,
                 filters=("scope=__BOX_CHAT__",),
                 local_only=True,
                 remove_empty_directories=True
             )
-            echo('\n[WHITE]@ Removing Chat Directory[WHITE]\n')
+            echo('\n[W0b]@ Removing Chat Directory[X]\n')
             tgbox.sync(chat_dir.delete())
 
-            echo('[GREEN]Done.[GREEN] [WHITE]Run chat-open again![WHITE]\n')
+            echo('[G0b]Done.[X] [W0b]Run chat-open again![X]\n')
 
         return
 
@@ -3486,16 +3486,16 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
                     if not all((i.isnumeric() for i in cd_check))\
                         or len(cd_check[0]) != 4 or len(cd_check) != 3:
                             echo(
-                                '[YELLOW]\nYou provided absolute or incorrect Date. '
+                                '[Y0b]\nYou provided absolute or incorrect Date. '
                                 'Sending\nMessages to it will not work as you may expect. '
-                                '\nRead Only or Review your --current-date option.[YELLOW]'
+                                '\nRead Only or Review your --current-date option.[X]'
                             )
                             echo(
-                                '\n[WHITE]Correct format is "%Y/%m/%d" '
-                                '(i.e "2024/02/22")[WHITE]'
+                                '\n[W0b]Correct format is "%Y/%m/%d" '
+                                '(i.e "2024/02/22")[X]'
                             )
                             click.prompt(
-                                '\n@ Press ENTER to Continue [OK]',
+                                '\n@ Press ENTER to Continue (OK)',
                                 default='', show_default=False
                             )
                             warning_shown = True
@@ -3504,12 +3504,12 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
             topic = topic.strip('/').strip('\\') or 'Main'
             topic_path = Path('__BOX_CHAT__', '__CHAT__', topic, current_date)
 
-            echo(f'\n# [WHITE]Chat {chat_name}[WHITE] ({description})')
-            echo(f'# [WHITE]Topic/{topic}, Date: {current_date}[WHITE]')
+            echo(f'\n# [W0b]Chat {chat_name}[X] ({description})')
+            echo(f'# [W0b]Topic/{topic}, Date: {current_date}[X]')
 
             chat_dir = tgbox.sync(ctx.obj.dlb.get_directory(str(topic_path)))
             if not chat_dir:
-                echo('\n[YELLOW]@ Chat is currently empty...[YELLOW]')
+                echo('\n[Y0b]@ Chat is currently empty...[X]')
                 dlbf_messages = []
             else:
                 contents = ctx.obj.dlb.contents(sfpid=chat_dir.part_id)
@@ -3523,8 +3523,8 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
 
             if not auto_mode:
                 echo(
-                    '\n[WHITE]1) Send Message; 2) Auto Mode; 3) Exit[WHITE]\n'
-                    '[WHITE]Press ENTER to Update or Select Mode[WHITE]', nl=False
+                    '\n[W0b]1) Send Message; 2) Auto Mode; 3) Exit[X]\n'
+                    '[W0b]Press ENTER to Update or Select Mode[X]', nl=False
                 )
                 mode = click.prompt('', default='', show_default=False)
 
@@ -3562,15 +3562,15 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
             else:
                 time = datetime.now().strftime('%d/%m/%y, %H:%M:%S')
                 echo(
-                    f'\n[WHITE]% ({time}) Waiting {auto_mode_wait} '
-                    'seconds before Sync...[WHITE]'
+                    f'\n[W0b]% ({time}) Waiting {auto_mode_wait} '
+                    'seconds before Sync...[X]'
                 )
-                echo('[WHITE]@ Press CTRL+C to Return to Input Mode\r[WHITE]', nl=False)
+                echo('[W0b]@ Press CTRL+C to Return to Input Mode\r[X]', nl=False)
 
                 sleep(auto_mode_wait)
 
                 time = datetime.now().strftime('%d/%m/%y, %H:%M:%S')
-                echo(f'[WHITE]V ({time}) Syncing your Chat with Fast Sync...[WHITE]')
+                echo(f'[W0b]V ({time}) Syncing your Chat with Fast Sync...[X]')
 
                 tgbox.sync(ctx.obj.dlb.sync(ctx.obj.drb))
 
@@ -3588,7 +3588,7 @@ def chat_info(ctx):
     chat_dir = tgbox.sync(ctx.obj.dlb.get_directory('__BOX_CHAT__'))
 
     if not chat_dir:
-        echo('\n[YELLOW]This Box doesn\'t have Chat yet.[YELLOW]\n')
+        echo('\n[Y0b]This Box doesn\'t have Chat yet.[X]\n')
         return
 
     config = ctx.obj.dlb.search_file(sf=tgbox.tools.SearchFilter(
@@ -3597,19 +3597,19 @@ def chat_info(ctx):
     try:
         config = tgbox.sync(tgbox.tools.anext(config))
     except StopAsyncIteration:
-        echo('[RED]\nChat doesn\'t have config!!! Try to reset it, error![RED]\n')
+        echo('[R0b]\nChat doesn\'t have config!!! Try to reset it, error![X]\n')
         return
 
     chat_name = config.cattrs['name'].decode()
     description = config.cattrs['description'].decode()
 
-    echo(f'\n# [WHITE]Chat {chat_name}[WHITE] ({description})')
+    echo(f'\n# [W0b]Chat {chat_name}[X] ({description})')
 
     chat_dir = tgbox.sync(ctx.obj.dlb.get_directory(
         str(Path('__BOX_CHAT__', '__CHAT__')))
     )
     if not chat_dir:
-        echo('\n[YELLOW]This Chat doesn\'t have any Messages yet.[YELLOW]\n')
+        echo('\n[Y0b]This Chat doesn\'t have any Messages yet.[X]\n')
         return
 
     topics_dict = {}
@@ -3636,7 +3636,7 @@ def chat_info(ctx):
             v.sort()
 
     for k,v in topics_dict.items():
-        echo(f'\n[CYAN]@ Topic[CYAN] "[WHITE]{k}[WHITE]"')
+        echo(f'\n[C0b]@ Topic[X] "[W0b]{k}[X]"')
 
         for date in v:
             date_dir = str(Path('__BOX_CHAT__', '__CHAT__', k, *date.split('/')))
@@ -3645,8 +3645,8 @@ def chat_info(ctx):
             messages_total = tgbox.sync(messages_total.get_files_total())
 
             echo(
-                f'[WHITE]| {date}[WHITE] ([YELLOW]'
-                f'{messages_total}[YELLOW])'
+                f'[W0b]| {date}[X] ([Y0b]'
+                f'{messages_total}[X])'
             )
     echo('')
 
@@ -3666,13 +3666,13 @@ def logfile_open(locate):
 def logfile_wipe():
     """Clear all logfile entries"""
     open(logfile,'w').close()
-    echo('[GREEN]Done.[GREEN]')
+    echo('[G0b]Done.[X]')
 
 @cli.command()
 def logfile_size():
     """Get bytesize of logfile"""
     size = format_bytes(logfile.stat().st_size)
-    echo(f'[WHITE]{str(logfile)}[WHITE]: {size}')
+    echo(f'[W0b]{str(logfile)}[X]: {size}')
 
 @cli.command()
 @click.argument('chat', nargs=-1)
@@ -3687,16 +3687,16 @@ def logfile_send(ctx, chat):
     """
     if not chat:
         echo(
-            '[YELLOW]You didn\'t specified any chat! Try'
-            '[YELLOW] [WHITE]tgbox-cli logfile-send me[WHITE]'
+            '[Y0b]You didn\'t specified any chat! Try'
+            '[X] [W0b]tgbox-cli logfile-send me[X]'
         )
     elif not logfile.stat().st_size:
-        echo(f'[YELLOW]Logfile "{logfile.name}" is empty, so not sent.[YELLOW]')
+        echo(f'[Y0b]Logfile "{logfile.name}" is empty, so not sent.[X]')
         return
 
     for e in chat:
         tgbox.sync(ctx.obj.account.send_file(e, logfile))
-        echo(f'[WHITE]Logfile has been sent to[WHITE] [BLUE]{e}[BLUE]')
+        echo(f'[W0b]Logfile has been sent to[X] [B0b]{e}[X]')
 
 # ========================================================= #
 # = Documentation commands  =============================== #
@@ -3720,7 +3720,7 @@ def help_(non_interactive):
         if getenv('TGBOX_CLI_FORCE_PAGER_COLOR'):
             colored = True
 
-        click.echo_via_pager(color(help_text), color=colored)
+        click.echo_via_pager(colorize(help_text), color=colored)
 
 # ========================================================= #
 # = Hidden CLI tools commands ============================= #
@@ -3741,7 +3741,7 @@ def sk_gen(size: int):
 )
 def phrase_gen(words: int):
     """Generate random Phrase"""
-    echo(f'[MAGENTA]{tgbox.keys.Phrase.generate(words)}[MAGENTA]')
+    echo(f'[M0b]{tgbox.keys.Phrase.generate(words)}[X]')
 
 @cli.command(hidden=True)
 @click.option(
@@ -3780,20 +3780,20 @@ def python(ctx, enable_logging, execute, non_interactive, i_understand_risk):
 
     if execute and not i_understand_risk:
         echo(
-            '\n    [RED]You are specified some Python script with the --execute option.\n'
+            '\n    [R0b]You are specified some Python script with the --execute option.\n'
             '    Third-party scripts can be useful for some actions that out of\n'
             '    TGBOX-CLI abilities, however, they can do MANY BAD THINGS to your\n'
             '    Telegram account [i.e STEAL IT] (or even to your System [i.e \n'
             '    REMOVE ALL FILES]) if written by ATTACKER. NEVER execute scripts\n'
-            '    you DON\'T UNDERSTAND or DON\'T TRUST. NEVER! NEVER! NEVER![RED]\n'
+            '    you DON\'T UNDERSTAND or DON\'T TRUST. NEVER! NEVER! NEVER![X]\n'
         )
         confirm = None
         while confirm != 'YES':
             prompt = (
-                'Type [GREEN]YES[GREEN] [or [RED]NO[RED]'
+                'Type [G0b]YES[X] [or [R0b]NO[X]'
                 '] if you understand this and want to proceed'
             )
-            confirm = click.prompt(color(prompt))
+            confirm = click.prompt(colorize(prompt))
             if confirm in ('NO', 'no', 'n'):
                 return
 
@@ -3822,10 +3822,10 @@ def safe_tgbox_cli_startup():
             logger.error(traceback)
 
         if getenv('TGBOX_CLI_DEBUG'):
-            echo(f'[RED]{traceback}[RED]')
+            echo(f'[R0b]{traceback}[X]')
 
         elif e.args: # Will echo only if error have message
-            echo(f'[RED]{e}[RED]')
+            echo(f'[R0b]{e}[X]')
 
         echo(''); exit(1)
 
