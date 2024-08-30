@@ -713,10 +713,11 @@
 
         The TGBOX-CLI has a few hidden commands. For example,
         there is [B0b]sk-gen[X], which generates [W0b]SessionKey[X] used to save
-        the state of the current CLI session. The [B0b]sk-gen[X] is presented on the
-        list of commands in the [B0b]cli-init[X]. There is also [B0b]phrase-gen[X],
-        which generates a number of [G0b]--words[X] that can be used as
-        Box phrase (-> [W0b]make_basekey[X] -> [W0b]BaseKey[X]).
+        the state of the current CLI session. The [B0b]sk-gen[X] is
+        presented on the list of commands in the [B0b]cli-init[X].
+        There is also [B0b]phrase-gen[X], which generates a number of
+        [G0b]--words[X] that can be used as Box phrase (-> [W0b]make_basekey[X]
+        -> [W0b]BaseKey[X]).
 
         The most interesting (for developers :) one is the [B0b]python[X]
         command. It can start an [W0b]Interactive Python Interpreter[X] with

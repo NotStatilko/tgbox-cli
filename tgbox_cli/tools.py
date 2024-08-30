@@ -576,7 +576,12 @@ def format_dxbf_message(
     name = f'[B0b]{dxbf.file_name}[X]'
 
     text = split_string(dxbf.cattrs['text'].decode(), 5)
-    text = f'[W0b]{text}[X]'
+    colorized_text = colorize(text)
+
+    if text == colorized_text:
+        text = f'[W0b]{text}[X]'
+    else:
+        text = colorized_text
 
     author = f'[Y0b]{dxbf.cattrs["author"].decode()}[X]'
     author += f' [X1b]({dxbf.cattrs["author_id"].decode()})[X]'
