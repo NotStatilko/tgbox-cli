@@ -564,7 +564,6 @@ def format_dxbf(
 
     return colorize(formatted)
 
-
 def format_dxbf_message(
         dxbf: Union['tgbox.api.DecryptedRemoteBoxFile',
             'tgbox.api.DecryptedLocalBoxFile']) -> str:
@@ -597,14 +596,14 @@ def format_dxbf_message(
         topic = f'[Y0b]{Path(file_path).parts[2]}[X]'
 
         date = Path(*Path(file_path).parts[3:])
-        date = f'[W0b]{str(date)}[X]'
+        date = f'[W0]{str(date)}[X]'
     else:
         if hasattr(dxbf, 'directory'):
             tgbox.sync(dxbf.directory.lload(full=True))
             topic = f'[Y0b]{str(dxbf.directory.parts[2])}[X]'
 
             date = Path(*dxbf.directory.parts[3:])
-            date = f'[W0b]{str(date)}[X]'
+            date = f'[W0]{str(date)}[X]'
         else:
             topic = '[R0b][Unknown Topic][X]'
 
@@ -620,8 +619,28 @@ def format_dxbf_message(
     else:
         text = colorized_text
 
-    author = f'[Y0b]{dxbf.cattrs["author"].decode()}[X]'
-    author += f' [X1b]({dxbf.cattrs["author_id"].decode()})[X]'
+    if getattr(dxbf, 'sender_entity', None):
+        if dxbf.sender_id < 0: # Channel
+            author = dxbf.sender_entity.username
+            author = f'@{author}' if author else author.title
+            id_ = f'Channel {dxbf.sender_id}'
+        else: # User
+            author = dxbf.sender_entity.username
+            author = f'@{author}' if author else author.first_name
+
+            if dxbf.sender_entity.last_name:
+                author += f' {author.last_name}'
+
+            id_ = f'User {dxbf.sender_id}'
+
+        author = f'[Y0b]{author}[X] [G0b]√[X]'
+        author += f' [X1]({id_})[X]'
+    else:
+        author = f'@{dxbf.cattrs["author"].decode()}'
+        id_ = f'{dxbf.cattrs["author_id"].decode().lstrip("id")}'
+
+        author = f'[X1b]{author}[X] [R0b]x[X]'
+        author += f' [X1](User {id_})[X]'
 
     formatted = (
        f'\n {idsalt} {name} ({topic}:{date})\n'

@@ -3395,12 +3395,34 @@ def dir_share(ctx, requestkey, directory):
 )
 @click.option(
     '--auto-mode-wait', '-w', type=click.IntRange(3, None), default=10,
-    help='Seconds of Sleep before fetching Chat Updates.'
+    help='Seconds of Sleep before fetching Chat Updates'
+)
+@click.option(
+    '--less-data', '-l', is_flag=True,
+    help='If specified, will use less network traffic'
 )
 @ctx_require(dlb=True, drb=True)
-def chat_open(ctx, topic, current_date, auto_mode_wait):
-    """Launch simple Chat inside your Box"""
+def chat_open(ctx, topic, current_date, auto_mode_wait, less_data):
+    """
+    Launch simple Chat inside your Box
 
+    For correctly attributing messages to Chat members
+    You are recommended to enable "Sign Messages" and
+    then "Show author's profiles" in your Box Channel
+    settings. This command will ask you for this.
+
+    By default Chat will fetch files from the RemoteBox
+    and make Fast Sync to cache new messages. With the
+    `--less-data` flag Chat will get messages from Local
+    instead of Remote. This should be faster and unload
+    some network usage BUT it will be impossible to know
+    ACTUAL message sender if "Show author's profiles"
+    option is enabled in Channel, as we will get it from
+    the File (Message) CAttrs, and they can be forged.
+
+    Verified messages have checkmark ("√") in "Author"
+    field, unverified will have red "x" symbol.
+    """
     chat_dir = tgbox.sync(ctx.obj.dlb.get_directory('__BOX_CHAT__'))
     if not chat_dir:
         echo(
@@ -3510,20 +3532,26 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
             chat_dir = tgbox.sync(ctx.obj.dlb.get_directory(str(topic_path)))
             if not chat_dir:
                 echo('\n[Y0b]@ Chat is currently empty...[X]')
-                dlbf_messages = []
+                dxbf_messages = []
             else:
                 contents = ctx.obj.dlb.contents(sfpid=chat_dir.part_id)
 
-                dlbf_messages = [
+                dxbf_messages = [
                     dlbf for dlbf in sync_async_gen(contents)
                     if isinstance(dlbf, tgbox.api.local.DecryptedLocalBoxFile)
                 ]
-            for dlbf in dlbf_messages:
-                echo(format_dxbf_message(dlbf))
+
+            if not less_data:
+                drbfi = ctx.obj.drb.files(ids=[dlbf.id for dlbf in dxbf_messages])
+                dxbf_messages = reversed([drbf for drbf in sync_async_gen(drbfi)])
+
+            for dxbf in dxbf_messages:
+                echo(format_dxbf_message(dxbf))
 
             if not auto_mode:
+                msgcc = '[X1b]' if warning_shown else '[W0b]'
                 echo(
-                    '\n[W0b]1) Send Message; 2) Auto Mode; 3) Exit[X]\n'
+                   f'\n{msgcc}1) Send Message;[X] [W0b]2) Auto Update; 3) Exit[X]\n'
                     '[W0b]Press ENTER to Update or Select Mode[X]', nl=False
                 )
                 mode = click.prompt('', default='', show_default=False)
@@ -3535,8 +3563,8 @@ def chat_open(ctx, topic, current_date, auto_mode_wait):
                     message = click.prompt('Message').encode()
 
                     me = tgbox.sync(ctx.obj.drb.tc.get_me())
-                    author = f'@{me.username}' if me.username else me.first_name
-                    author_id = f'id{me.id}'
+                    author = me.username or me.first_name
+                    author_id = str(me.id)
 
                     msg_pf = ctx.obj.dlb.prepare_file(b'',
                         file_path = str(topic_path / msg_name),
