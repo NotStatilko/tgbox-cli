@@ -3500,7 +3500,6 @@ def chat_open(ctx, topic, current_date, auto_mode_wait, less_data):
         scope=str(Path('__BOX_CHAT__', '__CONFIG__')))
     )
     try:
-        raise StopAsyncIteration
         config = tgbox.sync(tgbox.tools.anext(config))
     except StopAsyncIteration:
         no_config = colorize(
