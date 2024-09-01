@@ -3271,8 +3271,8 @@ def file_attr_edit(ctx, filters, attribute, local_only):
                     changes=changes, dlb=ctx.obj.dlb))
             else:
                 async def _update_drbf(dlbf_id):
-                    drbf = await ctx.obj.drb.get_file(dlbf_id)
-                    await drbf.update_metadata(changes=changes, dlb=ctx.obj.dlb)
+                    dlbf = await ctx.obj.dlb.get_file(dlbf_id)
+                    await dlbf.update_metadata(changes=changes, drb=ctx.obj.drb)
 
                 dxbf_to_update.append(_update_drbf(dlbf.id))
 
