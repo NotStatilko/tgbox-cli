@@ -3425,16 +3425,56 @@ def chat_open(ctx, topic, current_date, auto_mode_wait, less_data):
     """
     chat_dir = tgbox.sync(ctx.obj.dlb.get_directory('__BOX_CHAT__'))
     if not chat_dir:
-        echo(
-            '\n[Y0b]@ Currently we don\'t know about Chat in this Box. Did '
-            'you tried[X] [W0b]box-sync[X][Y0b]? If YES '
-            'and you want to create it, type Y. If NO, type N and try sync.[X]\n'
+        sync_ask = colorize(
+            '[W0b]@ Currently we don\'t know about Chat in this Box. Did '
+            'you tried[X] [C0b]box-sync[X][W0b]? If[X] [G1b]YES[X] [W0b]'
+            'and you want to create it, type [X][G1b]Y[X][W0b]. If[X] '
+            '[R1b]NO[X][W0b], type[X] [R1b]N[X][W0b] and try sync.[X]'
         )
+        echo(f'\n{break_string(sync_ask, 2)}\n')
+
         if not click.confirm('Type your choice and press Enter'):
             return
 
-        echo('\n[W0b]@ We need to configure Box chat firstly.[X]\n')
+        echo('\n[W1]% We need to configure Box chat firstly..[X]')
 
+        author_ask = colorize(
+            '[W0b]@ To correctly verify and assign messages to authors we '
+            'need to enable "Sign Messages" -> "Show author\'s profiles" '
+            'in Box Channel settings. Please note that this will[X] '
+            '[Y1b]deanonimize your profile in Channel[X]. [W0b]Are you '
+            'OK with this? Type[X] [G1b]Y[X] [W0b]if[X] [G1b]yes[X], '
+            '[W0b]type[W0b] [R1b]N[X] [W0b]otherwise[X].'
+        )
+        echo(f'\n{break_string(author_ask, 2)}\n')
+
+        enable_profiles = click.confirm('Type your choice and press Enter')
+
+        if enable_profiles:
+            author_files = tgbox.sync(ctx.obj.drb.author_files(True))
+
+            if author_files is None: # Old Layer. Can be removed later. TODO.
+                old_layer = colorize(
+                    '[R1b]x Oops! Your current tgbox build don\'t support changing '
+                    '"Show author\'s profiles" toggle from code. Please change '
+                    'it in Box Channel settings within Telegram.[X]'
+                )
+                echo(f'\n{break_string(old_layer, 2)}')
+
+            elif author_files is False: # Not enough rights
+                no_rights = colorize(
+                    '[R1b]x You don\'t have enough rights to toggle '
+                    'this parameter. Ask for them or Skip.[X]'
+                )
+                echo(f'\n{break_string(no_rights, 2)}')
+        else:
+            skip = colorize(
+                '\n[Y1b]% Okay, skip! You can always toggle "Show authors '
+                'profile\'s" in Box Channel settings within Telegram![X]'
+            )
+            echo(f'\n{break_string(skip, 2)}')
+
+        echo('')
         chat_name = click.prompt('Chat name')
         description = click.prompt('Chat description', default='No Description.')
 
@@ -3456,24 +3496,29 @@ def chat_open(ctx, topic, current_date, auto_mode_wait, less_data):
         config_pf = tgbox.sync(config_pf)
         tgbox.sync(ctx.obj.drb.push_file(config_pf))
 
-
     config = ctx.obj.dlb.search_file(sf=tgbox.tools.SearchFilter(
         scope=str(Path('__BOX_CHAT__', '__CONFIG__')))
     )
     try:
+        raise StopAsyncIteration
         config = tgbox.sync(tgbox.tools.anext(config))
     except StopAsyncIteration:
-        echo(
-            '[Y0b]\n@ It seems that there is already Chat folder on '
+        no_config = colorize(
+            '[W0b]@ It seems that there is already Chat folder on '
             'your Box, but it does not have CONFIG. Did you tried[X] '
-            '[W0b]box-sync[X][Y0b]? If yes, and you want to erase ALL '
-            'old Chat data type Y, otherwise type N.[X]\n')
+            '[C0b]box-sync[X][W0b]? If yes, and [X][R0b]you want to erase ALL '
+            'old Chat data[X][W0b] type[X] [G1b]Y[X][W0b], otherwise '
+            'type [X][R1b]N[X]'
+        )
+        echo(f'\n{break_string(no_config, 2)}\n')
 
         if not click.confirm('Do you want to erase old Chat data and make new?'):
-            echo(
-                '\n[W0b]@ Okay, skip! You can also use "dir-list --cleanup '
+            skip = colorize(
+                '[Y1b]% Okay, skip! You can also use "dir-list --cleanup '
                 '--show-box-chat" several times to remove "__BOX_CHAT__" '
-                'directory.[X]\n')
+                'directory.[X]'
+            )
+            echo(f'\n{break_string(skip, 2)}\n')
             return
 
         else:
