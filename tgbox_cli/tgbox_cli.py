@@ -3272,7 +3272,17 @@ def file_attr_edit(ctx, filters, attribute, local_only):
             else:
                 async def _update_drbf(dlbf_id):
                     dlbf = await ctx.obj.dlb.get_file(dlbf_id)
-                    await dlbf.update_metadata(changes=changes, drb=ctx.obj.drb)
+                    original_file_name = dlbf.file_name
+                    try:
+                        await dlbf.update_metadata(
+                            changes=changes, drb=ctx.obj.drb)
+                        echo(
+                            f'([W0b]{dlbf.id}[X]) {dlbf.file_name} '
+                            f'<= [Y0b]{attribute}[X]')
+                    except tgbox.errors.FingerprintExists:
+                        echo(
+                            f'([R1b]{dlbf.id}[X]) {original_file_name} '
+                            f'X= [R1b]{attribute}[X]. [R1]Fingerprint exists[X].')
 
                 dxbf_to_update.append(_update_drbf(dlbf.id))
 
@@ -3280,10 +3290,6 @@ def file_attr_edit(ctx, filters, attribute, local_only):
                 tgbox.sync(gather(*dxbf_to_update))
                 dxbf_to_update.clear()
                 sleep(TIMEOUT)
-
-            echo(
-                f'([W0b]{dlbf.id}[X]) {dlbf.file_name} '
-                f'<= [Y0b]{attribute}[X]')
 
         if dxbf_to_update:
             tgbox.sync(gather(*dxbf_to_update))
