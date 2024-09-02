@@ -3277,7 +3277,7 @@ def file_attr_edit(ctx, filters, attribute, local_only):
                         await dlbf.update_metadata(
                             changes=changes, drb=ctx.obj.drb)
                         echo(
-                            f'([W0b]{dlbf.id}[X]) {dlbf.file_name} '
+                            f'([W0b]{dlbf.id}[X]) {original_file_name} '
                             f'<= [Y0b]{attribute}[X]')
                     except tgbox.errors.FingerprintExists:
                         echo(
