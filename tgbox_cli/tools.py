@@ -550,11 +550,11 @@ def format_dxbf(
             n += 1
 
             v = split_string(v, 6, symbol='>')
-            v = v.replace('\n',f'[{color_}]\n[{color_}]')
+            v = v.replace('\n',f'[{color_}]\n[X]')
 
             formatted += (
                 f'   [W0b]{k}[X]: '
-                f'[{color_}]{v}[{color_}]\n'
+                f'[{color_}]{v}[X]\n'
             )
     formatted += time
 

@@ -1541,10 +1541,10 @@ def box_info(ctx, bytesize_total):
 
         box_description = tgbox.sync(ctx.obj.drb.get_box_description())
         if box_description:
-            box_description = split_string(box_description, 15, symbol='>')
-            box_description = box_description.replace('\n','[Y0b]\n[X]')
+            box_description = break_string(box_description, 15)
+            box_description = colorize(f'[Y0b]{box_description}[X]')
         else:
-            box_description = '[R0b]<Not presented>[X]'
+            box_description = colorize('[R0b]<Not presented>[X]')
 
         rights_interested = {
             'post_messages' : 'Upload files',
