@@ -2218,10 +2218,13 @@ def file_search(
 
             echo('')
 
-            iter_over = box.search_file(
-                sf, cache_preview=False,
-                fetch_count=fetch_count
-            )
+            if force_remote:
+                iter_over = box.search_file(sf, cache_preview=False)
+            else:
+                iter_over = box.search_file(
+                    sf, cache_preview=False,
+                    fetch_count=fetch_count
+                )
             for dlbf in sync_async_gen(iter_over):
                 total_bytes += dlbf.size
                 current_file_count += 1
@@ -3459,15 +3462,7 @@ def chat_open(ctx, topic, current_date, auto_mode_wait, less_data):
         if enable_profiles:
             author_files = tgbox.sync(ctx.obj.drb.author_files(True))
 
-            if author_files is None: # Old Layer. Can be removed later. TODO.
-                old_layer = colorize(
-                    '[R1b]x Oops! Your current tgbox build don\'t support changing '
-                    '"Show author\'s profiles" toggle from code. Please change '
-                    'it in Box Channel settings within Telegram.[X]'
-                )
-                echo(f'\n{break_string(old_layer, 2)}')
-
-            elif author_files is False: # Not enough rights
+            if author_files is False: # Not enough rights
                 no_rights = colorize(
                     '[R1b]x You don\'t have enough rights to toggle '
                     'this parameter. Ask for them or Skip.[X]'
