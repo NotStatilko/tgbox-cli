@@ -1094,7 +1094,6 @@ def box_list(ctx, remote, prefix):
                 )
                 if erb_desc:
                     erb_desc = split_string(f'{erb_desc}', 4, '>')
-                    erb_desc = erb_desc.replace('\n','[Y0b]\n[X]')
                     echo(f'    Description: [Y0b]{erb_desc}[X]')
                 count += 1
 

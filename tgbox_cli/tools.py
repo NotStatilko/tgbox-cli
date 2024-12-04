@@ -138,7 +138,7 @@ def colorize(text: str) -> str:
         text = text.replace(f'[{color_code}]', ansi)
 
     text = text.replace('[X]', '\x1b[0m')
-    text = text.replace('[\X]', '[X]') # If was escaped
+    text = text.replace(r'[\X]', '[X]') # If was escaped
     return text
 
 class Progress:
