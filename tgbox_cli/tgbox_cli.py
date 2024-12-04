@@ -2485,14 +2485,15 @@ def file_download(
                             f'to [W0b]{str(downloads)}[X]')
                     else:
                         if not force_remote: # box is DecryptedLocalBox
-                            dxbf = tgbox.sync(ctx.obj.drb.get_file(dxbf.id))
+                            drbf = tgbox.sync(ctx.obj.drb.get_file(dxbf.id))
 
-                        if not dxbf:
-                            echo(
-                                f'[Y0b]There is no file with ID={dxbf.id} in '
-                                 'RemoteBox. Skipping.[X]'
-                            )
-                            continue
+                            if not drbf:
+                                echo(
+                                    f'[Y0b]There is no file with ID={dxbf.id} in '
+                                     'RemoteBox. Skipping.[X]'
+                                )
+                                continue
+                            dxbf = drbf
 
                         write_mode = 'wb'
                         outfile_size = outfile.stat().st_size if outfile.exists() else 0

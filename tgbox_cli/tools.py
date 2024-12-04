@@ -560,7 +560,25 @@ def format_dxbf(
 
     if isinstance(dxbf, tgbox.api.remote.DecryptedRemoteBoxFile)\
         and dxbf.sender:
-            formatted += f'* Author: [Y0b]{dxbf.sender}[X]\n'
+            formatted += f'* Author: [Y0b]{dxbf.sender}[X]'
+
+            if dxbf.sender_id:
+                if dxbf.sender_id < 0: # Channel
+                    author = dxbf.sender_entity.username
+                    author = f'@{author}' if author else author.title
+                    id_ = f'Channel {dxbf.sender_id}'
+                else: # User
+                    author = dxbf.sender_entity.username
+                    author = f'@{author}' if author else author.first_name
+
+                    if dxbf.sender_entity.last_name:
+                        author += f' {author.last_name}'
+
+                    id_ = f'User {dxbf.sender_id}'
+
+                formatted += f' [X1]({id_})[X]'
+
+            formatted += '\n'
 
     return colorize(formatted)
 
