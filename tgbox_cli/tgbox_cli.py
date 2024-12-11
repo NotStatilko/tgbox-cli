@@ -1733,7 +1733,7 @@ def file_upload(
         # Include flag (upload only .DOC from Documents, ignore unmatched)
         tgbox-cli file-upload /home/non/Documents +i file_name='.doc'
         \b
-        # Include flag (ingore .DOC, upload every single file from Documents)
+        # Exclude flag (ingore .DOC, upload every single file from Documents)
         tgbox-cli file-upload /home/non/Documents +e file_name='.doc'
         \b
         You can use both, the ++include and ++exclude (+i, +e)
