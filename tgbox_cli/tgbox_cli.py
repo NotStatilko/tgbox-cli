@@ -1128,8 +1128,9 @@ def box_list(ctx, remote, prefix):
                     )
                     tgbox.sync(dlb.done())
                 except FileNotFoundError:
+                    count_id = str(count+1).zfill(2)
                     echo(
-                       f'[W0b]{count+1})[X] [R0b]{name} LocalBox '
+                       f'[W0b]{count_id})[X] [R0b]{name} LocalBox '
                         'file was moved, so disconnected.[X]'
                     )
                     lost_boxes.append([box_path, basekey])
