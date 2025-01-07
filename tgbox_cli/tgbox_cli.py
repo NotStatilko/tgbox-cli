@@ -3255,7 +3255,10 @@ def file_attr_edit(ctx, filters, attribute, local_only):
 
         attr_key, attr_value = attribute.split('=',1)
 
-        if attr_key == 'cattrs':
+        if attr_key == 'cattrs' and not attr_value:
+            changes = {}
+
+        elif attr_key == 'cattrs':
             attr_value = parse_str_cattrs(attr_value)
             changes = {attr_key: tgbox.tools.PackedAttributes.pack(**attr_value)}
         else:
@@ -3268,26 +3271,30 @@ def file_attr_edit(ctx, filters, attribute, local_only):
         UPDATE_WHEN = 200 if not local_only else 100
         TIMEOUT = 15 if not local_only else 0
 
-        for dlbf in sync_async_gen(to_change):
-            if local_only:
-                dxbf_to_update.append(dlbf.update_metadata(
-                    changes=changes, dlb=ctx.obj.dlb))
-            else:
-                async def _update_drbf(dlbf_id):
-                    dlbf = await ctx.obj.dlb.get_file(dlbf_id)
-                    original_file_name = dlbf.file_name
-                    try:
-                        await dlbf.update_metadata(
-                            changes=changes, drb=ctx.obj.drb)
-                        echo(
-                            f'([W0b]{dlbf.id}[X]) {original_file_name} '
-                            f'<= [Y0b]{attribute}[X]')
-                    except tgbox.errors.FingerprintExists:
-                        echo(
-                            f'([R1b]{dlbf.id}[X]) {original_file_name} '
-                            f'X= [R1b]{attribute}[X]. [R1]Fingerprint exists[X].')
+        async def _update_dxbf(dxbf_id, box):
+            dlbf = await ctx.obj.dlb.get_file(dxbf_id)
+            original_file_name = dlbf.file_name
+            try:
+                if isinstance(box, tgbox.api.local.DecryptedLocalBox):
+                    await dlbf.update_metadata(changes=changes, dlb=box)
+                    prefix = '[LB Only]'
+                else:
+                    await dlbf.update_metadata(changes=changes, drb=box)
+                    prefix = '[LB & RB]'
 
-                dxbf_to_update.append(_update_drbf(dlbf.id))
+                echo(
+                    f'[X1b]{prefix}[X] ([W0b]{dlbf.id}[X]) {original_file_name} '
+                    f'<= [Y0b]{attribute}[X]')
+            except tgbox.errors.FingerprintExists:
+                echo(
+                    f'[X1b]{prefix}[X] ([R1b]{dlbf.id}[X]) {original_file_name} '
+                    f'X= [R1b]{attribute}[X]. [R1]Fingerprint exists[X].')
+
+
+        box = ctx.obj.dlb if local_only else ctx.obj.drb
+
+        for dlbf in sync_async_gen(to_change):
+            dxbf_to_update.append(_update_dxbf(dlbf.id, box))
 
             if len(dxbf_to_update) == UPDATE_WHEN:
                 tgbox.sync(gather(*dxbf_to_update))
