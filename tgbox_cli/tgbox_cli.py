@@ -557,7 +557,7 @@ def cli_info():
 
         f'LOGGING: [Y0b]{logging_level}[X]([W0b]{logfile_name}[X])\n'
     )
-    if getenv('X0b_SABBATH'):
+    if getenv('BLACK_SABBATH'):
         from time import sleep
 
         bs_ana = (
