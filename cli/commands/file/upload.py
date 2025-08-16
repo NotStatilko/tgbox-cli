@@ -27,6 +27,13 @@ from ...config import tgbox
     help='Change file path of target in Box. System\'s if not specified'
 )
 @click.option(
+    '--flat-path', is_flag=True,
+    help = (
+        'If specified alongside with --file-path, will ignore all TARGET '
+        'sub-directories, uploading all files directly under --file-path'
+    )
+)
+@click.option(
     '--cattrs', '-c', help='File\'s CustomAttributes. Format: "key: value | key: value"'
 )
 @click.option(
@@ -50,7 +57,7 @@ from ...config import tgbox
     help='If specified, will calculate and show a total bytesize of targets'
 )
 @click.option(
-    '--max-workers', default=10, type=click.IntRange(1,50),
+    '--max-workers', default=5, type=click.IntRange(1,50),
     help='Max amount of files uploaded at the same time, default=10',
 )
 @click.option(
@@ -60,9 +67,9 @@ from ...config import tgbox
 )
 @ctx_require(dlb=True, drb=True)
 def file_upload(
-        ctx, target, file_path, cattrs, no_update,
-        force_update, use_slow_upload, no_thumb,
-        calculate, max_workers, max_bytes):
+        ctx, target, file_path, flat_path, cattrs,
+        no_update, force_update, use_slow_upload,
+        no_thumb, calculate, max_workers, max_bytes):
     """
     Upload TARGET by specified filters to the Box
 
@@ -145,7 +152,7 @@ def file_upload(
         filters = None
 
     # Remove all duplicates present in Target (if any)
-    target = tuple(set(Path(p) for p in target))
+    target = tuple(set(Path(p).resolve() for p in target))
 
     current_workers = max_workers
     current_bytes = max_bytes
@@ -382,7 +389,12 @@ def file_upload(
                 if not file_path:
                     remote_path = current_path.resolve()
                 else:
-                    remote_path = Path(file_path) / current_path.name
+                    if flat_path:
+                        remote_path = Path(file_path) / current_path.name
+                    else:
+                        r = str(current_path.resolve().parent)
+                        r = r.removeprefix(str(path)).lstrip('/\\')
+                        remote_path = file_path / r / current_path.name
 
                 current_bytes -= getsize(current_path)
                 current_workers -= 1

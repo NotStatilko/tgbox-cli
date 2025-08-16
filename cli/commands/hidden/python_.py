@@ -39,7 +39,7 @@ def python(ctx, enable_logging, execute, non_interactive, i_understand_risk):
 
     if execute:
         # Users are notified about all risks of exec(), so we don't need Warning.
-        EXEC_SCRIPT = lambda: exec(open(execute).read()) # pylint: disable=exec-used
+        EXEC_SCRIPT = lambda: exec(open(execute, encoding='utf-8').read()) # pylint: disable=exec-used
     else:
         EXEC_SCRIPT = lambda: None
 
