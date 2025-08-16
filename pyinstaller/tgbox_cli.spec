@@ -23,7 +23,7 @@ if Path.cwd().name != 'pyinstaller':
 # instead a folder with all bytecoded source
 TGBOX_CLI_NON_ONEFILE = getenv('TGBOX_CLI_NON_ONEFILE')
 
-TGBOX_CLI_FOLDER = Path.cwd().parent / 'tgbox_cli'
+TGBOX_CLI_FOLDER = Path.cwd().parent / 'cli'
 DATA_FOLDER = TGBOX_CLI_FOLDER / 'data'
 
 SCRIPT_LOGO = DATA_FOLDER / 'logo.ico'

@@ -64,7 +64,6 @@ else: # Not Autocomplete, regular usage
 
     from .version import VERSION as CLI_VER
 
-
     if tgbox.crypto.FAST_ENCRYPTION:
         from cryptography import __version__ as CRYPTOGRAPHY_VERSION
     else:
