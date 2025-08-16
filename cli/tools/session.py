@@ -1,4 +1,7 @@
-from tgbox.crypto import AESwState as AES
+"""
+Encrypted (by TGBOX_CLI_SK key) Session class that is
+used to store your Box keys per terminal.
+"""
 
 from typing import Optional
 from tempfile import gettempdir
@@ -7,6 +10,16 @@ from pickle import loads, dumps
 from base64 import urlsafe_b64encode
 from hashlib import sha256
 from pathlib import Path
+
+from ..config import tgbox
+if hasattr(tgbox, 'crypto'):
+    AES = tgbox.crypto.AESwState
+else:
+    # Autocompletion will create dummy tgbox object
+    # to omit useless imports. As AES will not be
+    # used in actual code, we can just set it to
+    # the None value.
+    AES = None
 
 
 class Session:
