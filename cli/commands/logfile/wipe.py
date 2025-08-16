@@ -1,5 +1,3 @@
-import click
-
 from ..group import cli_group
 from ...tools.terminal import echo
 from ...config import LOGFILE

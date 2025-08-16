@@ -1,5 +1,3 @@
-import click
-
 from ..group import cli_group
 from ..helpers import ctx_require
 from ...tools.terminal import echo

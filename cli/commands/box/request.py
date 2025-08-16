@@ -2,7 +2,7 @@ import click
 
 from ..group import cli_group
 from ...tools.terminal import echo
-from ..helpers import ctx_require, select_remotebox
+from ..helpers import select_remotebox
 from ...config import tgbox, TGBOX_CLI_SHOW_PASSWORD
 
 

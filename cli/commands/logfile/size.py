@@ -1,5 +1,3 @@
-import click
-
 from ..group import cli_group
 from ...tools.convert import format_bytes
 from ...tools.terminal import echo

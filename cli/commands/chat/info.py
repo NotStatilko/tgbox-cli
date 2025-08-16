@@ -1,5 +1,3 @@
-import click
-
 from pathlib import Path
 
 from ..group import cli_group
