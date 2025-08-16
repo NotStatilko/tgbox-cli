@@ -4,7 +4,7 @@ from pathlib import Path
 from os import getenv
 
 
-PACKAGE = Path(__name__).parent
+PACKAGE = Path(__file__).absolute().parent
 
 TGBOX_CLI_SHOW_PASSWORD = bool(getenv('TGBOX_CLI_SHOW_PASSWORD'))
 TGBOX_CLI_NOCOLOR = bool(getenv('TGBOX_CLI_NOCOLOR'))
