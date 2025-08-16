@@ -81,7 +81,7 @@ class StructuredGroup(click.Group):
         if not TGBOX_CLI_NOCOLOR:
             formatter.write_text('\x1b[0m')
 
-@click.group(cls=StructuredGroup)
+@click.group(cls=StructuredGroup, add_help_option=False)
 @click.pass_context
 def cli_group(ctx):
     ctx.obj = Objects()
