@@ -38,9 +38,9 @@ if TGBOX_CLI_COMPLETE:
     # them into decorators, which *are* executed. Without it, code
     # would just throw us error. In all commands we will import the
     # "tgbox" from here.
-    tgbox = type('', (), {})
+    tgbox = type('tgbox-dummy', (), {'defaults': None})
 
-    tgbox.defaults = type('', (), {})
+    tgbox.defaults = type('defaults', (), {})
     tgbox.defaults.REMOTEBOX_PREFIX = None
 
     tgbox.defaults.Scrypt = type('', (), {})
