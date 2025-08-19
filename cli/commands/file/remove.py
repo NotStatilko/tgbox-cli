@@ -24,10 +24,14 @@ from ...config import tgbox
     '--remove-empty-directories','-e', is_flag=True,
     help='If specified, will remove Directory of file If empty'
 )
+@click.option(
+    '--force', is_flag=True,
+    help='If specified, will not ask for confirmation'
+)
 @click.pass_context
 def file_remove(
         ctx, filters, local_only, ask_before_remove,
-        remove_empty_directories):
+        remove_empty_directories, force):
     """Remove files by selected filters
 
     \b
@@ -120,7 +124,7 @@ def file_remove(
     except KeyError as e: # Unknown filters
         echo(f'[R0b]Filter "{e.args[0]}" doesn\'t exists[X]')
     else:
-        if not filters:
+        if not filters and not force:
             echo(
                 '\n[R0b]You didn\'t specified any search filter.\n   This '
                 'will [X]REMOVE ALL FILES[W0b] in your Box[X]\n'
@@ -172,5 +176,4 @@ def file_remove(
                     remove_empty_directories=remove_empty_directories
                 )
                 tgbox.sync(delete_files)
-
                 echo('[G0b]Done.[X]')
