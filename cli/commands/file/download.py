@@ -11,6 +11,43 @@ from ...tools.convert import filters_to_searchfilter
 from ...config import tgbox
 
 
+def _launch(path: str, locate: bool, size: int) -> None:
+    """
+    This function will call click.launch() after 5% of the
+    target file (path) is downloaded
+    """
+    while (Path(path).stat().st_size+1) / size * 100 < 5:
+        sleep(1)
+    click.launch(path, locate=locate)
+
+def _download_preview(
+        dxbf, file_name, outfile, show,
+        locate, downloads, force_remote
+    ):
+    """This function will save preview to outfile (if exists)"""
+
+    if dxbf.preview == b'':
+        # Drop the '.jpg' preview suffix string
+        file_name = '.'.join(file_name.split('.')[:-1])
+
+        if force_remote:
+            echo(f'[Y0b]{file_name} doesn\'t have preview. Skipping.[X]')
+        else:
+            echo(
+               f'[Y0b]{file_name} doesn\'t have '
+                'preview. Try -r flag. Skipping.[X]')
+        return
+
+    with open(outfile,'wb') as f:
+        f.write(dxbf.preview)
+
+    if show or locate:
+        click.launch(str(outfile), locate)
+    echo(
+        f'[W0b]{file_name}[X] preview downloaded '
+        f'to [W0b]{str(downloads)}[X]')
+
+
 @cli_group.command()
 @click.argument('filters', nargs=-1)
 @click.option(
@@ -166,160 +203,155 @@ def file_download(
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
         echo('[R0b]Incorrect filters! Make sure to use format filter=value[X]')
+        return
     except KeyError as e: # Unknown filters
         echo(f'[R0b]Filter "{e.args[0]}" doesn\'t exists[X]')
-    else:
+        return
+
+    loop = get_event_loop()
+
+    current_workers = max_workers
+    current_bytes = max_bytes
+
+    box = ctx.obj.drb if force_remote else ctx.obj.dlb
+    to_download = box.search_file(sf)
+
+    exit_from_while = False
+    while True:
+        if exit_from_while:
+            break
+
+        to_gather_files = []
+        while all((current_workers > 0, current_bytes > 0)):
+            try:
+                dxbf = tgbox.sync(tgbox.tools.anext(to_download))
+            except StopAsyncIteration:
+                exit_from_while = True
+                break
+
+            if hide_name:
+                file_name = tgbox.tools.prbg(16).hex()
+                file_name += Path(dxbf.file_name).suffix
+            else:
+                file_name = dxbf.file_name
+
+            file_name = file_name.lstrip('/')
+            file_name = file_name.lstrip('\\')
+
+            file_name = file_name if not preview else file_name + '.jpg'
+
+            if not out:
+                downloads = Path(dxbf.defaults.DOWNLOAD_PATH)
+                downloads = downloads / ('Previews' if preview else 'Files')
+            else:
+                downloads = out
+
+            downloads.mkdir(parents=True, exist_ok=True)
+
+            if ignore_file_path:
+                outfile = downloads / file_name
+            else:
+                if hide_folder:
+                    file_path = tgbox.tools.make_safe_file_path(
+                        tgbox.defaults.DEF_UNK_FOLDER)
+                else:
+                    file_path = tgbox.tools.make_safe_file_path(dxbf.file_path)
+
+                outfile = downloads / file_path / file_name
+
+            outfile.parent.mkdir(exist_ok=True, parents=True)
+
+            if preview:
+                _download_preview(
+                    dxbf, file_name, outfile, show,
+                    locate, downloads, force_remote)
+                continue
+
+            if not force_remote: # box is DecryptedLocalBox
+                drbf = tgbox.sync(ctx.obj.drb.get_file(dxbf.id))
+
+                if not drbf:
+                    echo(
+                        f'[Y0b]There is no file with ID={dxbf.id} in '
+                         'RemoteBox. Skipping.[X]')
+                    continue
+                dxbf = drbf
+
+            write_mode = 'wb'
+            outfile_size = outfile.stat().st_size if outfile.exists() else 0
+
+            if not redownload and outfile.exists():
+                if outfile_size == dxbf.size:
+                    echo(f'[G0b]{str(outfile)} downloaded. Skipping...[X]')
+                    continue
+
+                if offset:
+                    echo(
+                       f'[Y0b]{str(outfile)} is partially downloaded and '
+                        'you specified offset. This will corrupt file. Drop the '
+                        'offset or remove file from your computer. Skipping...[X]')
+                    continue
+
+                if outfile_size % 524288: # Remove partially downloaded block
+                    with open(outfile, 'ab') as f:
+                        f.truncate(outfile_size - (outfile_size % 524288))
+
+                # File is partially downloaded, so we need to fetch leftover bytes
+                offset, write_mode = outfile.stat().st_size, 'ab+'
+
+            if offset % 4096 or offset % 524288:
+                echo('[R0b]Offset must be divisible by 4096 and by 524288.[X]')
+                continue
+
+            current_workers -= 1
+            current_bytes -= dxbf.file_size
+
+            outpath = open(outfile, write_mode)
+
+            p_file_name = '<Filename hidden>' if hide_name\
+                else dxbf.file_name
+
+            blocks_downloaded = 0 if not offset else offset // 524288
+
+            download_coroutine = dxbf.download(
+                outfile = outpath,
+                progress_callback = ProgressBar(
+                    ctx.obj.enlighten_manager,
+                    p_file_name, blocks_downloaded).update,
+
+                offset = offset,
+                use_slow_download = use_slow_download,
+                omit_hmac_check = omit_hmac_check
+            )
+            to_gather_files.append(download_coroutine)
+
+            if write_mode == 'ab+': # Partially downloaded write
+                offset = 0 # Reset offset for the next files
+
+            if show or locate:
+                to_gather_files.append(loop.run_in_executor(
+                    None, lambda: _launch(outpath.name, locate, dxbf.size))
+                )
+        if to_gather_files:
+            r = tgbox.sync(gather(*to_gather_files, return_exceptions=True))
+
+            exception = False
+            for flo in r:
+                if isinstance(flo, Exception): # If download returned Exception
+                    error = f'{type(flo).__name__}: {flo}'
+                    echo(f'[R0b]x Can not download ID{dxbf.id} due to "{error}"[X]')
+                    exception = True
+                else:
+                    # We need to close each File-like Object to
+                    # ensure that all writes are final.
+                    flo.close()
+
+            if exception:
+                return
+            to_gather_files.clear()
+
         current_workers = max_workers
         current_bytes = max_bytes
 
-        box = ctx.obj.drb if force_remote else ctx.obj.dlb
-        to_download = box.search_file(sf)
-
-        while True:
-            try:
-                to_gather_files = []
-                while all((current_workers > 0, current_bytes > 0)):
-                    dxbf = tgbox.sync(tgbox.tools.anext(to_download))
-
-                    if hide_name:
-                        file_name = tgbox.tools.prbg(16).hex()
-                        file_name += Path(dxbf.file_name).suffix
-                    else:
-                        file_name = dxbf.file_name
-
-                    file_name = file_name.lstrip('/')
-                    file_name = file_name.lstrip('\\')
-
-                    file_name = file_name if not preview else file_name + '.jpg'
-
-                    if not out:
-                        downloads = Path(dxbf.defaults.DOWNLOAD_PATH)
-                        downloads = downloads / ('Previews' if preview else 'Files')
-                    else:
-                        downloads = out
-
-                    downloads.mkdir(parents=True, exist_ok=True)
-
-                    if ignore_file_path:
-                        outfile = downloads / file_name
-                    else:
-                        if hide_folder:
-                            file_path = tgbox.tools.make_safe_file_path(tgbox.defaults.DEF_UNK_FOLDER)
-                        else:
-                            file_path = tgbox.tools.make_safe_file_path(dxbf.file_path)
-
-                        outfile = downloads / file_path / file_name
-
-                    outfile.parent.mkdir(exist_ok=True, parents=True)
-
-                    preview_bytes = dxbf.preview if preview else None
-
-                    if preview_bytes is not None:
-                        if preview_bytes == b'':
-                            # Drop the '.jpg' preview suffix string
-                            file_name = '.'.join(file_name.split('.')[:-1])
-
-                            if force_remote:
-                                echo(f'[Y0b]{file_name} doesn\'t have preview. Skipping.[X]')
-                            else:
-                                echo(
-                                    f'[Y0b]{file_name} doesn\'t have preview. Try '
-                                     '-r flag. Skipping.[X]'
-                                )
-                            continue
-
-                        with open(outfile,'wb') as f:
-                            f.write(preview_bytes)
-
-                        if show or locate:
-                            click.launch(str(outfile), locate)
-
-                        echo(
-                            f'[W0b]{file_name}[X] preview downloaded '
-                            f'to [W0b]{str(downloads)}[X]')
-                    else:
-                        if not force_remote: # box is DecryptedLocalBox
-                            drbf = tgbox.sync(ctx.obj.drb.get_file(dxbf.id))
-
-                            if not drbf:
-                                echo(
-                                    f'[Y0b]There is no file with ID={dxbf.id} in '
-                                     'RemoteBox. Skipping.[X]'
-                                )
-                                continue
-                            dxbf = drbf
-
-                        write_mode = 'wb'
-                        outfile_size = outfile.stat().st_size if outfile.exists() else 0
-
-                        if not redownload and outfile.exists():
-                            if outfile_size == dxbf.size:
-                                echo(f'[G0b]{str(outfile)} downloaded. Skipping...[X]')
-                                continue
-                            else:
-                                if offset:
-                                    echo(
-                                       f'[Y0b]{str(outfile)} is partially downloaded and '
-                                        'you specified offset. This will corrupt file. Drop the '
-                                        'offset or remove file from your computer. Skipping...[X]'
-                                    )
-                                    continue
-
-                                if outfile_size % 524288: # Remove partially downloaded block
-                                    with open(outfile, 'ab') as f:
-                                        f.truncate(outfile_size - (outfile_size % 524288))
-
-                                # File is partially downloaded, so we need to fetch left bytes
-                                offset, write_mode = outfile.stat().st_size, 'ab+'
-
-                        if offset % 4096 or offset % 524288:
-                            echo('[R0b]Offset must be divisible by 4096 and by 524288.[X]')
-                            continue
-
-                        current_workers -= 1
-                        current_bytes -= dxbf.file_size
-
-                        outpath = open(outfile, write_mode)
-
-                        p_file_name = '<Filename hidden>' if hide_name\
-                            else dxbf.file_name
-
-                        blocks_downloaded = 0 if not offset else offset // 524288
-
-                        download_coroutine = dxbf.download(
-                            outfile = outpath,
-                            progress_callback = ProgressBar(
-                                ctx.obj.enlighten_manager,
-                                p_file_name, blocks_downloaded).update,
-
-                            offset = offset,
-                            use_slow_download = use_slow_download,
-                            omit_hmac_check = omit_hmac_check
-                        )
-                        to_gather_files.append(download_coroutine)
-
-                        if write_mode == 'ab+': # Partially downloaded write
-                            offset = 0 # Reset offset for the next files
-
-                        if show or locate:
-                            def _launch(path: str, locate: bool, size: int) -> None:
-                                while (Path(path).stat().st_size+1) / size * 100 < 5:
-                                    sleep(1)
-                                click.launch(path, locate=locate)
-
-                            loop = get_event_loop()
-
-                            to_gather_files.append(loop.run_in_executor(
-                                None, lambda: _launch(outpath.name, locate, dxbf.size))
-                            )
-                if to_gather_files:
-                    tgbox.sync(gather(*to_gather_files))
-
-                current_workers = max_workers
-                current_bytes = max_bytes
-
-            except StopAsyncIteration:
-                break
-
-        if to_gather_files: # If any files left
-            tgbox.sync(gather(*to_gather_files))
+    if to_gather_files: # If any files left
+        tgbox.sync(gather(*to_gather_files))
