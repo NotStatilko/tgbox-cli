@@ -6,6 +6,14 @@ from code import interact as interactive_console
 
 from ..group import cli_group
 from ...tools.terminal import echo, colorize
+from ...config import tgbox # pylint: disable=unused-import
+
+# These imports are for tgbox-cli python Scripts
+from ...tools import convert # pylint: disable=unused-import
+from ...tools import other # pylint: disable=unused-import
+from ...tools import terminal # pylint: disable=unused-import
+from ...tools import session # pylint: disable=unused-import
+from ...tools import strings # pylint: disable=unused-import
 
 
 @cli_group.command(hidden=True)
