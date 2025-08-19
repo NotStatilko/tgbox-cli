@@ -44,6 +44,7 @@ from ...config import tgbox, TGBOX_CLI_SHOW_PASSWORD
 )
 def box_request(number, phrase, s, n, p, r, l, prefix):
     """Command to receive RequestKey for other Box"""
+    # pylint: disable=no-value-for-parameter
     erb = select_remotebox(number, prefix)
 
     basekey = tgbox.keys.make_basekey(

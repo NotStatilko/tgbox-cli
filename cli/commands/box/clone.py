@@ -63,6 +63,7 @@ def box_clone(
     """
     Clone RemoteBox to LocalBox by your passphrase
     """
+    # pylint: disable=no-value-for-parameter
     erb = select_remotebox(box_number, prefix)
 
     try:
