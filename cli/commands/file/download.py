@@ -337,6 +337,9 @@ def file_download(
 
             exception = False
             for flo in r:
+                if not flo:
+                    continue
+
                 if isinstance(flo, Exception): # If download returned Exception
                     error = f'{type(flo).__name__}: {flo}'
                     echo(f'[R0b]x Can not download ID{dxbf.id} due to "{error}"[X]')
