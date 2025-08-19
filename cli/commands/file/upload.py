@@ -17,6 +17,162 @@ from ...tools.terminal import echo, ProgressBar
 from ...config import tgbox
 
 
+def _check_filters(filters, current_path: Path):
+    """
+    This function will check filters against given File
+    (under current_path)
+    """
+    # Will use Regex Search if 're' is included in Filters, "In" otherwise.
+    in_func = re_search if filters.in_filters['re'] else lambda p,s: p in s
+    INCLUDE, EXCLUDE = 0, 1
+
+    for inex, filter in enumerate((filters.in_filters, filters.ex_filters)):
+        try:
+            if filter['min_time'] or filter['max_time']:
+                cp_st_mtime = current_path.stat().st_mtime # File Modification Time
+
+            if filter['min_size'] or filter['max_size']:
+                cp_st_size = current_path.stat().st_size # File Size
+
+            if filter['mime']:
+                file_mime = filetype_guess(current_path) # File MIME Type
+                file_mime = file_mime.mime if file_mime else ''
+
+            if filter['file_path']:
+                abs_path = str(current_path.absolute()) # File absolute Path
+
+        except (FileNotFoundError, PermissionError, OSError) as e:
+            echo(f'[R0b]x {e}. Skipping...[X]')
+            return
+
+        for filter_file_path in filter['file_path']:
+            if in_func(filter_file_path, abs_path): # pylint: disable=E0606
+                if inex == EXCLUDE:
+                    return
+                break
+        else:
+            if filter['file_path']:
+                if inex == INCLUDE:
+                    return
+
+        for file_name in filter['file_name']:
+            if in_func(file_name, current_path.name):
+                if inex == EXCLUDE:
+                    return
+                break
+        else:
+            if filter['file_name'] and inex == INCLUDE:
+                return
+
+        for mime in filter['mime']:
+            if in_func(mime, file_mime):
+                if inex == EXCLUDE:
+                    return
+                break
+        else:
+            if filter['mime'] and inex == INCLUDE:
+                return
+
+        if filter['min_time']:
+            if cp_st_mtime < filter['min_time'][-1]: # pylint: disable=E0606
+                if inex == INCLUDE:
+                    return
+
+            elif cp_st_mtime >= filter['min_time'][-1]:
+                if inex == EXCLUDE:
+                    return
+
+        if filter['max_time']:
+            if cp_st_mtime > filter['max_time'][-1]:
+                if inex == INCLUDE:
+                    return
+
+            elif cp_st_mtime <= filter['max_time'][-1]:
+                if inex == EXCLUDE:
+                    return
+
+        if filter['min_size']:
+            if cp_st_size < filter['min_size'][-1]: # pylint: disable=E0606
+                if inex == INCLUDE:
+                    return
+
+            elif cp_st_size >= filter['min_size'][-1]:
+                if inex == EXCLUDE:
+                    return
+
+        if filter['max_size']:
+            if cp_st_size > filter['max_size'][-1]:
+                if inex == INCLUDE:
+                    return
+
+            elif cp_st_size <= filter['max_size'][-1]:
+                if inex == EXCLUDE:
+                    return
+
+    return True # File matches against the filters
+
+async def _push_wrapper(
+        ctx, file, file_path, cattrs, force_update,
+        no_update, no_thumb, use_slow_upload
+    ):
+    """Helper-function for the .push_file() coroutine"""
+
+    fingerprint = tgbox.tools.make_file_fingerprint(
+        mainkey = ctx.obj.dlb.mainkey,
+        file_path = str(file_path)
+    )
+    dlbf = await ctx.obj.dlb.get_file(fingerprint=fingerprint)
+
+    # Standard file upload if dlbf is not exists (from scratch)
+    if not dlbf and not force_update:
+        file_action = (ctx.obj.drb.push_file, {})
+
+    # File re-uploading (or updating) if file size differ
+    elif force_update or not no_update and dlbf and dlbf.size != getsize(file):
+        if not dlbf: # Wasn't uploaded before
+            file_action = (ctx.obj.drb.push_file, {})
+        else:
+            drbf = await ctx.obj.drb.get_file(dlbf.id)
+            file_action = (ctx.obj.drb.update_file, {'rbf': drbf})
+    else:
+        # Ignore upload if file exists and wasn't changed
+        echo(f'[Y0b]| File {file} is already uploaded. Skipping...[X]')
+        return
+
+    if cattrs is None: # CAttrs not specified
+        cattrs = cattrs or dlbf.cattrs if dlbf else None
+
+    elif not cattrs: # Can be "", then remove CAttrs
+        cattrs = None
+    else:
+        if dlbf and dlbf.cattrs: # Combine if dlbf has CAttrs
+            dlbf.cattrs.update(cattrs)
+            cattrs = dlbf.cattrs
+    try:
+        pf = await ctx.obj.dlb.prepare_file(
+            file = open(file,'rb'),
+            file_path = file_path,
+            cattrs = cattrs,
+            make_preview = (not no_thumb),
+            skip_fingerprint_check = True
+        )
+    except tgbox.errors.LimitExceeded as e:
+        echo(f'[Y0b]{file}: {e} Skipping...[X]')
+        return
+
+    except PermissionError:
+        echo(f'[R0b]{file} is not readable! Skipping...[X]')
+        return
+
+    progressbar = ProgressBar(ctx.obj.enlighten_manager, file.name)
+
+    file_action[1]['pf'] = pf
+    file_action[1]['progress_callback'] = progressbar.update
+    file_action[1]['use_slow_upload'] = use_slow_upload
+
+    await file_action[0](**file_action[1])
+
+
 @cli_group.command()
 @click.argument(
     'target', nargs=-1, required=False, default=None,
@@ -34,7 +190,8 @@ from ...config import tgbox
     )
 )
 @click.option(
-    '--cattrs', '-c', help='File\'s CustomAttributes. Format: "key: value | key: value"'
+    '--cattrs', '-c',
+    help='File\'s CustomAttributes. Format: "key: value | key: value"'
 )
 @click.option(
     '--no-update', is_flag=True,
@@ -165,64 +322,6 @@ def file_upload(
     else:
         parsed_cattrs = None
 
-    def _upload(to_upload: list):
-        tgbox.sync(gather(*to_upload))
-        to_upload.clear()
-
-    async def _push_wrapper(file, file_path, cattrs):
-        fingerprint = tgbox.tools.make_file_fingerprint(
-            mainkey = ctx.obj.dlb.mainkey,
-            file_path = str(file_path)
-        )
-        # Standard file upload if dlbf is not exists (from scratch)
-        if not (dlbf := await ctx.obj.dlb.get_file(fingerprint=fingerprint)) and not force_update:
-            file_action = (ctx.obj.drb.push_file, {})
-
-        # File re-uploading (or updating) if file size differ
-        elif force_update or not no_update and dlbf and dlbf.size != getsize(file):
-            if not dlbf: # Wasn't uploaded before
-                file_action = (ctx.obj.drb.push_file, {})
-            else:
-                drbf = await ctx.obj.drb.get_file(dlbf.id)
-                file_action = (ctx.obj.drb.update_file, {'rbf': drbf})
-        else:
-            # Ignore upload if file exists and wasn't changed
-            echo(f'[Y0b]| File {file} is already uploaded. Skipping...[X]')
-            return
-
-        if cattrs is None: # CAttrs not specified
-            cattrs = cattrs or dlbf.cattrs if dlbf else None
-
-        elif not cattrs: # Can be "", then remove CAttrs
-            cattrs = None
-        else:
-            if dlbf and dlbf.cattrs: # Combine if dlbf has CAttrs
-                dlbf.cattrs.update(cattrs)
-                cattrs = dlbf.cattrs
-        try:
-            pf = await ctx.obj.dlb.prepare_file(
-                file = open(file,'rb'),
-                file_path = file_path,
-                cattrs = cattrs,
-                make_preview = (not no_thumb),
-                skip_fingerprint_check = True
-            )
-        except tgbox.errors.LimitExceeded as e:
-            echo(f'[Y0b]{file}: {e} Skipping...[X]')
-            return
-
-        except PermissionError:
-            echo(f'[R0b]{file} is not readable! Skipping...[X]')
-            return
-
-        progressbar = ProgressBar(ctx.obj.enlighten_manager, file.name)
-
-        file_action[1]['pf'] = pf
-        file_action[1]['progress_callback'] = progressbar.update
-        file_action[1]['use_slow_upload'] = use_slow_upload
-
-        await file_action[0](**file_action[1])
-
     for path in target:
         if not path.exists():
             echo(f'[R0b]@ Target "{path}" doesn\'t exists! Skipping...[X]')
@@ -255,118 +354,6 @@ def file_upload(
                 echo(f'[R0b]x Not Working on. {e}. Skipping...[X]')
                 continue
 
-            if filters:
-                # Flags. First is for 'Include', the second
-                # is for 'Exclude. Both must be 'True' to
-                # start uploading process.
-                yield_result = [True, True]
-
-                # Will use Regex Search if 're' is included in Filters, "In" otherwise.
-                in_func = re_search if filters.in_filters['re'] else lambda p,s: p in s
-
-                for indx, filter in enumerate((filters.in_filters, filters.ex_filters)):
-                    try:
-                        if filter['min_time'] or filter['max_time']:
-                            cp_st_mtime = current_path.stat().st_mtime # File Modification Time
-
-                        if filter['min_size'] or filter['max_size']:
-                            cp_st_size = current_path.stat().st_size # File Size
-
-                        if filter['mime']:
-                            file_mime = filetype_guess(current_path) # File MIME Type
-                            file_mime = file_mime.mime if file_mime else ''
-
-                        if filter['file_path']:
-                            abs_path = str(current_path.absolute()) # File absolute Path
-
-                    except (FileNotFoundError, PermissionError, OSError) as e:
-                        echo(f'[R0b]x {e}. Skipping...[X]')
-                        yield_result[0] = False; break
-
-                    for filter_file_path in filter['file_path']:
-                        if in_func(filter_file_path, abs_path): # pylint: disable=E0606
-                            if indx == 1:
-                                yield_result[indx] = False
-                            break
-                    else:
-                        if filter['file_path']:
-                            if indx == 0:
-                                yield_result[indx] = False
-                                break
-
-                    for file_name in filter['file_name']:
-                        if in_func(file_name, current_path.name):
-                            if indx == 1:
-                                yield_result[indx] = False
-                            break
-                    else:
-                        if filter['file_name']:
-                            if indx == 0:
-                                yield_result[indx] = False
-                                break
-
-                    for mime in filter['mime']:
-                        if in_func(mime, file_mime):
-                            if indx == 1:
-                                yield_result[indx] = False
-                            break
-                    else:
-                        if filter['mime']:
-                            if indx == 0:
-                                yield_result[indx] = False
-                                break
-
-                    if filter['min_time']:
-                        if cp_st_mtime < filter['min_time'][-1]: # pylint: disable=E0606
-                            if indx == 0:
-                                yield_result[indx] = False
-                                break
-
-                        elif cp_st_mtime >= filter['min_time'][-1]:
-                            if indx == 1:
-                                yield_result[indx] = False
-                                break
-
-                    if filter['max_time']:
-                        if cp_st_mtime > filter['max_time'][-1]:
-                            if indx == 0:
-                                yield_result[indx] = False
-                                break
-
-                        elif cp_st_mtime <= filter['max_time'][-1]:
-                            if indx == 1:
-                                yield_result[indx] = False
-                                break
-
-                    if filter['min_size']:
-                        if cp_st_size < filter['min_size'][-1]: # pylint: disable=E0606
-                            if indx == 0:
-                                yield_result[indx] = False
-                                break
-
-                        elif cp_st_size >= filter['min_size'][-1]:
-                            if indx == 1:
-                                yield_result[indx] = False
-                                break
-
-                    if filter['max_size']:
-                        if cp_st_size > filter['max_size'][-1]:
-                            if indx == 0:
-                                yield_result[indx] = False
-                                break
-
-                        elif cp_st_size <= filter['max_size'][-1]:
-                            if indx == 1:
-                                yield_result[indx] = False
-                                break
-
-                if not all(yield_result):
-                    echo(
-                        f'[Y0b]x Target "{current_path}" is '
-                        'ignored by filters! Skipping...[X]'
-                    )
-                    continue
-
             if calculate:
                 if not current_path.exists():
                     echo(
@@ -385,40 +372,55 @@ def file_upload(
                 )
                 echo(echo_text, nl=False)
                 echo(' ' * 60 + '\r', nl=False)
-            else:
-                if not file_path:
-                    remote_path = current_path.resolve()
-                else:
-                    if flat_path:
-                        remote_path = Path(file_path) / current_path.name
-                    else:
-                        r = str(current_path.resolve().parent)
-                        r = r.removeprefix(str(path)).lstrip('/\\')
-                        remote_path = file_path / r / current_path.name
+                continue
 
-                current_bytes -= getsize(current_path)
-                current_workers -= 1
-
-                if not all((current_workers > 0, current_bytes > 0)):
-                    try:
-                        _upload(to_upload)
-                    except tgbox.errors.NotEnoughRights as e:
-                        echo(f'\n[R0b]{e}[X]')
-                        return
-
-                    current_workers = max_workers - 1
-                    current_bytes = max_bytes - getsize(current_path)
-
-                pw = _push_wrapper(
-                    file = current_path,
-                    file_path = remote_path,
-                    cattrs = parsed_cattrs
+            if filters and not _check_filters(filters, current_path):
+                echo(
+                    f'[Y0b]x Target "{current_path}" is '
+                    'ignored by filters! Skipping...[X]'
                 )
-                to_upload.append(pw)
+                continue
+
+            if not file_path:
+                remote_path = current_path.resolve()
+            else:
+                if flat_path:
+                    remote_path = Path(file_path) / current_path.name
+                else:
+                    r = str(current_path.resolve().parent)
+                    r = r.removeprefix(str(path)).lstrip('/\\')
+                    remote_path = file_path / r / current_path.name
+
+            current_bytes -= getsize(current_path)
+            current_workers -= 1
+
+            if not all((current_workers > 0, current_bytes > 0)):
+                try:
+                    tgbox.sync(gather(*to_upload))
+                    to_upload.clear()
+                except tgbox.errors.NotEnoughRights as e:
+                    echo(f'\n[R0b]{e}[X]')
+                    return
+
+                current_workers = max_workers - 1
+                current_bytes = max_bytes - getsize(current_path)
+
+            pw = _push_wrapper(
+                ctx = ctx,
+                file = current_path,
+                file_path = remote_path,
+                cattrs = parsed_cattrs,
+                force_update = force_update,
+                no_update = no_update,
+                no_thumb = no_thumb,
+                use_slow_upload = use_slow_upload
+            )
+            to_upload.append(pw)
 
         if to_upload: # If any files left
             try:
-                _upload(to_upload)
+                tgbox.sync(gather(*to_upload))
+                to_upload.clear()
             except tgbox.errors.NotEnoughRights as e:
                 echo(f'\n[R0b]{e}[X]')
 
