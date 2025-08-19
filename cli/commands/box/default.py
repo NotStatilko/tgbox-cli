@@ -13,9 +13,9 @@ def box_default(ctx, defaults):
     """Change the TGBOX default values to your own
 
     \b
-    I.e:\b
+    E.g:\b
         # Change METADATA_MAX to the max allowed size
-        tgbox-cli box-default METADATA_MAX=1677721
+        tgbox-cli box-default FAST_SYNC_ENABLED=1
         \b
         # Change download path from DownloadsTGBOX to Downloads
         tgbox-cli box-default DOWNLOAD_PATH=Downloads

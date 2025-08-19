@@ -23,30 +23,36 @@ from ...config import tgbox
 def box_sync(ctx, start_from_id, deep, timeout):
     """Synchronize your current LocalBox with RemoteBox
 
-    After this operation, all info about your LocalFiles that are
+    \b
+    After this operation, all info about your local files that are
     not in RemoteBox will be deleted from LocalBox. Files that
     not in LocalBox but in RemoteBox will be imported.
 
+    \b
     There is two modes of sync: the Fast and the Deep. The
     "Fast" mode will fetch data from the "Recent Actions"
     Telegram channel admin log. The updates here will stay
-    up to 48 hours, so this is the best option. In any other
-    case specify a --deep flag to enable the "Deep" sync.
+    up to 48 hours, so this is the best option for multiple
+    users who share one Box. In any other case specify a
+    --deep flag to issue the "Deep" sync.
 
-    Deep sync will iterate over each file in Remote and
-    Local boxes, then compare them. This may take a
-    very long time. You can track state of remote
-    with the file-last-id command and specify
-    the last file ID of your LocalBox as
+    \b
+    Deep sync will iterate over each file in Remote and Local
+    boxes, then compare them. This may take a long time. You
+    can track state of remote with the file-last-id command
+    and specify the last file ID of your LocalBox as
     --start-from-id (-s) option here.
 
     \b
-    (!) Please note that to make a fast sync you *need*\b
+    (!) Please note that to issue a Fast Sync you *need*\b
      |  to have access to the Channel's Admin Log. Ask
      |  the RemoteBox owner to make you Admin with (at
      |  least) zero rights or use a deep synchronization.
      |
     (?) Use tgbox-cli box-info to check your rights.
+     |
+     |  You also need to enable it firstly:
+     |      tgbox-cli box-default FAST_SYNC_ENABLED=1
 
     (!) --start-from-id can be used only with --deep sync.
     """
@@ -68,11 +74,20 @@ def box_sync(ctx, start_from_id, deep, timeout):
         start_from = start_from_id,
         fast_progress_callback = progress_callback,
         deep_progress_callback = progress_callback,
-        timeout = timeout
-    )
+        timeout = timeout)
     try:
         tgbox.sync(box_sync_coro)
     except tgbox.errors.RemoteFileNotFound as e:
         echo(f'[R0b]{e}[X]')
+    except tgbox.errors.FastSyncDisabled:
+        echo(
+            '[R0b]Fast Sync on your Box is disabled, but you '
+            'can enable it with[X] [Y1]tgbox-cli box-default '
+            'FAST_SYNC_ENABLED=1[X]. [W0b]Please note that '
+            'Fast Sync is only useful when you share your Box '
+            'with someone. If only You use this Box, then you '
+            'can issue Deep Sync with the[X] [G0b]--deep[X] '
+            '[W0b]flag. Also use the[X] [G0b]--start-from-id[X] '
+            '[W0b]to set Sync start point.[X]')
     else:
         echo('[G0b]Syncing complete.[X]')

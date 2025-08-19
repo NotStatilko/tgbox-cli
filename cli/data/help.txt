@@ -1,6 +1,6 @@
 [Y0br]TGBOX-CLI README[X]
     Hi and Welcome to the short TGBOX-CLI README! This file
-    intended to help you to get info about this program.
+    is intended to guide you through the usage of this CLI.
 
 [W0b]What is TGBOX?[X]
     TGBOX (TelegramBox) is a non-official API to the encrypted
@@ -39,21 +39,21 @@
 
 
 [W0b]ENVIRONMENT VARIABLES[X]
-    As many CLI applications, TGBOX-CLI supports some environment
-    variables. You can set them in your CMD with the "[M0b]set[X]" (Windows)
-    or "[M0b]export[X]" (UNIX) commands. See more on Wikipedia:
+    TGBOX-CLI supports some environment variables. You can set them
+    in your Terminal with the "[M0b]set[X]" (Windows) or "[M0b]export[X]" (UNIX)
+    commands. See more on Wikipedia:
         [B0b]en.wikipedia.org/wiki/Environment_variable#Syntax[X]
 
-    TGBOX-CLI supports the next environment variables:
-        [W1b]http_proxy[X] (or [W1b]https_proxy[X]): setup Proxy (Google for format)
+    TGBOX-CLI supports the Environment Variables:
+        [W1b]http_proxy[X] (or [W1b]https_proxy[X]): set HTTPS/s Proxy string
         [W1b]TGBOX_CLI_SHOW_PASSWORD[X]: any value will disable hidden input
         [W1b]TGBOX_CLI_DEBUG[X]: any value will enable full error Traceback
         [W1b]TGBOX_CLI_NOCOLOR[X]: any value will disable colored output
         [W1b]TGBOX_CLI_LOGFILE[X]: a full path to logging file
-        [W1b]TGBOX_CLI_LOGLEVEL[X]: setup logging level (DEBUG/INFO/...etc)
+        [W1b]TGBOX_CLI_LOGLEVEL[X]: set logging level (DEBUG/INFO/...etc)
         [W1b]TGBOX_CLI_SK[X]: SessionKey. Will be installed on initialization
 
-    [X1b]! Ordinary users may only need the first var to set up Proxy[X]
+    [X1b]! Regular users may only need the first var to setup Proxy[X]
     [X1b]  and TGBOX_CLI_SHOW_PASSWORD to make input visible[X]
 
 [W0b]COMMANDS & USAGE[X]
@@ -410,7 +410,7 @@
 
         [M0b]|||||| Box Syncing ||||||[X]
 
-        Box needs to be synced [W0b]if[X] it's used by multiply
+        Box needs to be synced [W0b]if[X] it's used by multiple
         peoples & [W0b]if[X] at least one upload files. This can be
         done with the [B0b]box-sync[X] command. [W0b]By default[X], TGBOX-CLI
         will try to use a [C0b]Fast Sync[X]: the synchronization
@@ -420,10 +420,14 @@
         [W0b]Admin with zero rights[X] (all rights off). Ask
         the Box owner to make you such Admin. Note
         that you need to sync [W0b]within 48 hours[X] after
-        the file was uploaded, because later Log will be cleared.
+        file was uploaded, because later Log will reset.
 
-        Alternatively, you can make a [C0b]Deep Sync[X]. It
-        can be enabled by specifying the [G0b]--deep[X] flag.
+        You [W0b]need[X] to enable [C0b]Fast Sync[X] on your Box to be
+        able to use it. It can be easily done with:
+            [W1b]tgbox-cli box-default FAST_SYNC_ENABLED=1[X]
+
+        Alternatively, you can issue [C0b]Deep Sync[X]. It
+        can be forced by specifying the [G0b]--deep[X] flag.
 
         The [B0b]box-sync[X] [G0b]--deep[X] without additional options
         will check [W0b]every file[X] in RemoteBox and compare it
@@ -478,7 +482,7 @@
 
         [M0b]|||||| Directory Sharing ||||||[X]
 
-        Instead of sharing multiply files separately, [R0b]Alice[X] can
+        Instead of sharing multiple files separately, [R0b]Alice[X] can
         share with [C0b]Bob[X] an [W0b]entire Directory[X]. This is pretty
         similar to the [M0b]File Sharing[X], but make use of the two
         new commands: the [B0b]dir-forward[X] & [B0b]dir-share[X].
@@ -495,7 +499,7 @@
         So, [R0b]Alice[X] has a directory [W0b]/home/alice/Arts[X] with
         many arts in it. Making a ShareKey for each file and
         sharing it separately (as in [M0b]File Sharing[X]) can be
-        really annoying. See a use of the [B0b]dir-share[X] command:
+        really annoying. See usage of the [B0b]dir-share[X] command:
 
         [W0b]Step one[X]: [R0b]Alice[X] is sure about dir she wants to share,
         that is [W0b]/home/alice/Arts[X]. To share all files from it,
@@ -556,7 +560,7 @@
         direct access to [R0b]Giver[X]'s [W0b]RemoteBox[X] contents). If
         you don't want this, use [B0b]file-share[X] command instead.
         |
-        See a [W0b]TGBOX docs[X] for more info about [W0b]Protocol[X].
+        See [W0b]TGBOX docs[X] for more info about [W0b]Protocol[X].
 
         [W0b]2[X]/
         The [B0b]dir-forward[X] is a some kind of [W0b]syntactic sugar[X]
