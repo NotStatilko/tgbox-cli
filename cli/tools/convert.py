@@ -108,8 +108,10 @@ def parse_str_cattrs(cattrs_str: str) -> dict:
     try:
         cattrs_str = tgbox.tools.PackedAttributes.unpack(
             bytes.fromhex(cattrs_str)
-        );  assert cattrs_str
-    except (ValueError, AssertionError):
+        )
+        if not cattrs_str:
+            raise ValueError
+    except ValueError:
         try:
             cattrs_str = [
                 i.strip().split(':')

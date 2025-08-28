@@ -68,9 +68,10 @@ class Session:
         self.file = folder / f'sess_{session_id.decode()}'
         try:
             state = open(self.file,'rb').read()
-            assert state, 'State is empty.'
+            if not state:
+                raise FileNotFoundError
             self.state = loads(AES(self.enc_key).decrypt(state))
-        except (AssertionError, FileNotFoundError):
+        except FileNotFoundError:
             self.file.touch()      # chmod is effectively ignored by Windows, so
             self.file.chmod(0o600) # this basically works only on a POSIX-like
                                    # machines. Blame shitty Windows for this.
