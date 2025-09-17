@@ -265,6 +265,8 @@ async def _push_wrapper(
         ctx, file, file_path, cattrs, force_update,
         no_update, no_thumb, use_slow_upload):
     """
+    This function selects correct push action (either
+    updates file or uploads it) and wraps it.
     """
     file_action = await _get_push_action(
         ctx=ctx, file=file,
