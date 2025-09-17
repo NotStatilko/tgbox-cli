@@ -13,7 +13,9 @@ from ...config import PACKAGE, TGBOX_CLI_NOCOLOR
 def help_(non_interactive):
     """Write this command for extended Help!"""
 
-    help_text = open(PACKAGE / 'data' / 'help.txt').read()
+    help_path = PACKAGE / 'data' / 'help.txt'
+    help_text = open(help_path, encoding='utf-8').read()
+
     if non_interactive:
         echo(help_text)
     else:

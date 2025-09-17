@@ -10,6 +10,6 @@ from ...config import tgbox
     '--words', '-w', default=6,
     help='Words amount in Phrase'
 )
-def phrase_gen(words: int):
+def phrase_gen(words):
     """Generate random Phrase"""
     echo(f'[M0b]{tgbox.keys.Phrase.generate(words)}[X]')

@@ -40,6 +40,7 @@ class Objects:
     @property
     def account(self):
         if isfunction(self._account): # self._account can be lambda
+            # pylint: disable=pointless-statement
             self.drb # Make sure DRB is initialized
             self._account = self._account()
 

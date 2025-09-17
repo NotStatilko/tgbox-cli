@@ -3,7 +3,11 @@ import click
 from re import search as re_search
 from os.path import getsize
 from asyncio import gather
+from copy import deepcopy
 from pathlib import Path
+from os import SEEK_SET
+from math import ceil
+from io import IOBase
 
 from filetype import guess as filetype_guess
 
@@ -15,6 +19,82 @@ from ..group import cli_group
 from ..helpers import ctx_require
 from ...tools.terminal import echo, ProgressBar
 from ...config import tgbox
+
+
+class LimitedReader:
+    """
+    This class is designed to provide limited, offset
+    read() for the Tgbox .push_file() method. Here
+    we can specify start and stop position to read
+    from.
+    """
+    def __init__(
+            self, file_path: str, start_pos: int,
+            stop_pos: int, actual_size: int):
+
+        self._file_path = file_path
+        self._start_pos = start_pos
+        self._stop_pos = stop_pos
+        self._actual_size = actual_size
+
+        self._flo = open(file_path,'rb')
+        self._flo.seek(start_pos, 0)
+
+        self._available = stop_pos - start_pos
+
+    def __del__(self):
+        self.close()
+
+    @property
+    def size(self) -> int:
+        return self._actual_size
+
+    @property
+    def name(self) -> str:
+        return self._file_path
+
+    def read(self, size: int=-1):
+        if self._available <= 0:
+            return b''
+
+        if size < 0:
+            amount = self._available
+            self._available = 0
+        else:
+            if self._available < size:
+                amount = self._available
+            else:
+                amount = size
+
+        self._available -= amount
+        return self._flo.read(amount)
+
+    def seek(self, cookie: int, whence: int=SEEK_SET, /):
+        """
+        Dead simple File-like object (IOBase) .seek() analogue.
+        Please note that here we support only SEEK_SET (0) as
+        whence, any other values will throw error. We don't
+        need complex .seek() here, as it's only for the tgbox
+        push_file() coroutine.
+        """
+        if whence != SEEK_SET:
+            raise ValueError('This dumb seek() supports only SEEK_SET (0)')
+
+        sp_p_cookie = self._start_pos + cookie
+
+        if sp_p_cookie < self._start_pos:
+            start_pos = self._start_pos
+
+        elif sp_p_cookie > self._stop_pos:
+            start_pos = self._stop_pos
+        else:
+            start_pos = self._start_pos + cookie
+
+        self._available = self._stop_pos - self._start_pos
+        return self._flo.seek(start_pos, whence)
+
+    def close(self):
+        self._flo.close()
 
 
 def _check_filters(filters, current_path: Path):
@@ -111,9 +191,9 @@ def _check_filters(filters, current_path: Path):
 
     return True # File matches against the filters
 
-async def _push_wrapper(
+async def _get_push_action(
         ctx, file, file_path, cattrs, force_update,
-        no_update, no_thumb, use_slow_upload
+        no_update, no_thumb
     ):
     """Helper-function for the .push_file() coroutine"""
 
@@ -123,12 +203,17 @@ async def _push_wrapper(
     )
     dlbf = await ctx.obj.dlb.get_file(fingerprint=fingerprint)
 
+    if isinstance(file, LimitedReader):
+        file_size = file.size
+    else:
+        file_size = getsize(file)
+
     # Standard file upload if dlbf is not exists (from scratch)
     if not dlbf and not force_update:
         file_action = (ctx.obj.drb.push_file, {})
 
     # File re-uploading (or updating) if file size differ
-    elif force_update or not no_update and dlbf and dlbf.size != getsize(file):
+    elif force_update or not no_update and dlbf and dlbf.size != file_size:
         if not dlbf: # Wasn't uploaded before
             file_action = (ctx.obj.drb.push_file, {})
         else:
@@ -136,7 +221,8 @@ async def _push_wrapper(
             file_action = (ctx.obj.drb.update_file, {'rbf': drbf})
     else:
         # Ignore upload if file exists and wasn't changed
-        echo(f'[Y0b]| File {file} is already uploaded. Skipping...[X]')
+        name = file.name if isinstance(file, IOBase) else file
+        echo(f'[Y0b]| File {name} is already uploaded. Skipping...[X]')
         return
 
     if cattrs is None: # CAttrs not specified
@@ -148,10 +234,14 @@ async def _push_wrapper(
         if dlbf and dlbf.cattrs: # Combine if dlbf has CAttrs
             dlbf.cattrs.update(cattrs)
             cattrs = dlbf.cattrs
+
+    if not isinstance(file, (IOBase, LimitedReader)):
+        file = open(file,'rb')
     try:
         pf = await ctx.obj.dlb.prepare_file(
-            file = open(file,'rb'),
+            file = file,
             file_path = file_path,
+            file_size = file_size,
             cattrs = cattrs,
             make_preview = (not no_thumb),
             skip_fingerprint_check = True
@@ -164,14 +254,31 @@ async def _push_wrapper(
         echo(f'[R0b]{file} is not readable! Skipping...[X]')
         return
 
-    progressbar = ProgressBar(ctx.obj.enlighten_manager, file.name)
+    progressbar = ProgressBar(ctx.obj.enlighten_manager, file_path.name)
 
     file_action[1]['pf'] = pf
     file_action[1]['progress_callback'] = progressbar.update
-    file_action[1]['use_slow_upload'] = use_slow_upload
 
-    await file_action[0](**file_action[1])
+    return file_action
 
+async def _push_wrapper(
+        ctx, file, file_path, cattrs, force_update,
+        no_update, no_thumb, use_slow_upload):
+    """
+    """
+    file_action = await _get_push_action(
+        ctx=ctx, file=file,
+        file_path=file_path,
+        cattrs=cattrs,
+        force_update=force_update,
+        no_update=no_update,
+        no_thumb=no_thumb
+    )
+    if file_action is None:
+        return
+
+    return await file_action[0](**file_action[1],
+        use_slow_upload=use_slow_upload)
 
 @cli_group.command()
 @click.argument(
@@ -211,22 +318,36 @@ async def _push_wrapper(
 )
 @click.option(
     '--calculate', is_flag=True,
-    help='If specified, will calculate and show a total bytesize of targets'
+    help = (
+        'If specified, will calculate and show a total '
+        'bytesize of targets (without uploading)')
 )
 @click.option(
     '--max-workers', default=5, type=click.IntRange(1,50),
-    help='Max amount of files uploaded at the same time, default=10',
+    help='Max amount of files we will upload at the same time, default=10',
 )
 @click.option(
     '--max-bytes', default=200000000,
     type=click.IntRange(1000000, 1000000000),
-    help='Max amount of bytes uploaded at the same time, default=200000000',
+    help='Max amount of bytes we will upload at the same time, default=200000000',
+)
+@click.option(
+    '--multi-file-size',
+    type = click.IntRange(
+        32_000_000, # V 32MB here is reserved for possible Metadata
+        tgbox.defaults.UploadLimits.PREMIUM - 32_000_000
+    ),
+    help = (
+        'Max amount of bytes that we can upload as single file. If file size is > '
+        '--multi-file-size, will split one file by {--multi-file-size} parts and '
+        'upload them separately')
 )
 @ctx_require(dlb=True, drb=True)
 def file_upload(
         ctx, target, file_path, flat_path, cattrs,
         no_update, force_update, use_slow_upload,
-        no_thumb, calculate, max_workers, max_bytes):
+        no_thumb, calculate, max_workers, max_bytes,
+        multi_file_size):
     """
     Upload TARGET by specified filters to the Box
 
@@ -322,6 +443,16 @@ def file_upload(
     else:
         parsed_cattrs = None
 
+    if multi_file_size is None and not calculate:
+        # We can omit request to drb if --calculate
+        has_premium = tgbox.sync(ctx.obj.drb.tc.get_me()).premium
+        if has_premium:
+            multi_file_size = tgbox.defaults.UploadLimits.PREMIUM
+        else:
+            multi_file_size = tgbox.defaults.UploadLimits.DEFAULT
+
+        multi_file_size -= 32_000_000 # Subtract 32MB to leave space
+                                      # for possible Metadata
     for path in target:
         if not path.exists():
             echo(f'[R0b]@ Target "{path}" doesn\'t exists! Skipping...[X]')
@@ -354,6 +485,7 @@ def file_upload(
                 echo(f'[R0b]x Not Working on. {e}. Skipping...[X]')
                 continue
 
+            # --calculate ------------------------------------------------- #
             if calculate:
                 if not current_path.exists():
                     echo(
@@ -380,6 +512,7 @@ def file_upload(
                     'ignored by filters! Skipping...[X]'
                 )
                 continue
+            # ------------------------------------------------------------- #
 
             if not file_path:
                 remote_path = current_path.resolve()
@@ -391,7 +524,8 @@ def file_upload(
                     r = r.removeprefix(str(path)).lstrip('/\\')
                     remote_path = file_path / r / current_path.name
 
-            current_bytes -= getsize(current_path)
+            current_path_size = getsize(current_path)
+            current_bytes -= current_path_size
             current_workers -= 1
 
             if not all((current_workers > 0, current_bytes > 0)):
@@ -403,7 +537,57 @@ def file_upload(
                     return
 
                 current_workers = max_workers - 1
-                current_bytes = max_bytes - getsize(current_path)
+                current_bytes = max_bytes - current_path_size
+
+            # --- Multi upload --------------------------------- #
+            actual_file_size = current_path_size
+            parts = ceil(current_path_size / multi_file_size)
+            multipart_total_b = tgbox.tools.int_to_bytes(parts)
+
+            multipart_offset = 0
+            previous_part_id = b'genesis'
+
+            if current_path_size > multi_file_size:
+                for p in range(parts):
+                    part_path = remote_path.parent / f'{remote_path.name}-{p}'
+                    cattrs = {} if not parsed_cattrs else deepcopy(parsed_cattrs)
+
+                    cattrs['__mp_previous'] = previous_part_id
+                    cattrs['__mp_part'] = tgbox.tools.int_to_bytes(p)
+                    cattrs['__mp_total'] = multipart_total_b
+
+                    if actual_file_size >= multi_file_size:
+                        actual_size = multi_file_size
+                    else:
+                        actual_size = actual_file_size
+
+                    actual_file_size -= multi_file_size
+
+                    file = LimitedReader(
+                        file_path=current_path,
+                        start_pos=multipart_offset,
+                        stop_pos=(multipart_offset + multi_file_size),
+                        actual_size = actual_size
+                    )
+                    multipart_offset += multi_file_size
+
+                    pw = _push_wrapper(
+                        ctx = ctx,
+                        file = file,
+                        file_path = part_path,
+                        cattrs = cattrs,
+                        force_update = force_update,
+                        no_update = no_update,
+                        no_thumb = no_thumb,
+                        use_slow_upload = use_slow_upload
+                    )
+                    drbf = tgbox.sync(pw)
+                    previous_part_id = tgbox.tools.int_to_bytes(drbf.id)
+                    file.close()
+
+                continue
+
+            # -------------------------------------------------- #
 
             pw = _push_wrapper(
                 ctx = ctx,

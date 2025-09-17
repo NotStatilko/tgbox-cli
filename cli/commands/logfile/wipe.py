@@ -9,5 +9,5 @@ def logfile_wipe():
     if not LOGFILE:
         echo('[R0b]Can not clean Logfile[X]')
         return
-    open(LOGFILE,'w').close()
+    open(LOGFILE,'w',encoding='utf-8').close()
     echo('[G0b]Done.[X]')

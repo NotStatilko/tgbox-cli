@@ -24,11 +24,16 @@ if not all((API_ID, API_HASH)):
     API_ID = 2210681#                                                  |
     # ------------------------------------------------------------------
 
-TGBOX_CLI_COMPLETE = getenv('_TGBOX_CLI_COMPLETE')
+# Some CustomAttributes are only functional and should not be
+# visible to User, e.g Multipart ones. Here we list CAttrs
+# that will be hidden in format_dxbf/format_dxbf_multipart
+HIDDEN_CATTRS = ['__mp_total', '__mp_previous', '__mp_part']
 
 # _TGBOX_CLI_COMPLETE will be present in env variables
 # only on source code scan by the autocompletion. To
 # make a scan process faster we drop useless imports
+TGBOX_CLI_COMPLETE = getenv('_TGBOX_CLI_COMPLETE')
+
 if TGBOX_CLI_COMPLETE:
     # If TGBOX_CLI_COMPLETE is True, then we're in the "Autocomplete"
     # mode. No functions will be actually executed, only code scan

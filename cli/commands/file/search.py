@@ -7,7 +7,7 @@ from datetime import datetime
 from ..group import cli_group
 from ..helpers import check_ctx
 from ...tools.terminal import echo
-from ...tools.other import format_dxbf, sync_async_gen
+from ...tools.other import format_dxbf, format_dxbf_multipart, sync_async_gen
 from ...tools.convert import format_bytes, filters_to_searchfilter
 from ...config import tgbox, TGBOX_CLI_NOCOLOR
 
@@ -38,10 +38,14 @@ from ...config import tgbox, TGBOX_CLI_NOCOLOR
     '--fetch-count', '-f', default=100,
     help='Amount of files to fetch from LocalBox before return',
 )
+@click.option(
+    '--split-multipart', '-s', is_flag=True,
+    help='If specified, will not collect Multipart file in one entry',
+)
 @click.pass_context
 def file_search(
-        ctx, filters, force_remote, non_interactive,
-        non_imported, upend, bytesize_total, fetch_count):
+        ctx, filters, force_remote, non_interactive, non_imported,
+        upend, bytesize_total, fetch_count, split_multipart):
     """List files by selected filters
 
     \b
@@ -142,87 +146,136 @@ def file_search(
 
     except IndexError: # Incorrect filters format
         echo('[R0b]Incorrect filters! Make sure to use format filter=value[X]')
+        return
     except KeyError as e: # Unknown filters
         echo(f'[R0b]Filter "{e.args[0]}" doesn\'t exists[X]')
-    else:
-        def bfi_gen(search_file_gen):
-            for bfi in sync_async_gen(search_file_gen):
+        return
+
+    box = ctx.obj.drb if force_remote else ctx.obj.dlb
+
+    if non_imported:
+        iter_over = ctx.obj.drb.search_file(
+            sf=sf, reverse=True,
+            cache_preview=False,
+            return_imported_as_erbf=True
+        )
+        echo('[Y0b]\nSearching, press CTRL+C to stop...[X]')
+
+        for xrbf in sync_async_gen(iter_over):
+            if type(xrbf) is tgbox.api.EncryptedRemoteBoxFile:
+                time = datetime.fromtimestamp(xrbf.upload_time)
+                time = f"[C0b]{time.strftime('%d/%m/%y, %H:%M:%S')}[X]"
+
+                salt = urlsafe_b64encode(xrbf.file_salt.salt).decode()
+                idsalt = f'[[R1b]{str(xrbf.id)}[X]:'
+                idsalt += f'[X1b]{salt[:12]}[X]]'
+
+                size = f'[G0b]{format_bytes(xrbf.file_size)}[X]'
+                name = '[R0b][N/A: No FileKey available][X]'
+
+                req_key = xrbf.get_requestkey(ctx.obj.dlb._mainkey).encode()
+                req_key = f'[W0b]{req_key}[X]'
+
+                formatted = (
+                   f"""\nFile: {idsalt} {name}\n"""
+                   f"""Size, Time: {size}({xrbf.file_size}), {time}\n"""
+                   f"""RequestKey: {req_key}"""
+                )
+                echo(formatted)
+        echo('')
+        return
+
+    if bytesize_total:
+        total_bytes, current_file_count = 0, 0
+
+        echo('')
+
+        if force_remote:
+            iter_over = box.search_file(sf, cache_preview=False)
+        else:
+            iter_over = box.search_file(
+                sf, cache_preview=False,
+                fetch_count=fetch_count
+            )
+        for dlbf in sync_async_gen(iter_over):
+            total_bytes += dlbf.size
+            current_file_count += 1
+
+            total_formatted = f'[B0b]{format_bytes(total_bytes)}[X]'
+            current_file = f'[Y0b]{current_file_count}[X]'
+
+            echo_text = (
+                f'@ Total [W0b]files found [X]({current_file}) '
+                f'size is {total_formatted}({total_bytes})   \r'
+            )
+            echo(echo_text, nl=False)
+
+        echo('\n')
+        return
+
+    def bfi_gen(search_file_gen):
+        # We will construct (format) dxbf only for first
+        # multipart file part and skip its parts. Here
+        # we will cache ids to omit
+        multipart_ignore = set()
+
+        for bfi in sync_async_gen(search_file_gen):
+            if bfi.id in multipart_ignore:
+                multipart_ignore.remove(bfi.id)
+                continue
+
+            # We concat multipart into one entry-file only on LocalBox
+            # file search, because we can not do it reliably on Remote
+            # in the same way as with Local (through search).
+            is_dlbf = isinstance(bfi, tgbox.api.local.DecryptedLocalBoxFile)
+
+            if not split_multipart and is_dlbf:
+                if bfi.cattrs and '__mp_part' in bfi.cattrs:
+                    name = '-'.join(bfi.file_name.split('-')[:-1])
+                    # The most straightforward solution to get all parts of
+                    # one multipart file is to search for them. We can NOT
+                    # just blindly assume that "next file is the next part";
+                    # though yes, we upload parts from first to last one-
+                    # by-one, in case when multiple Users share one Box,
+                    # file of Bob can be in a way of multipart file of
+                    # Alice, like [part, part, Bob file, part, ...], so
+                    # it's only safe for us to request them directly. If
+                    # scope (directory of file) doesn't have enormous
+                    # amount of files, search should be lightning fast.
+                    sf = tgbox.tools.SearchFilter(file_name=name,
+                        scope=str(bfi.file_path), cattrs={
+                            '__mp_part': b'',
+                            '__mp_previous': b'',
+                            '__mp_total': b''
+                        }
+                    )
+                    parts = []
+                    for i, dlbf in enumerate(sync_async_gen(box.search_file(sf))):
+                        if i > 0: # skip first id as we show it
+                            multipart_ignore.add(dlbf.id)
+                        parts.append(dlbf)
+
+                    parts.sort(key=lambda d: d.cattrs['__mp_part'])
+                    yield format_dxbf_multipart(parts)
+                else:
+                    yield format_dxbf(bfi)
+            else:
                 yield format_dxbf(bfi)
 
-        box = ctx.obj.drb if force_remote else ctx.obj.dlb
+    sgen = box.search_file(
+        sf=sf, reverse=upend,
+        cache_preview=True
+    )
+    sgen = bfi_gen(sgen)
 
-        if non_imported:
-            iter_over = ctx.obj.drb.search_file(
-                sf=sf, reverse=True,
-                cache_preview=False,
-                return_imported_as_erbf=True
-            )
-            echo('[Y0b]\nSearching, press CTRL+C to stop...[X]')
+    if non_interactive:
+        for dxbfs in sgen:
+            echo(dxbfs, nl=False)
+        echo('')
+    else:
+        colored = False if TGBOX_CLI_NOCOLOR else None
 
-            for xrbf in sync_async_gen(iter_over):
-                if type(xrbf) is tgbox.api.EncryptedRemoteBoxFile:
-                    time = datetime.fromtimestamp(xrbf.upload_time)
-                    time = f"[C0b]{time.strftime('%d/%m/%y, %H:%M:%S')}[X]"
+        if getenv('TGBOX_CLI_FORCE_PAGER_COLOR'):
+            colored = True
 
-                    salt = urlsafe_b64encode(xrbf.file_salt.salt).decode()
-                    idsalt = f'[[R1b]{str(xrbf.id)}[X]:'
-                    idsalt += f'[X1b]{salt[:12]}[X]]'
-
-                    size = f'[G0b]{format_bytes(xrbf.file_size)}[X]'
-                    name = '[R0b][N/A: No FileKey available][X]'
-
-                    req_key = xrbf.get_requestkey(ctx.obj.dlb._mainkey).encode()
-                    req_key = f'[W0b]{req_key}[X]'
-
-                    formatted = (
-                       f"""\nFile: {idsalt} {name}\n"""
-                       f"""Size, Time: {size}({xrbf.file_size}), {time}\n"""
-                       f"""RequestKey: {req_key}"""
-                    )
-                    echo(formatted)
-            echo('')
-
-        elif bytesize_total:
-            total_bytes, current_file_count = 0, 0
-
-            echo('')
-
-            if force_remote:
-                iter_over = box.search_file(sf, cache_preview=False)
-            else:
-                iter_over = box.search_file(
-                    sf, cache_preview=False,
-                    fetch_count=fetch_count
-                )
-            for dlbf in sync_async_gen(iter_over):
-                total_bytes += dlbf.size
-                current_file_count += 1
-
-                total_formatted = f'[B0b]{format_bytes(total_bytes)}[X]'
-                current_file = f'[Y0b]{current_file_count}[X]'
-
-                echo_text = (
-                    f'@ Total [W0b]files found [X]({current_file}) '
-                    f'size is {total_formatted}({total_bytes})   \r'
-                )
-                echo(echo_text, nl=False)
-
-            echo('\n')
-        else:
-            sgen = box.search_file(
-                sf=sf, reverse=upend,
-                cache_preview=True
-            )
-            sgen = bfi_gen(sgen)
-
-            if non_interactive:
-                for dxbfs in sgen:
-                    echo(dxbfs, nl=False)
-                echo('')
-            else:
-                colored = False if TGBOX_CLI_NOCOLOR else None
-
-                if getenv('TGBOX_CLI_FORCE_PAGER_COLOR'):
-                    colored = True
-
-                click.echo_via_pager(sgen, color=colored)
+        click.echo_via_pager(sgen, color=colored)
