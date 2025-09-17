@@ -48,6 +48,10 @@ if TGBOX_CLI_COMPLETE:
     tgbox.defaults = type('defaults', (), {})
     tgbox.defaults.REMOTEBOX_PREFIX = None
 
+    tgbox.defaults.UploadLimits = type('', (), {})
+    tgbox.defaults.UploadLimits.PREMIUM = 0
+    tgbox.defaults.UploadLimits.DEFAULT = 0
+
     tgbox.defaults.Scrypt = type('', (), {})
     tgbox.defaults.Scrypt.SALT = 0
     tgbox.defaults.Scrypt.N = 0
