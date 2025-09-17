@@ -1,11 +1,14 @@
 # A *C*ommand *L*ine *I*nterface to the TGBOX
 
-This is a [**CLI**](https://en.wikipedia.org/wiki/Command-line_interface) implementation of the [**TGBOX**](https://github.com/NonProjects/tgbox/) — an encrypted cloud storage built around the [**Telegram**](https://telegram.org).
+This is a [**CLI**](https://en.wikipedia.org/wiki/Command-line_interface) implementation of the [**TGBOX**](https://github.com/NonProjects/tgbox/) — an encrypted cloud storage built around the [**Telegram**](https://telegram.org). 
 
-![List of the TGBOX-CLI commands](https://github.com/NotStatilko/tgbox-cli/assets/43419673/b84b98e9-1ea1-432f-86d3-07a018d315bc)
+**TGBOX-CLI** supports all features of the `tgbox` protocol, adding additional ones\
+like basic **Encrypted Chat** and support for **unlimited file size** (4GB+) uploads.
+
+![List of the TGBOX-CLI commands](https://github.com/user-attachments/assets/85039ac8-80c7-4cf3-a86d-0912100cdd7e)
 ## Installation
 
-To *build* the **TGBOX-CLI** you will need to have **at least** Python 3.8.
+To *build* the **TGBOX-CLI** you will need to have **at least** Python **3.9**.
 
 ### Windows builds (.EXE)
 
@@ -79,6 +82,7 @@ tgbox-cli help
 
 ## Bug reports
 
-Feel free to report some problems (i believe there can be many) on the [**GitHub Issue tab**](https://github.com/NotStatilko/tgbox-cli/issues). Any encountered error should be written to the logfile. Use the **logfile-open** command and **attach** its content to the bug report.
+Feel free to report some problems (i believe there can be many) on the [**GitHub Issue tab**](https://github.com/NotStatilko/tgbox-cli/issues). Any encountered error should be\
+written to the logfile. Use the **logfile-open** command and **attach** its contents to the bug report.
 
 **Thanks**.
