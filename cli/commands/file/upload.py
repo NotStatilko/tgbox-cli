@@ -484,7 +484,7 @@ def file_upload(
                     echo(f'[C0b]@ Working on[X] [W0b]{str(current_path)}[X] ...')
                     continue
                 else:
-                    current_path.touch()
+                    open(current_path,'rb') # check if we can read file
             except (FileNotFoundError, PermissionError, OSError) as e:
                 if current_path.is_dir():
                     echo(f'[R0b]x Not Working on. {e}. Skipping...[X]')
