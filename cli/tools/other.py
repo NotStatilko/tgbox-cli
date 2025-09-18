@@ -340,16 +340,20 @@ def format_dxbf_message(
     else:
         text = colorized_text
 
-    if getattr(dxbf, 'sender_entity', None):
+    sender_entity = None
+    if getattr(dxbf, 'get_sender_entity', None):
+        sender_entity = tgbox.sync(dxbf.get_sender_entity())
+
+    if sender_entity:
         if dxbf.sender_id < 0: # Channel
-            author = dxbf.sender_entity.username
+            author = sender_entity.username
             author = f'@{author}' if author else author.title
             id_ = f'Channel {dxbf.sender_id}'
         else: # User
-            author = dxbf.sender_entity.username
+            author = sender_entity.username
             author = f'@{author}' if author else author.first_name
 
-            if dxbf.sender_entity.last_name:
+            if sender_entity.last_name:
                 author += f' {author.last_name}'
 
             id_ = f'User {dxbf.sender_id}'

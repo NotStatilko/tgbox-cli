@@ -198,7 +198,7 @@ def chat_open(ctx, topic, current_date, auto_mode_wait, less_data):
 
             chat_dir = tgbox.sync(ctx.obj.dlb.get_directory(str(topic_path)))
             if not chat_dir:
-                echo('\n[Y0b]@ Chat is currently empty...[X]')
+                echo('\n[Y0b]@ Chat on this date is empty...[X]')
                 dxbf_messages = []
             else:
                 contents = ctx.obj.dlb.contents(sfpid=chat_dir.part_id)
