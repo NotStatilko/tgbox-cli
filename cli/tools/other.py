@@ -287,7 +287,8 @@ def format_dxbf_multipart(
 
 def format_dxbf_message(
         dxbf: Union['tgbox.api.DecryptedRemoteBoxFile',
-            'tgbox.api.DecryptedLocalBoxFile']) -> str:
+            'tgbox.api.DecryptedLocalBoxFile'],
+        show_username: bool) -> str:
     """
     This will make a colored information string from the
     DecryptedRemoteBoxFile or DecryptedLocalBoxFile message
@@ -341,25 +342,34 @@ def format_dxbf_message(
         text = colorized_text
 
     sender_entity = None
-    if getattr(dxbf, 'get_sender_entity', None):
+    sender_id = getattr(dxbf, 'sender_id', None)
+
+    if show_username and getattr(dxbf, 'get_sender_entity', None):
         sender_entity = tgbox.sync(dxbf.get_sender_entity())
 
-    if sender_entity:
-        if dxbf.sender_id < 0: # Channel
-            author = sender_entity.username
-            author = f'@{author}' if author else author.title
-            id_ = f'Channel {dxbf.sender_id}'
-        else: # User
-            author = sender_entity.username
-            author = f'@{author}' if author else author.first_name
+    if sender_id:
+        if not sender_entity:
+            if sender_id < 0: # Channel
+                author = f'Channel {sender_id}'
+            else:
+                author = f'User {sender_id}'
+            id_ = ''
+        else:
+            if sender_id < 0: # Channel
+                author = sender_entity.username
+                author = f'@{author}' if author else author.title
+                id_ = f'(Channel {sender_id})'
+            else: # User
+                author = sender_entity.username
+                author = f'@{author}' if author else author.first_name
 
-            if sender_entity.last_name:
-                author += f' {author.last_name}'
+                if sender_entity.last_name:
+                    author += f' {author.last_name}'
 
-            id_ = f'User {dxbf.sender_id}'
+                id_ = f'(User {sender_id})'
 
         author = f'[Y0b]{author}[X] [G0b]√[X]'
-        author += f' [X1]({id_})[X]'
+        author += f' [X1]{id_}[X]'
     else:
         author = f'@{dxbf.cattrs["author"].decode()}'
         id_ = f'{dxbf.cattrs["author_id"].decode().lstrip("id")}'
