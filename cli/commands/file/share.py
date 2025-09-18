@@ -15,10 +15,6 @@ from ...config import tgbox
     '--id', required=True, type=int,
     help='ID of file to share'
 )
-@click.option(
-    '--directory', '-d', required=True, prompt=True,
-    help='Absolute path of Directory to share'
-)
 @ctx_require(dlb=True)
 def file_share(ctx, requestkey, id):
     """Get a ShareKey from RequestKey to share file"""
