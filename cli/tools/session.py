@@ -56,7 +56,7 @@ class Session:
                 folder.chmod(0o777)
         except PermissionError:
             pass # We can not change permissions from this user.
-                 # This shoudln't be a problem, as initial user
+                 # This shouldn't be a problem, as initial user
                  # (creator) of this folder should set it to 777
 
         self.folder, self.session_key = folder, session_key
