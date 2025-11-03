@@ -322,7 +322,7 @@ def process_multipart_download(
     )
 )
 @click.option(
-    '--split-multipart', '-s', is_flag=True,
+    '--split-multipart', '-m', is_flag=True,
     help='If specified, will download all Multipart file parts separately',
 )
 @click.option(
