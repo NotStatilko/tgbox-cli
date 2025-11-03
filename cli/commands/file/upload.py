@@ -17,6 +17,7 @@ from ...tools.convert import (
 )
 from ..group import cli_group
 from ..helpers import ctx_require
+from ...tools.other import sync_async_gen
 from ...tools.terminal import echo, ProgressBar
 from ...config import tgbox
 
@@ -445,8 +446,8 @@ def file_upload(
     else:
         parsed_cattrs = None
 
+                               # We can omit request to drb if --calculate
     if multi_file_size is None and not calculate:
-        # We can omit request to drb if --calculate
         has_premium = tgbox.sync(ctx.obj.drb.tc.get_me()).premium
         if has_premium:
             multi_file_size = tgbox.defaults.UploadLimits.PREMIUM
@@ -455,6 +456,7 @@ def file_upload(
 
         multi_file_size -= 32_000_000 # Subtract 32MB to leave space
                                       # for possible Metadata
+
     for path in target:
         if not path.exists():
             echo(f'[R0b]@ Target "{path}" doesn\'t exists! Skipping...[X]')
@@ -496,7 +498,7 @@ def file_upload(
             if calculate:
                 if not current_path.exists():
                     echo(
-                       f'[R0b]@ Target "{current_path}" doesn\'t '
+                       f'[R0b]x Target "{current_path}" doesn\'t '
                         'exists! Skipping...[X]')
                     continue
 
@@ -556,12 +558,36 @@ def file_upload(
 
             if current_path_size > multi_file_size:
                 for p in range(parts):
-                    part_path = remote_path.parent / f'{remote_path.name}-{p}'
-                    cattrs = {} if not parsed_cattrs else deepcopy(parsed_cattrs)
+                    # will be used if part is already uploaded
+                    skip_upload = False
 
-                    cattrs['__mp_previous'] = previous_part_id
-                    cattrs['__mp_part'] = tgbox.tools.int_to_bytes(p)
-                    cattrs['__mp_total'] = multipart_total_b
+                    part_path = remote_path.parent / f'{remote_path.name}-{p}'
+
+                    dlbf_sf = tgbox.tools.SearchFilter(
+                        file_name=part_path.name,
+                        scope=str(part_path.parent)
+                    )
+                    dlbf = ctx.obj.dlb.search_file(dlbf_sf)
+                    try:
+                        dlbf = next(sync_async_gen(dlbf))
+                    except StopIteration:
+                        pass # Proceed with upload
+                    else:
+                        p_bytes = tgbox.tools.int_to_bytes(p)
+                        if dlbf.cattrs and dlbf.cattrs['__mp_part'] == p_bytes:
+                            echo(f'[Y0b]| Part {p} of file {remote_path.name} '
+                                'is already uploaded. Skipping...[X]')
+
+                            previous_part_id = tgbox.tools.int_to_bytes(dlbf.id)
+                            skip_upload = True
+                        else:
+                            echo(
+                                f'[R0b]x File "{part_path}" is already exists in '
+                                'your LocalBox, so upload of Multipart file is '
+                                'impossible! Please rename your file or verify '
+                                'that your LocalBox is not broken (if you see '
+                                'this error after broken multipart upload)![X]')
+                            break # will jump to continue
 
                     if actual_file_size >= multi_file_size:
                         actual_size = multi_file_size
@@ -570,30 +596,36 @@ def file_upload(
 
                     actual_file_size -= multi_file_size
 
-                    file = LimitedReader(
-                        file_path=current_path,
-                        start_pos=multipart_offset,
-                        stop_pos=(multipart_offset + multi_file_size),
-                        actual_size = actual_size
-                    )
+                    if not skip_upload:
+                        cattrs = {} if not parsed_cattrs else deepcopy(parsed_cattrs)
+
+                        cattrs['__mp_previous'] = previous_part_id
+                        cattrs['__mp_part'] = tgbox.tools.int_to_bytes(p)
+                        cattrs['__mp_total'] = multipart_total_b
+
+                        file = LimitedReader(
+                            file_path=current_path,
+                            start_pos=multipart_offset,
+                            stop_pos=(multipart_offset + multi_file_size),
+                            actual_size = actual_size
+                        )
+                        pw = _push_wrapper(
+                            ctx = ctx,
+                            file = file,
+                            file_path = part_path,
+                            cattrs = cattrs,
+                            force_update = force_update,
+                            no_update = no_update,
+                            no_thumb = no_thumb,
+                            use_slow_upload = use_slow_upload
+                        )
+                        drbf = tgbox.sync(pw)
+                        previous_part_id = tgbox.tools.int_to_bytes(drbf.id)
+                        file.close()
+
                     multipart_offset += multi_file_size
 
-                    pw = _push_wrapper(
-                        ctx = ctx,
-                        file = file,
-                        file_path = part_path,
-                        cattrs = cattrs,
-                        force_update = force_update,
-                        no_update = no_update,
-                        no_thumb = no_thumb,
-                        use_slow_upload = use_slow_upload
-                    )
-                    drbf = tgbox.sync(pw)
-                    previous_part_id = tgbox.tools.int_to_bytes(drbf.id)
-                    file.close()
-
                 continue
-
             # -------------------------------------------------- #
 
             pw = _push_wrapper(
