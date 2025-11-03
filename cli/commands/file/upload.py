@@ -564,7 +564,6 @@ def file_upload(
                     part_path = remote_path.parent / f'{remote_path.name}-{p}'
 
                     if not force_update:
-
                         dlbf_sf = tgbox.tools.SearchFilter(
                             file_name=part_path.name,
                             scope=str(part_path.parent)
