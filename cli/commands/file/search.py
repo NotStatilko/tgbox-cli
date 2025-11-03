@@ -39,7 +39,7 @@ from ...config import tgbox, TGBOX_CLI_NOCOLOR
     help='Amount of files to fetch from LocalBox before return',
 )
 @click.option(
-    '--split-multipart', '-s', is_flag=True,
+    '--split-multipart', '-m', is_flag=True,
     help='If specified, will not collect Multipart file in one entry',
 )
 @click.pass_context
