@@ -244,6 +244,28 @@
         to remote at least one file, -- it [W0b]will accept[X]
         target which bytesize is > than [G0b]--max-bytes[X].
 
+        [W0b]Multipart Upload[X]
+        [W0b]----------------[X]
+
+        Starting from the TGBOX-CLI [W0b]version 1.5[X], you can [Y0b]upload[X]
+        [Y0b]files that is larger than Telegram file limit[X], which
+        is [W0b]2GB[X] for ordinary users and [W0b]4GB[X] for Premium ones. We
+        do so by [W0b]splitting file in parts[X] and uploading each
+        one of them separately, seamlessly for You.
+
+        Part size is typically a bit less than a maximum
+        allowed file size on your Account, ~[W0b]2GB[X] or ~[W0b]4GB[X].
+
+        You can [W0b]continue[X] uploading or downloading parts
+        [W0b]even after abrupt/error stop[X]. If you downloaded
+        or uploaded 3 parts, you will [W0b]continue from 4th[W0b].
+
+        [C1b]Multipart Upload[X] will be [W0b]automatically enabled[X] if
+        size of your file [Y0b]exceeds[X] [W0b]2GB[X] or [W0b]4GB[X] (Premium),
+        you can override chunk size with special option
+        [G0b]--multi-file-size[X], but it is [Y0b]not[X] recommended
+        unless You [W0b]understand[X] what You are doing.
+
         [M0b]|||||| Searching Files ||||||[X]
 
         After you upload some files, you may list them, try:
@@ -282,8 +304,8 @@
         so we can make a [W0b]quick fetch[X] of all files in specified
         directory. That's what the "[C0b]scope[X]" do.
         |
-        Let's imagine that you have a [W0b]*many*[X] files in your Box. You
-        want to find a nice track by name "[W0b]Spit[X]" of amazing singer,
+        Let's imagine that you have a [W0b]*many*[X] files in your Box.
+        You want to find a nice track "[W0b]Spit[X]" by amazing singer,
         [W0b]Poppy[X]. You totally know that it has the word "[W0b]Spit[X]" in
         name and also you're sure that it's somewhere in the
         [W0b]/home/user/Music/[X] directory (has this file path).
