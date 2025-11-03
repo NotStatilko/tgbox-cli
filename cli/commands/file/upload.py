@@ -558,36 +558,38 @@ def file_upload(
 
             if current_path_size > multi_file_size:
                 for p in range(parts):
-                    # will be used if part is already uploaded
+                    # will be True if part is already uploaded
                     skip_upload = False
 
                     part_path = remote_path.parent / f'{remote_path.name}-{p}'
 
-                    dlbf_sf = tgbox.tools.SearchFilter(
-                        file_name=part_path.name,
-                        scope=str(part_path.parent)
-                    )
-                    dlbf = ctx.obj.dlb.search_file(dlbf_sf)
-                    try:
-                        dlbf = next(sync_async_gen(dlbf))
-                    except StopIteration:
-                        pass # Proceed with upload
-                    else:
-                        p_bytes = tgbox.tools.int_to_bytes(p)
-                        if dlbf.cattrs and dlbf.cattrs['__mp_part'] == p_bytes:
-                            echo(f'[Y0b]| Part {p} of file {remote_path.name} '
-                                'is already uploaded. Skipping...[X]')
+                    if not force_update:
 
-                            previous_part_id = tgbox.tools.int_to_bytes(dlbf.id)
-                            skip_upload = True
+                        dlbf_sf = tgbox.tools.SearchFilter(
+                            file_name=part_path.name,
+                            scope=str(part_path.parent)
+                        )
+                        dlbf = ctx.obj.dlb.search_file(dlbf_sf)
+                        try:
+                            dlbf = next(sync_async_gen(dlbf))
+                        except StopIteration:
+                            pass # Proceed with upload
                         else:
-                            echo(
-                                f'[R0b]x File "{part_path}" is already exists in '
-                                'your LocalBox, so upload of Multipart file is '
-                                'impossible! Please rename your file or verify '
-                                'that your LocalBox is not broken (if you see '
-                                'this error after broken multipart upload)![X]')
-                            break # will jump to continue
+                            p_bytes = tgbox.tools.int_to_bytes(p)
+                            if dlbf.cattrs and dlbf.cattrs['__mp_part'] == p_bytes:
+                                echo(f'[Y0b]| Part {p} of file {remote_path.name} '
+                                    'is already uploaded. Skipping...[X]')
+
+                                previous_part_id = tgbox.tools.int_to_bytes(dlbf.id)
+                                skip_upload = True
+                            else:
+                                echo(
+                                    f'[R0b]x File "{part_path}" is already exists in '
+                                    'your LocalBox, so upload of Multipart file is '
+                                    'impossible! Please rename your file or verify '
+                                    'that your LocalBox is not broken (if you see '
+                                    'this error after broken multipart upload)![X]')
+                                break # will jump to continue
 
                     if actual_file_size >= multi_file_size:
                         actual_size = multi_file_size
