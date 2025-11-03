@@ -5,7 +5,7 @@ with open('cli/version.py', encoding='utf-8') as f:
     version = literal_eval(f.read().split('=')[1].strip())
 
 setup(
-    name             = "tgbox-cli",
+    name             = 'tgbox-cli',
     version          = version,
     packages         = find_packages(),
     py_modules       = ['main'],
@@ -26,8 +26,8 @@ setup(
 
     install_requires=[
         'tgbox<2',
-        'click==8.2.1',
-        'enlighten==1.12.0'
+        'click==8.3.0',
+        'enlighten==1.14.1'
     ],
     extras_require={
         'fast': ['tgbox[fast]<2']
