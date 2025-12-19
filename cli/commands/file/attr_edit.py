@@ -145,12 +145,11 @@ def file_attr_edit(ctx, filters, attribute, local_only):
             original_file_name = dlbf.file_name
             try:
                 if isinstance(box, tgbox.api.local.DecryptedLocalBox):
-                    await dlbf.update_metadata(changes=changes, dlb=box)
                     prefix = '[LB Only]'
+                    await dlbf.update_metadata(changes=changes, dlb=box)
                 else:
-                    await dlbf.update_metadata(changes=changes, drb=box)
                     prefix = '[LB & RB]'
-
+                    await dlbf.update_metadata(changes=changes, drb=box)
                 echo(
                     f'[X1b]{prefix}[X] ([W0b]{dlbf.id}[X]) {original_file_name} '
                     f'<= [Y0b]{attribute}[X]')
