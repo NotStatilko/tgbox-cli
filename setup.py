@@ -26,7 +26,7 @@ setup(
 
     install_requires=[
         'tgbox<2',
-        'click==8.3.0',
+        'click==8.3.1',
         'enlighten==1.14.1'
     ],
     extras_require={
