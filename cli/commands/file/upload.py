@@ -526,7 +526,7 @@ def file_upload(
             if not file_path:
                 remote_path = current_path.resolve()
             else:
-                if flat_path:
+                if flat_path or not Path(file_path).exists():
                     remote_path = Path(file_path) / current_path.name
                 else:
                     r = str(current_path.resolve().parent)
