@@ -10,13 +10,17 @@ from ...config import tgbox
 
 
 @cli_group.command()
-@click.argument('source_target', nargs=2)
+@click.argument('source_target', nargs=-1)
 @click.option(
     '--local-only','-l', is_flag=True,
     help='If specified, will move files ONLY in LocalBox'
 )
+@click.option(
+    '--reset-directory','-r', is_flag=True,
+    help='If specified, will reset directory to original'
+)
 @click.pass_context
-def dir_rename(ctx, source_target, local_only):
+def dir_rename(ctx, source_target, local_only, reset_directory):
     """
     Rename Directory and move files under it
 
@@ -35,12 +39,26 @@ def dir_rename(ctx, source_target, local_only):
     else:
         check_ctx(ctx, dlb=True, drb=True)
 
-    from_ = str(tgbox.tools.make_general_path(source_target[0]))
-    to = tgbox.tools.make_general_path(source_target[1])
-
-    if from_ == str(to):
-        echo('\n[Y0b]x Paths are the same.[X]\n')
+    if not source_target:
+        echo(
+            '[R0b]x You should specify[X] [W0b]/source/path[X] '
+            '[R0b]and[X] [W0b]/target/path[X]')
         return
+
+    if len(source_target) == 1 and not reset_directory:
+        echo(
+            '[R0b]x You should specify[X] [W0b]/target/path[W0b] '
+            '[R0b]or[X] [G0b]--reset-directory[X]')
+        return
+
+    from_ = str(tgbox.tools.make_general_path(source_target[0]))
+
+    if not reset_directory:
+        to = tgbox.tools.make_general_path(source_target[1])
+
+        if from_ == str(to):
+            echo('\n[Y0b]x Paths are the same.[X]\n')
+            return
 
     if not (directory := tgbox.sync(ctx.obj.dlb.get_directory(from_))):
         echo(f'\n[Y0b]x Directory[X] [W0b]{from_}[X] [Y0b]is not found.[X]\n')
@@ -59,17 +77,18 @@ def dir_rename(ctx, source_target, local_only):
         if isinstance(dlbf, tgbox.api.local.DecryptedLocalBoxDirectory):
             continue
 
-        if (dest_path := str(dlbf.file_path).removeprefix(from_)):
-            dest_path = tgbox.tools.make_general_path(dest_path)
+        if not reset_directory:
+            if (dest_path := str(dlbf.file_path).removeprefix(from_)):
+                dest_path = tgbox.tools.make_general_path(dest_path)
 
-            if dest_path.parts[0] in ('/', '\\'):
-                dest_path = type(dest_path)(*dest_path.parts[1:])
+                if dest_path.parts[0] in ('/', '\\'):
+                    dest_path = type(dest_path)(*dest_path.parts[1:])
 
-            dest_path = to / dest_path
-        else:
-            dest_path = to
+                dest_path = to / dest_path
+            else:
+                dest_path = to
 
-        if str(dest_path) == str(dlbf._original_file_path):
+        if reset_directory or str(dest_path) == str(dlbf._original_file_path):
             new_path = None # Same as original
 
         elif str(dest_path) == str(dlbf._file_path):
