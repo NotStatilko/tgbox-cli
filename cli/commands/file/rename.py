@@ -1,11 +1,9 @@
 import click
 
-from pathlib import Path
-
 from ..group import cli_group
 from ..helpers import check_ctx
 from ...tools.terminal import echo
-from ...tools.other import format_dxbf, sync_async_gen
+from ...tools.other import sync_async_gen
 from ...tools.convert import filters_to_searchfilter
 from ...config import tgbox
 
@@ -109,43 +107,45 @@ def file_rename(ctx, filters, local_only, new_file_name, reset_file_name):
         sf = filters_to_searchfilter(filters)
     except IndexError: # Incorrect filters format
         echo('[R0b]Incorrect filters! Make sure to use format filter=value[X]')
+        return
     except KeyError as e: # Unknown filters
         echo(f'[R0b]Filter "{e.args[0]}" doesn\'t exists[X]')
+        return
+
+    if not filters:
+        echo('\n[R0b]You didn\'t specified any search filter.[X]')
+        return
+
+    to_rename = ctx.obj.dlb.search_file(sf, cache_preview=False)
+
+    dlbf, dlbf_rename = None, None
+    for dlbf in sync_async_gen(to_rename):
+        if dlbf_rename:
+            echo('[Y0b]\nFilters must return exactly One file![X]\n')
+            return
+        dlbf_rename = dlbf
+
+    if dlbf is None:
+        echo('\n[R0b]No files found by specified filters.[X]')
+        return
+
+    if not new_file_name and not reset_file_name:
+        new_file_name = click.prompt('Please enter new file name')
+
+    previous_name = dlbf.file_name
+    new_file_name = None if reset_file_name else new_file_name.encode()
+
+    coro = dlbf_rename.update_metadata(
+        changes = {'file_name': new_file_name},
+        drb = None if local_only else ctx.obj.drb
+    )
+    tgbox.sync(coro)
+
+    if new_file_name is None:
+        new_file_name = dlbf.file_name
     else:
-        if not filters:
-            echo('\n[R0b]You didn\'t specified any search filter.[X]')
-            return
-
-        to_rename = ctx.obj.dlb.search_file(sf, cache_preview=False)
-
-        dlbf, dlbf_rename = None, None
-        for dlbf in sync_async_gen(to_rename):
-            if dlbf_rename:
-                echo('[Y0b]\nFilters must return exactly One file![X]\n')
-                return
-            dlbf_rename = dlbf
-
-        if dlbf is None:
-            echo('\n[R0b]No files found by specified filters.[X]')
-            return
-
-        if not new_file_name and not reset_file_name:
-            new_file_name = click.prompt('Please enter new file name')
-
-        previous_name = dlbf.file_name
-        new_file_name = None if reset_file_name else new_file_name.encode()
-
-        coro = dlbf_rename.update_metadata(
-            changes = {'file_name': new_file_name},
-            drb = None if local_only else ctx.obj.drb
-        )
-        tgbox.sync(coro)
-
-        if new_file_name is None:
-            new_file_name = dlbf.file_name
-        else:
-            new_file_name = new_file_name.decode()
-        echo(
-            f'[G0b]Successfully renamed [X]"[Y0b]{previous_name}[X]" '
-            f'-> "[W0b]{new_file_name}[X]"'
-        )
+        new_file_name = new_file_name.decode()
+    echo(
+        f'[G0b]Successfully renamed [X]"[Y0b]{previous_name}[X]" '
+        f'-> "[W0b]{new_file_name}[X]"'
+    )
