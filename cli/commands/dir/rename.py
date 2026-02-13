@@ -27,7 +27,7 @@ def dir_rename(ctx, source_target, local_only):
     manually before using this command.
     \b
     Example:\b
-        tgbox-cli dir-rename /home/user/Downloads/Rock \ \b
+        tgbox-cli dir-rename /home/user/Downloads/Rock\b
             /home/user/Music/Rock
     """
     if local_only:
@@ -39,11 +39,11 @@ def dir_rename(ctx, source_target, local_only):
     to = tgbox.tools.make_general_path(source_target[1])
 
     if from_ == str(to):
-        echo('[R0b]x Paths are the same.[X]')
+        echo('\n[Y0b]x Paths are the same.[X]\n')
         return
 
     if not (directory := tgbox.sync(ctx.obj.dlb.get_directory(from_))):
-        echo(f'[R0b]x Directory[X] [W0b]{from_}[X] [R0b]is not found.[X]')
+        echo(f'\n[Y0b]x Directory[X] [W0b]{from_}[X] [Y0b]is not found.[X]\n')
         return
 
     echo(f'\n@ Moving files... \r', nl=False)
@@ -51,8 +51,8 @@ def dir_rename(ctx, source_target, local_only):
 
     for dlbf in sync_async_gen(ctx.obj.dlb.contents(directory.part_id)):
         if len(coros) == 100:
-            tgbox.sync(gather(*coros))
-            total_processed += len(coros)
+            processed = tgbox.sync(gather(*coros))
+            total_processed += len(tuple(r for r in processed if r == True))
             coros.clear()
             echo(f'@ Moving files... ([Y0b]{total_processed}[X])\r', nl=False)
 
@@ -71,20 +71,45 @@ def dir_rename(ctx, source_target, local_only):
 
         if str(dest_path) == str(dlbf._original_file_path):
             new_path = None # Same as original
+
+        elif str(dest_path) == str(dlbf._file_path):
+            echo(
+               f'[Y0b]| Can not move [W0b]{dlbf.file_name}[X][W0]'
+               f'(ID {dlbf.id})[X] to[X] [W0b]{directory}[X] [Y0]'
+               '(Already in this Directory)[X]'
+            )
+            continue
         else:
             new_path = str(dest_path).encode()
 
-        coro = dlbf.update_metadata(
-            changes = {'file_path': new_path},
-            drb = None if local_only else ctx.obj.drb
-        )
-        coros.append(coro)
+        async def update_metadata(dlbf, new_path):
+            try:
+                await dlbf.update_metadata(
+                    changes = {'file_path': new_path},
+                    drb = None if local_only else ctx.obj.drb
+                )
+                return True
+            except tgbox.errors.FingerprintExists:
+                if new_path is None:
+                    new_path_i = '<original dir>'
+                else:
+                    new_path_i = new_path.decode()
+
+                echo(
+                   f'[R0b]x Can not move [W0b]{dlbf.file_name}[X][W0]'
+                   f'(ID {dlbf.id})[X] to[X] [W0b]{new_path_i}[X] [R0]'
+                   '(There is already file with same name)[X]'
+                )
+
+        coros.append(update_metadata(dlbf, new_path))
 
     if coros:
-        tgbox.sync(gather(*coros))
-        total_processed += len(coros)
+        processed = tgbox.sync(gather(*coros))
+        total_processed += len(tuple(r for r in processed if r == True))
 
     if not total_processed:
         echo(f'@ [Y0b]No files to move under[X] [W0b]{from_}[X]')
     else:
         echo(f'@ [G0b]{total_processed}[X] files moved [W0b]successfully![X]')
+
+    echo('')
