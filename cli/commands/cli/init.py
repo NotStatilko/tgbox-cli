@@ -73,14 +73,14 @@ def cli_init(ctx, bash, fish, zsh, win_cmd):
                 )
                 echo(eval_commands)
 
-                init_commands = 'eval "$(!!)" || true && clear'
+                init_commands = 'eval "$(!!)" 2>/dev/null'
             else:
                 init_commands = (
                     f'export TGBOX_CLI_SK=(tgbox-cli sk-gen)'
                     f'{autocomplete}'
                 )
         echo(
-            '\n[Y0b]Welcome to the TGBOX-CLI![X]\n\n'
-            'Copy & Paste commands below to your shell:\n\n'
-           f'[W0b]{init_commands}[X]\n'
+            '\n# [Y1bi]Welcome to the TGBOX-CLI![X]\n'
+            '# [W1b]Copy & Paste commands below to your shell:[X]\n\n'
+           f'[G1b]{init_commands}[X]\n'
         )
