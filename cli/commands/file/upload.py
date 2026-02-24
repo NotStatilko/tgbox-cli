@@ -2,6 +2,7 @@ import click
 
 from re import search as re_search
 from os.path import getsize
+from hashlib import sha256
 from asyncio import gather
 from copy import deepcopy
 from pathlib import Path
@@ -20,6 +21,12 @@ from ..helpers import ctx_require
 from ...tools.other import sync_async_gen
 from ...tools.terminal import echo, ProgressBar
 from ...config import tgbox
+
+
+# Size of one block of Multipart file upload. We will compute
+# sha256 over it, so it must be fairly small. MUST BE DIVISIBLE
+# by 64_000_000 (64MB)
+MULTIPART_BLOCK_SIZE = 256_000_000
 
 
 class LimitedReader:
@@ -194,7 +201,7 @@ def _check_filters(filters, current_path: Path):
 
 async def _get_push_action(
         ctx, file, file_path, cattrs, force_update,
-        no_update, no_thumb
+        no_update, no_thumb, is_multipart
     ):
     """Helper-function for the .push_file() coroutine"""
 
@@ -214,15 +221,20 @@ async def _get_push_action(
         file_action = (ctx.obj.drb.push_file, {})
 
     # File re-uploading (or updating) if file size differ
-    elif force_update or not no_update and dlbf and dlbf.size != file_size:
-        if not dlbf: # Wasn't uploaded before
-            file_action = (ctx.obj.drb.push_file, {})
-        else:
-            drbf = await ctx.obj.drb.get_file(dlbf.id)
-            file_action = (ctx.obj.drb.update_file, {'rbf': drbf})
+    elif is_multipart or (force_update or not no_update and\
+        dlbf and dlbf.size != file_size):
+            # If 'is_multipart' and file was sent here, it means that
+            # checksums differ, and we should omit checking by file
+            # size, as it will be same.
+
+            if not dlbf: # Wasn't uploaded before
+                file_action = (ctx.obj.drb.push_file, {})
+            else:
+                drbf = await ctx.obj.drb.get_file(dlbf.id)
+                file_action = (ctx.obj.drb.update_file, {'rbf': drbf})
     else:
         # Ignore upload if file exists and wasn't changed
-        name = file.name if isinstance(file, IOBase) else file
+        name = getattr(file, 'name', file)
         echo(f'[Y0b]| File {name} is already uploaded. Skipping...[X]')
         return
 
@@ -264,7 +276,7 @@ async def _get_push_action(
 
 async def _push_wrapper(
         ctx, file, file_path, cattrs, force_update,
-        no_update, no_thumb, use_slow_upload):
+        no_update, no_thumb, use_slow_upload, is_multipart):
     """
     This function selects correct push action (either
     updates file or uploads it) and wraps it.
@@ -275,7 +287,8 @@ async def _push_wrapper(
         cattrs=cattrs,
         force_update=force_update,
         no_update=no_update,
-        no_thumb=no_thumb
+        no_thumb=no_thumb,
+        is_multipart=is_multipart
     )
     if file_action is None:
         return
@@ -335,22 +348,17 @@ async def _push_wrapper(
     help='Max amount of bytes we will upload at the same time, default=200000000',
 )
 @click.option(
-    '--multi-file-size',
-    type = click.IntRange(
-        32_000_000, # V 32MB here is reserved for possible Metadata
-        tgbox.defaults.UploadLimits.PREMIUM - 32_000_000
-    ),
+    '--force-multipart', is_flag=True,
     help = (
-        'Max amount of bytes that we can upload as single file. If file size is > '
-        '--multi-file-size, will split one file by {--multi-file-size} parts and '
-        'upload them separately')
+        'If specified, will force multipart upload even if we can '
+        'use regular upload (file is smaller than Telegram limits)')
 )
 @ctx_require(dlb=True, drb=True)
 def file_upload(
         ctx, target, file_path, flat_path, cattrs,
         no_update, force_update, use_slow_upload,
         no_thumb, calculate, max_workers, max_bytes,
-        multi_file_size):
+        force_multipart):
     """
     Upload TARGET by specified filters to the Box
 
@@ -446,15 +454,15 @@ def file_upload(
     else:
         parsed_cattrs = None
 
-                               # We can omit request to drb if --calculate
-    if multi_file_size is None and not calculate:
+   # We can omit request to drb if --calculate, as we don't use
+    if not calculate: # upload_limit there at all
         has_premium = tgbox.sync(ctx.obj.drb.tc.get_me()).premium
         if has_premium:
-            multi_file_size = tgbox.defaults.UploadLimits.PREMIUM
+            upload_limit = tgbox.defaults.UploadLimits.PREMIUM
         else:
-            multi_file_size = tgbox.defaults.UploadLimits.DEFAULT
+            upload_limit = tgbox.defaults.UploadLimits.DEFAULT
 
-        multi_file_size -= 32_000_000 # Subtract 32MB to leave space
+        upload_limit -= 32_000_000 # Subtract 32MB to leave space
                                       # for possible Metadata
 
     for path in target:
@@ -548,20 +556,40 @@ def file_upload(
                 current_workers = max_workers - 1
                 current_bytes = max_bytes - current_path_size
 
-            # --- Multi upload --------------------------------- #
-            actual_file_size = current_path_size
-            parts = ceil(current_path_size / multi_file_size)
-            multipart_total_b = tgbox.tools.int_to_bytes(parts)
+            multipart_forced = ( # Force only if file is larger than 1 block
+                force_multipart and current_path_size > MULTIPART_BLOCK_SIZE
+            )
+            if multipart_forced or current_path_size > upload_limit:
+                # --- Multi upload --------------------------------- #
+                MULTIPART_VERSION = tgbox.tools.int_to_bytes(1)
 
-            multipart_offset = 0
-            previous_part_id = b'genesis'
+                actual_file_size = current_path_size
+                parts = ceil(current_path_size / MULTIPART_BLOCK_SIZE)
+                multipart_total_b = tgbox.tools.int_to_bytes(parts)
 
-            if current_path_size > multi_file_size:
+                multipart_offset = 0
+                previous_part_id = b'genesis'
+
                 for p in range(parts):
                     # will be True if part is already uploaded
                     skip_upload = False
+                    p_bytes = tgbox.tools.int_to_bytes(p)
 
                     part_path = remote_path.parent / f'{remote_path.name}-{p}'
+                    part_hash = sha256()
+
+                    with open(current_path, 'rb') as f:
+                        f.seek(current_path_size - actual_file_size)
+
+                        for _ in range(MULTIPART_BLOCK_SIZE // 64_000_000):
+                            part_hash.update(f.read(64_000_000))
+
+                    # Although CAttrs are already protected with FileKey,
+                    # I want to add extra protection so checksums will
+                    # differ on each unique Box, even if bytes are same
+                    part_hash.update(p_bytes)
+                    part_hash.update(ctx.obj.dlb.mainkey.key)
+                    part_hash = part_hash.digest()
 
                     if not force_update:
                         dlbf_sf = tgbox.tools.SearchFilter(
@@ -574,14 +602,7 @@ def file_upload(
                         except StopIteration:
                             pass # Proceed with upload
                         else:
-                            p_bytes = tgbox.tools.int_to_bytes(p)
-                            if dlbf.cattrs and dlbf.cattrs['__mp_part'] == p_bytes:
-                                echo(f'[Y0b]| Part {p} of file {remote_path.name} '
-                                    'is already uploaded. Skipping...[X]')
-
-                                previous_part_id = tgbox.tools.int_to_bytes(dlbf.id)
-                                skip_upload = True
-                            else:
+                            if not dlbf.cattrs:
                                 echo(
                                     f'[R0b]x File "{part_path}" is already exists in '
                                     'your LocalBox, so upload of Multipart file is '
@@ -590,12 +611,25 @@ def file_upload(
                                     'this error after broken multipart upload)![X]')
                                 break # will jump to continue
 
-                    if actual_file_size >= multi_file_size:
-                        actual_size = multi_file_size
+                            if '__mp_ver' not in dlbf.cattrs:
+                                # If __mp_ver NOT in cattrs, this is the first
+                                # implemenation of Multipart files. In this
+                                # case, we will force update them to latest Ver
+                                pass
+
+                            elif dlbf.cattrs and dlbf.cattrs['__mp_hash'] == part_hash:
+                                echo(f'[Y0b]| Part {p} of file {remote_path.name} '
+                                    'is already uploaded. Skipping...[X]')
+
+                                previous_part_id = tgbox.tools.int_to_bytes(dlbf.id)
+                                skip_upload = True
+
+                    if actual_file_size >= MULTIPART_BLOCK_SIZE:
+                        actual_size = MULTIPART_BLOCK_SIZE
                     else:
                         actual_size = actual_file_size
 
-                    actual_file_size -= multi_file_size
+                    actual_file_size -= MULTIPART_BLOCK_SIZE
 
                     if not skip_upload:
                         cattrs = {} if not parsed_cattrs else deepcopy(parsed_cattrs)
@@ -603,11 +637,13 @@ def file_upload(
                         cattrs['__mp_previous'] = previous_part_id
                         cattrs['__mp_part'] = tgbox.tools.int_to_bytes(p)
                         cattrs['__mp_total'] = multipart_total_b
+                        cattrs['__mp_ver'] = MULTIPART_VERSION
+                        cattrs['__mp_hash'] = part_hash
 
                         file = LimitedReader(
                             file_path=current_path,
                             start_pos=multipart_offset,
-                            stop_pos=(multipart_offset + multi_file_size),
+                            stop_pos=(multipart_offset + MULTIPART_BLOCK_SIZE),
                             actual_size = actual_size
                         )
                         pw = _push_wrapper(
@@ -618,16 +654,17 @@ def file_upload(
                             force_update = force_update,
                             no_update = no_update,
                             no_thumb = no_thumb,
-                            use_slow_upload = use_slow_upload
+                            use_slow_upload = use_slow_upload,
+                            is_multipart = True
                         )
                         drbf = tgbox.sync(pw)
                         previous_part_id = tgbox.tools.int_to_bytes(drbf.id)
                         file.close()
 
-                    multipart_offset += multi_file_size
+                    multipart_offset += MULTIPART_BLOCK_SIZE
 
                 continue
-            # -------------------------------------------------- #
+                # -------------------------------------------------- #
 
             pw = _push_wrapper(
                 ctx = ctx,
@@ -637,7 +674,8 @@ def file_upload(
                 force_update = force_update,
                 no_update = no_update,
                 no_thumb = no_thumb,
-                use_slow_upload = use_slow_upload
+                use_slow_upload = use_slow_upload,
+                is_multipart = False
             )
             to_upload.append(pw)
 

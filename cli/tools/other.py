@@ -219,8 +219,10 @@ def format_dxbf_multipart(
         if len(dxbf_list) != total:
             MULTIPART_VALID = False
 
-        cattrs.pop('__mp_previous')
-        cattrs.pop('__mp_part')
+        cattrs.pop('__mp_previous', None)
+        cattrs.pop('__mp_part', None)
+        cattrs.pop('__mp_ver', None)
+        cattrs.pop('__mp_hash', None)
     else:
         cattrs = None
 

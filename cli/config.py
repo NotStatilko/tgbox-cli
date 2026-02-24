@@ -27,7 +27,10 @@ if not all((API_ID, API_HASH)):
 # Some CustomAttributes are only functional and should not be
 # visible to User, e.g Multipart ones. Here we list CAttrs
 # that will be hidden in format_dxbf/format_dxbf_multipart
-HIDDEN_CATTRS = ['__mp_total', '__mp_previous', '__mp_part']
+HIDDEN_CATTRS = [
+    '__mp_total', '__mp_previous', '__mp_part',
+    '__mp_ver', '__mp_hash'
+]
 
 # _TGBOX_CLI_COMPLETE will be present in env variables
 # only on source code scan by the autocompletion. To
