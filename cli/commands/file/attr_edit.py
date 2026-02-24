@@ -11,7 +11,7 @@ from ...tools.other import sync_async_gen
 from ...config import tgbox
 
 
-@cli_group.command()
+@cli_group.command(hidden=True)
 @click.argument('filters', nargs=-1)
 @click.option(
     '--attribute', '-a', required=True,
