@@ -253,18 +253,15 @@
         do so by [W0b]splitting file in parts[X] and uploading each
         one of them separately, seamlessly for You.
 
-        Part size is typically a bit less than a maximum
-        allowed file size on your Account, ~[W0b]2GB[X] or ~[W0b]4GB[X].
-
         You can [W0b]continue[X] uploading or downloading parts
         [W0b]even after abrupt/error stop[X]. If you downloaded
         or uploaded 3 parts, you will [W0b]continue from 4th[W0b].
 
         [C1b]Multipart Upload[X] will be [W0b]automatically enabled[X] if
         size of your file [Y0b]exceeds[X] [W0b]2GB[X] or [W0b]4GB[X] (Premium),
-        you can override chunk size with special option
-        [G0b]--multi-file-size[X], but it is [Y0b]not[X] recommended
-        unless You [W0b]understand[X] what You are doing.
+        you can force the [W0b]Multipart upload[X] with the flag
+        [G0b]--force-multipart[X], though your file should
+        be [W0b]larger that minimum block size[X] (256MB).
 
         [M0b]|||||| Searching Files ||||||[X]
 
@@ -350,6 +347,24 @@
         [B0b]file-download[X] will [W0b]auto download[X] missing blocks. You
         can also specify the [G0b]--offset[X] if necessary.
 
+        [M0b]|||||| Renaming Files ||||||[X]
+
+        You have an option to easily rename any files by the
+        specified [C0b]filters[X]:
+            [W1b]tgbox-cli file-rename id=777 -n "New name"[X]
+
+        [M0b]|||||| Renaming Directories ||||||[X]
+
+        You have an option to easily rename any directory. Just
+        specify the source and target, e.g:
+            [W1b]tgbox-cli dir-rename /home/user /home/non[X]
+
+        [Y0b]Please note[X] that we need to "move" all files attached
+        to this directory when you issue [B0b]dir-rename[X], and
+        this can be [Y0b]slow[X] and [Y0b]pricey[X] on requests to Telegram
+        servers. You can use [G0b]--local-only[X] to apply
+        changes only on [W0b]Local Box[X].
+
         [M0b]|||||| Removing Files ||||||[X]
 
         You can easily remove uploaded files by [C0b]filters[X]:
@@ -362,30 +377,6 @@
         can also remove files [W0b]from the LocalBox only[X] by
         using the [G0b]--local[X] flag and force TGBOX-CLI to
         [W0b]ask you[X] for each file by the [G0b]--ask-before-remove[X].
-
-        [M0b]|||||| Changing File attributes ||||||[X]
-
-        The default file attributes (not CAttrs) is the
-        [W0b]mime[X], [W0b]file_name[X], [W0b]file_path[X], ... etc. Probably the
-        most interesting is the last two, as you may want
-        to [W0b]change name or path[X] of some file(s). This can
-        be easily done via [B0b]file-attr-edit[X] command:
-            [W1b]tgbox-cli file-attr-edit mime=image -a\[X]
-                [W1b]file_path=/home/non/Pictures[X]
-
-        As you can see, selecting is done by [C0b]filters[X]. We
-        specify attribute with the [G0b]--attribute[X] ([G0b]-a[X])
-        option. The example above will [W0b]change[X] the
-        file path of every image in your Box [W0b]to[X]
-        [W0b]/home/non/Pictures[X] path. We can say that
-        this is something like "[W0b]move to[X]" operation.
-
-        [X1b]! The same can be done with the "file_name"[X]
-
-        [Y0b]Please note[X] that we [W0b]can not[X] change file after it
-        was uploaded, so we store your updates encrypted
-        in the Telegram File "[W0b]caption[X]". It has limit of
-        [W0b]~2KB[X] and [W0b]~4KB[X] for Telegram [W0b]Premium[X] users.
 
     [W0b]EXTENDED USAGE[X]
         [M0b]|||||| Box Sharing ||||||[X]
@@ -632,7 +623,7 @@
         [G0b]--hide-folder[X] flag was specified on the
         TGBOX-CLI [B0b]file-download[X] command.
 
-        Probably, the [W0b]only[X] useful for end-users one
+        Probably, the [W0b]only[X] useful for the typical Users one
         is the [B1b]DOWNLOAD_PATH[X] default. You can change
         it from [W0b]DownloadsTGBOX[X] folder to any other:
             [W1b]tgbox-cli box-default DOWNLOAD_PATH=Downloads[X]
