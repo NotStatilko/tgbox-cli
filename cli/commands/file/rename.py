@@ -12,7 +12,7 @@ from ...config import tgbox
 @click.argument('filters', nargs=-1)
 @click.option(
     '--local-only','-l', is_flag=True,
-    help='If specified, will remove file ONLY from LocalBox'
+    help='If specified, will rename file ONLY in LocalBox'
 )
 @click.option(
     '--new-file-name','-n', help='New name of the file'
@@ -125,27 +125,60 @@ def file_rename(ctx, filters, local_only, new_file_name, reset_file_name):
             return
         dlbf_rename = dlbf
 
-    if dlbf is None:
+    if dlbf_rename is None:
         echo('\n[R0b]No files found by specified filters.[X]')
         return
 
     if not new_file_name and not reset_file_name:
         new_file_name = click.prompt('Please enter new file name')
 
-    previous_name = dlbf.file_name
-    new_file_name = None if reset_file_name else new_file_name.encode()
+    if dlbf_rename.cattrs and '__mp_total' in dlbf_rename.cattrs:
+        name = dlbf.file_name.split('-')
 
-    coro = dlbf_rename.update_metadata(
-        changes = {'file_name': new_file_name},
-        drb = None if local_only else ctx.obj.drb
-    )
-    tgbox.sync(coro)
+        if len(name) > 1:
+            name = '-'.join(name[:-1])
+        else:
+            name = name[0]
 
-    if new_file_name is None:
-        new_file_name = dlbf.file_name
+        sf = tgbox.tools.SearchFilter(file_name=name,
+            scope=str(dlbf_rename.file_path), cattrs={
+                '__mp_part': b'',
+                '__mp_previous': b'',
+                '__mp_total': b''
+            }
+        )
+        dlbf_parts = []
+        for dlbf in enumerate(sync_async_gen(ctx.obj.dlb.search_file(sf))):
+            dlbf_parts.append(dlbf[1])
+
+        total = tgbox.tools.bytes_to_int(dlbf[1].cattrs['__mp_total'])
+        if len(dlbf_parts) != total:
+            echo(
+                '\n[R0b]We can\'t rename Multipart file because of '
+               f'missing parts. Expected {total}, got {len(dlbf_parts)}[X]')
+            return
     else:
-        new_file_name = new_file_name.decode()
-    echo(
-        f'[G0b]Successfully renamed [X]"[Y0b]{previous_name}[X]" '
-        f'-> "[W0b]{new_file_name}[X]"'
-    )
+        dlbf_parts = [dlbf_rename]
+
+    for i, dlbf in enumerate(dlbf_parts):
+        previous_name = dlbf.file_name
+        file_name = None if reset_file_name else new_file_name.encode()
+
+        if file_name is not None and len(dlbf_parts) > 1:
+            file_name += b'-' + str(i).encode()
+
+        coro = dlbf.update_metadata(
+            changes = {'file_name': file_name},
+            drb = None if local_only else ctx.obj.drb
+        )
+        tgbox.sync(coro)
+
+        if file_name is None:
+            dlbf = tgbox.sync(ctx.obj.dlb.get_file(dlbf.id))
+            file_name = dlbf.file_name
+        else:
+            file_name = file_name.decode()
+        echo(
+            f'[G0b]Successfully renamed [X]"[Y0b]{previous_name}[X]" '
+            f'-> "[W0b]{file_name}[X]"'
+        )

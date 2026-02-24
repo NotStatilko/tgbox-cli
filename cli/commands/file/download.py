@@ -464,7 +464,12 @@ def file_download(
             file_name += Path(dxbf.file_name).suffix
         else:
             if multipart_file:
-                file_name = '-'.join(dxbf.file_name.split('-')[:-1])
+                file_name = dxbf.file_name.split('-')
+
+                if len(file_name) > 1:
+                    file_name = '-'.join(file_name[:-1])
+                else:
+                    file_name = file_name[0]
             else:
                 file_name = dxbf.file_name
 

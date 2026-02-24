@@ -227,7 +227,12 @@ def format_dxbf_multipart(
         cattrs = None
 
     file_name = dxbf_list[0].file_name
-    file_name = '-'.join(file_name.split('-')[:-1])
+    file_name = file_name.split('-')
+
+    if len(file_name) > 1:
+        file_name = '-'.join(file_name[:-1])
+    else:
+        file_name = file_name[0]
 
     file_path_valid = True
 

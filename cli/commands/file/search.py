@@ -231,7 +231,13 @@ def file_search(
 
             if not split_multipart and is_dlbf:
                 if bfi.cattrs and '__mp_part' in bfi.cattrs:
-                    name = '-'.join(bfi.file_name.split('-')[:-1])
+                    name = bfi.file_name.split('-')
+
+                    if len(name) > 1:
+                        name = '-'.join(name[:-1])
+                    else:
+                        name = name[0]
+
                     # The most straightforward solution to get all parts of
                     # one multipart file is to search for them. We can NOT
                     # just blindly assume that "next file is the next part";
