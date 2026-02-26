@@ -537,14 +537,15 @@ def file_upload(
                 if flat_path:
                     remote_path = Path(file_path) / current_path.name
                 else:
-                    r = str(path.resolve())
+                    if path.is_dir():
+                        r = str(path.resolve())
+                    else:
+                        r = str(path.resolve().parent)
+
                     r = str(current_path).removeprefix(r)
                     r = r.lstrip('/\\')
 
-                    if current_path.is_dir():
-                        remote_path = file_path / r
-                    else:
-                        remote_path = file_path / r / current_path.name
+                    remote_path = file_path / r
 
             current_path_size = getsize(current_path)
             current_bytes -= current_path_size
