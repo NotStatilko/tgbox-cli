@@ -28,10 +28,14 @@ from ...config import tgbox
     '--force', is_flag=True,
     help='If specified, will not ask for confirmation'
 )
+@click.option(
+    '--remote','-r', is_flag=True,
+    help='If specified, will search for files in RemoteBox'
+)
 @click.pass_context
 def file_remove(
         ctx, filters, local_only, ask_before_remove,
-        remove_empty_directories, force):
+        remove_empty_directories, force, remote):
     """Remove files by selected filters
 
     \b
@@ -132,11 +136,15 @@ def file_remove(
             if not click.confirm('Are you TOTALLY sure?'):
                 return
 
-        to_remove = ctx.obj.dlb.search_file(sf, cache_preview=False)
+        if remote:
+            to_remove = ctx.obj.drb.search_file(sf, cache_preview=False,
+                return_imported_as_erbf=True)
+        else:
+            to_remove = ctx.obj.dlb.search_file(sf, cache_preview=False)
 
         if ask_before_remove:
-            for dlbf in sync_async_gen(to_remove):
-                file_path = str(Path(dlbf.file_path) / dlbf.file_name)
+            for dxbf in sync_async_gen(to_remove):
+                file_path = str(Path(dxbf.file_path) / dxbf.file_name)
                 echo(f'@ [R0b]Removing[X] [W0b]Box[X]({file_path})')
 
                 while True:
@@ -145,11 +153,19 @@ def file_remove(
                         'Are you TOTALLY sure? ([y]es | [n]o | [i]nfo | [e]xit)'
                     )
                     if choice.lower() in ('yes','y'):
-                        tgbox.sync(dlbf.delete(remove_empty_directories=\
-                            remove_empty_directories))
+                        if issubclass(dxbf.__class__, tgbox.api.remote.EncryptedRemoteBoxFile):
+                            tgbox.sync(dxbf.delete())
+                        else:
+                            tgbox.sync(dxbf.delete(remove_empty_directories=\
+                                remove_empty_directories))
 
-                        if not local_only:
-                            drbf = tgbox.sync(ctx.obj.drb.get_file(dlbf.id))
+                        if issubclass(dxbf.__class__, tgbox.api.remote.EncryptedRemoteBoxFile):
+                            if (dlbf := tgbox.sync(ctx.obj.dlb.get_file(dxbf.id))):
+                                tgbox.sync(dlbf.delete(remove_empty_directories=\
+                                    remove_empty_directories))
+
+                        elif not local_only:
+                            drbf = tgbox.sync(ctx.obj.drb.get_file(dxbf.id))
                             tgbox.sync(drbf.delete())
                         echo('')
                         break
@@ -157,23 +173,30 @@ def file_remove(
                         echo('')
                         break
                     elif choice.lower() in ('info','i'):
-                        echo(format_dxbf(dlbf).rstrip())
+                        echo(format_dxbf(dxbf).rstrip())
                     elif choice.lower() in ('exit','e'):
                         return
                     else:
                         echo('[R0b]Invalid choice, try again[X]')
         else:
-            echo('\n[Y0b]Searching for LocalBox files[X]...')
-            to_remove = [dlbf for dlbf in sync_async_gen(to_remove)]
+            box = 'RemoteBox' if remote else 'LocalBox'
+
+            echo(f'\n[Y0b]Searching for any files in your {box}[X]...')
+            to_remove = [dxbf for dxbf in sync_async_gen(to_remove)]
 
             if not to_remove:
-                echo('[Y0b]No files to remove was found.[X]')
+                echo(f'[Y0b]No files to remove was found in {box}[X]')
+                if not remote:
+                    echo('[Y0b]You can use --remote to search in Remote[X]\n')
             else:
                 echo(f'[W0b]Removing[X] [R0b]{len(to_remove)}[X] [W0b]files[X]...')
 
-                delete_files = ctx.obj.dlb.delete_files(
-                    *to_remove, rb=(None if local_only else ctx.obj.drb),
-                    remove_empty_directories=remove_empty_directories
-                )
+                if remote:
+                    delete_files = ctx.obj.drb.delete_files(*to_remove, lb=ctx.obj.dlb)
+                else:
+                    delete_files = ctx.obj.dlb.delete_files(
+                        *to_remove, rb=(None if local_only else ctx.obj.drb),
+                        remove_empty_directories=remove_empty_directories
+                    )
                 tgbox.sync(delete_files)
                 echo('[G0b]Done.[X]')
