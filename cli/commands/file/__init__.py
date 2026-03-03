@@ -3,6 +3,7 @@ from . import search
 from . import download
 from . import rename
 from . import move
+from . import tag
 from . import open as open_
 from . import attr_edit
 from . import remove
