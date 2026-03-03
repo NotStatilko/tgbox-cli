@@ -347,6 +347,19 @@
         [B0b]file-download[X] will [W0b]auto download[X] missing blocks. You
         can also specify the [G0b]--offset[X] if necessary.
 
+        [M0b]|||||| Adding tags to Files ||||||[X]
+
+        [W0b]You can add tag[X] with some data to [W0b]any[X] file in your Box
+        with the [B0b]file-tag[X] command, selecting target files with
+        [C0b]filters[X]. In TGBOX Protocol they are called [W0b]CAtrrs[X]:
+            [W1b]tgbox-cli file-tag scope=/home/user/Music/Painkiller[X]
+                [W1b]--tag "rating" --data "10"[X]
+
+        To [W0b]remove tag[X] from file, you can use [G0b]--remove-tag[X]
+        instead of [G0b]--data[X]. E.g:
+            [W1b]tgbox-cli file-tag scope=/home/user/Music/Painkiller[X]
+                [W1b]--tag "rating" --remove-tag[X]
+
         [M0b]|||||| Renaming Files ||||||[X]
 
         You have an option to easily rename any files by the
@@ -686,9 +699,7 @@
         new Chat we form the "[W0b]CONFIG[X]" file and attach some
         CAttrs to it (i.e [W0b]Chat name[X] / [W0b]Description[X]). Actual
         file contains [W0b]zero[X] bytes. We upload this file under
-        the [W0b]__BOX_CHAT__/__CONFIG__[X] Directory. Obviously,
-        later we will have chance to [W0b]change[X] Chat CONFIG
-        via manipulating CAttrs with [B0b]file-attr-edit[X].
+        the [W0b]__BOX_CHAT__/__CONFIG__[X] Directory.
 
         When user "[W0b]send Message[X]" to Chat, we form a zero-
         bytes File with random name and attach CAttrs
