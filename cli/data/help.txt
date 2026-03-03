@@ -351,7 +351,7 @@
 
         [W0b]You can add tag[X] with some data to [W0b]any[X] file in your Box
         with the [B0b]file-tag[X] command, selecting target files with
-        [C0b]filters[X]. In TGBOX Protocol they are called [W0b]CAtrrs[X]:
+        [C0b]filters[X]. In TGBOX Protocol they are called [W0b]CAttrs[X]:
             [W1b]tgbox-cli file-tag scope=/home/user/Music/Painkiller[X]
                 [W1b]--tag "rating" --data "10"[X]
 
@@ -619,7 +619,7 @@
 
         The command above will change [B1b]METADATA_MAX[X] to the
         [W0b]max allowed[X] by TGBOX protocol value -- [W0b]16MiB[X]-1. This
-        will allow you to attach some crazy-big CAtrrs &
+        will allow you to attach some crazy-big CAttrs &
         [Y0b]will disable[X] file sharing with peoples which
         Box has [B1b]METADATA_MAX[X] lower than yours. Typically
         you [W0b]don't want this[X] as it's almost useless.
