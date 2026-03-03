@@ -182,6 +182,13 @@ def file_search(
                    f"""RequestKey: {req_key}"""
                 )
                 echo(formatted)
+            else:
+                if not tgbox.sync(ctx.obj.dlb.get_file(xrbf.id)):
+                    f = format_dxbf(xrbf)
+
+                    if tgbox.sync(ctx.obj.dlb.get_file(fingerprint=xrbf.fingerprint)):
+                        f = f'{f}* [R0]Duplicate! Remove this file from Remote[X]'
+                    echo(f.rstrip('\n'))
         echo('')
         return
 
