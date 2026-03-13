@@ -5,7 +5,7 @@ This is a [**CLI**](https://en.wikipedia.org/wiki/Command-line_interface) implem
 **TGBOX-CLI** supports all features of the `tgbox` protocol, adding additional ones\
 like basic **Encrypted Chat** and support for **unlimited file size** (4GB+) uploads.
 
-![List of the TGBOX-CLI commands](https://github.com/user-attachments/assets/85039ac8-80c7-4cf3-a86d-0912100cdd7e)
+![List of the TGBOX-CLI commands](pyinstaller/preview.png)
 ## Installation
 
 ### Install with PIP
@@ -29,7 +29,7 @@ pip install ./tgbox-cli[fast]
 ### Builds
 
 We provide [**GitHub actions repository**](https://github.com/NotStatilko/tgbox-cli-build/releases) designed specifically to build the `tgbox-cli` executables. You\
-can either get your builds there, of consult the **Manual Build** chapter.
+can either get your builds there, or consult the **Manual Build** chapter.
 
 #### Manual Build
 
