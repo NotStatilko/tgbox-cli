@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import click
 import cli
 
@@ -29,7 +30,7 @@ def safe_tgbox_cli_startup():
         cli.tools.terminal.echo(e.format_message())
     except Exception as e:
         if isinstance(e, (click.Abort, cli.commands.errors.CheckCTXFailed)):
-            exit(0)
+            sys.exit(0)
 
         traceback = ''.join(format_exception(
             e,
@@ -48,7 +49,7 @@ def safe_tgbox_cli_startup():
             cli.tools.terminal.echo(f'[R0b]{e}[X]')
 
         cli.tools.terminal.echo('')
-        exit(1)
+        sys.exit(1)
 
 if __name__ == '__main__':
     safe_tgbox_cli_startup()
