@@ -30,7 +30,7 @@ SCRIPT_LOGO = DATA_FOLDER / 'logo.ico'
 MAIN_SCRIPT = Path.cwd() / '.tgbox_cli_wrapper.py'
 
 TGBOX_CLI_DATA: dict = {
-    str(Path('tgbox_cli', 'data', i.name)): str(i)
+    str(Path('cli', 'data', i.name)): str(i)
     for i in DATA_FOLDER.glob('*')
 }
 PYINSTALLER_DATA.update(TGBOX_CLI_DATA)
