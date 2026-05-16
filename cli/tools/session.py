@@ -5,10 +5,11 @@ used to store your Box keys per terminal.
 
 from typing import Optional
 from tempfile import gettempdir
-from pickle import loads, dumps
+from json import loads, dumps
 
 from base64 import urlsafe_b64encode
 from hashlib import sha256
+from hmac import HMAC, compare_digest
 from pathlib import Path
 
 from ..config import tgbox
@@ -50,7 +51,7 @@ class Session:
 
         folder.mkdir(exist_ok=True, parents=True)
         try:
-            if folder.stat().st_size != 16895: # oct(16895) is 0o777
+            if folder.stat().st_mode != 16895: # oct(16895) is 0o777
                 # Allow different users to store
                 # sessions in this folder (UNIX)
                 folder.chmod(0o777)
@@ -65,12 +66,29 @@ class Session:
         session_id = sha256(session_key.encode() + self.enc_key)
         session_id = urlsafe_b64encode(session_id.digest()[:18])
 
-        self.file = folder / f'sess_{session_id.decode()}'
+        self.file = folder / f'sess_1_{session_id.decode()}'
         try:
-            state = open(self.file,'rb').read()
-            if not state:
+            encrypted_state = open(self.file,'rb').read()
+            if not encrypted_state:
                 raise FileNotFoundError
-            self.state = loads(AES(self.enc_key).decrypt(state))
+
+            hmac_f = encrypted_state[-32:]
+            encrypted_state = encrypted_state[:-32]
+
+            hmackey = HMAC(b'hmac+' + self.enc_key, digestmod='sha256')
+            hmackey.update(encrypted_state)
+
+            if not compare_digest(hmackey.digest(), hmac_f):
+                self.file.unlink()
+
+                raise ValueError(
+                    'Session file is broken and/or was tampered with! We will '
+                    'remove your current session. Please, try again. Reset your '
+                    'TGBOX_CLI_SK env var!! Open tgbox-cli in new Terminal.'
+                )
+
+            self.state = loads(AES(self.enc_key).decrypt(encrypted_state))
+
         except FileNotFoundError:
             self.file.touch()      # chmod is effectively ignored by Windows, so
             self.file.chmod(0o600) # this basically works only on a POSIX-like
@@ -97,5 +115,11 @@ class Session:
 
     def commit(self):
         """Will write changes made to self.state to file in encrypted form"""
-        encrypted_state = AES(self.enc_key).encrypt(dumps(self.state))
+        state_data = dumps(self.state, separators=(',',':')).encode()
+        encrypted_state = AES(self.enc_key).encrypt(state_data)
+
+        hmackey = HMAC(b'hmac+' + self.enc_key, digestmod='sha256')
+        hmackey.update(encrypted_state)
+        encrypted_state += hmackey.digest()
+
         open(self.file,'wb').write(encrypted_state)

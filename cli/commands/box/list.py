@@ -53,8 +53,8 @@ def box_list(ctx, remote, prefix):
 
         if ctx.obj.session['CURRENT_BOX'] is None:
             echo(
-                '[R0b]You didn\'t opened any box yet. Use[X] '
-                '[W0b]box-open[X] [R0b]command firstly.[X]')
+                '[Y0b]You didn\'t opened any box yet. Use[X] '
+                '[W0b]box-open[X] [Y0b]command firstly.[X]')
         else:
             echo(
                 '\n[W0b]You\'re using Box[X] '
@@ -67,7 +67,7 @@ def box_list(ctx, remote, prefix):
                     name = Path(box_path).name
 
                     dlb = tgbox.sync(tgbox.api.get_localbox(
-                        tgbox.keys.BaseKey(basekey), box_path)
+                        tgbox.keys.BaseKey.decode(basekey), box_path)
                     )
                     salt = urlsafe_b64encode(dlb.box_salt.salt).decode()
 

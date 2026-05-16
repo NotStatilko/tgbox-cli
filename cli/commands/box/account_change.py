@@ -37,7 +37,7 @@ def box_account_change(ctx, number):
         )
         tgbox.sync(tc.connect())
 
-        basekey = tgbox.keys.BaseKey(
+        basekey = tgbox.keys.BaseKey.decode(
             ctx.obj.session['BOX_LIST'][ctx.obj.session['CURRENT_BOX']][1]
         )
         tgbox.sync(ctx.obj.dlb.replace_session(basekey, tc))
