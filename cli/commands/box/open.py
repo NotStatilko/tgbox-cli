@@ -78,11 +78,11 @@ def box_open(ctx, box_path, phrase, s, n, p, r, l, no_switch):
         echo('[C0b]Updating local data...[X] ', nl=False)
 
         localbox_path = str(Path(dlb.tgbox_db.db_path).resolve())
-        box_data = [localbox_path, basekey.key]
+        box_data = [localbox_path, basekey.encode()]
 
         for other_box_data in ctx.obj.session['BOX_LIST']:
             if other_box_data == box_data:
-                echo('[R0b]This Box is already opened[X]')
+                echo('[Y0b]This Box is already opened[X]')
                 break
         else:
             ctx.obj.session['BOX_LIST'].append(box_data)

@@ -60,29 +60,29 @@ class Objects:
 def check_ctx(ctx, *, session=False, account=False, dlb=False, drb=False):
     if session and not ctx.obj.session:
         echo(
-            '[R0b]You should run[X] [W0b]tgbox-cli '
-            'cli-init[X] [R0b]firstly.[X]'
+            '[Y0b]You should run[X] [W0b]tgbox-cli '
+            'cli-init[X] [Y0b]firstly.[X]'
         )
         raise CheckCTXFailed('Failed on "session" requirement')
 
     if account and not ctx.obj.account:
         echo(
-          '[R0b]You should run [X][W0b]tgbox-cli '
-          'account-connect [X][R0b]firstly.[X]'
+          '[Y0b]You should run [X][W0b]tgbox-cli '
+          'account-connect [X][Y0b]firstly.[X]'
         )
         raise CheckCTXFailed('Failed on "account" requirement')
 
     if dlb and not ctx.obj.dlb:
         echo(
-            '[R0b]You didn\'t connected box yet. Use[X] '
-            '[W0b]box-open[X] [R0b]command.[X]'
+            '[Y0b]You didn\'t connected box yet. Use[X] '
+            '[W0b]box-open[X] [Y0b]command.[X]'
         )
         raise CheckCTXFailed('Failed on "dlb" requirement')
 
     if drb and not ctx.obj.drb:
         echo(
-            '[R0b]You didn\'t connected box yet. Use[X] '
-            '[W0b]box-open[X] [R0b]command.[X]'
+            '[Y0b]You didn\'t connected box yet. Use[X] '
+            '[W0b]box-open[X] [Y0b]command.[X]'
         )
         raise CheckCTXFailed('Failed on "drb" requirement')
 
@@ -125,6 +125,6 @@ def select_remotebox(ctx, number: int, prefix: str):
                     chat, ctx.obj.account)
                 break
     if not erb:
-        echo(f'[R0b]RemoteBox by number={number} not found.[X]')
+        echo(f'[R0b]RemoteBox by number={number} is not found.[X]')
     else:
         return erb

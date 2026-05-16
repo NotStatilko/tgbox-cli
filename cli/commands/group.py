@@ -126,7 +126,7 @@ def cli_group(ctx):
             ctx.obj._drb = None
         else:
             dlb = tgbox.sync(tgbox.api.get_localbox(
-                tgbox.keys.BaseKey(basekey), box_path)
+                tgbox.keys.BaseKey.decode(basekey), box_path)
             )
             drb = tgbox.api.get_remotebox(dlb, proxy=proxy)
 

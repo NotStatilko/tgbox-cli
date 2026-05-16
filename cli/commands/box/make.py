@@ -101,7 +101,7 @@ def box_make(ctx, box_path, box_name, box_salt, phrase, s, n, p, r, l):
 
     localbox_path = str(Path(dlb.tgbox_db.db_path).resolve())
 
-    ctx.obj.session['BOX_LIST'].append([localbox_path, basekey.key])
+    ctx.obj.session['BOX_LIST'].append([localbox_path, basekey.encode()])
     ctx.obj.session['CURRENT_BOX'] = len(ctx.obj.session['BOX_LIST']) - 1
 
     ctx.obj.session.commit()
