@@ -73,10 +73,8 @@ else: # Not Autocomplete, regular usage
 
     from platform import system
     from os.path import expandvars
-    from pathlib import Path
 
-    CURDIR = Path(__file__).parent
-    CLI_VER = open(CURDIR / 'version.txt').read().strip()
+    CLI_VER = open(PACKAGE / 'version.txt').read().strip()
 
     if tgbox.crypto.FAST_ENCRYPTION:
         from cryptography import __version__ as CRYPTOGRAPHY_VERSION
