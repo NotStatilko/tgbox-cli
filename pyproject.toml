@@ -39,7 +39,8 @@ Issues = "https://github.com/NotStatilko/tgbox-cli/issues"
 
 [tool.setuptools]
 packages = [
-    "cli", "cli.commands",
+    "cli", "cli.tools",
+    "cli.commands",
     "cli.commands.account",
     "cli.commands.box",
     "cli.commands.chat",
