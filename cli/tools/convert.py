@@ -55,6 +55,17 @@ def filters_to_searchfilter(filters: tuple):
             current_filter = exclude if current else include
             filter = filter.split('=',1)
 
+            if filter[0] == 'imported':
+                data = filter[1].lower().strip()
+
+                if data in ('true', '1'):
+                    filter[1] = True
+
+                elif data in ('false', '0'):
+                    filter[1] = False
+                else:
+                    raise ValueError('"imported" filter must be either true or false')
+
             if filter[0] == 'cattrs':
                 filter[1] = parse_str_cattrs(filter[1])
 
