@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tgbox-cli"
+dynamic = ["version"]
+description = "Command Line Interface to the TGBOX"
+readme = "README.md"
+
+license = "MIT"
+authors = [{ name = "NotStatilko", email = "thenonproton@pm.me" }]
+requires-python = ">=3.9"
+
+classifiers = [
+    "Programming Language :: Python :: 3.9",
+    "Operating System :: OS Independent"
+]
+dependencies = [
+    "tgbox<2",
+    "click==8.5.0",
+    "enlighten==1.14.1",
+    "phrasegen==1.1.2"
+]
+keywords = ['Telegram', 'Cloud-Storage', 'Cloud', 'Non-official']
+
+[project.scripts]
+tgbox-cli = "main:safe_tgbox_cli_startup"
+
+[project.optional-dependencies]
+fast = [
+    "tgbox[fast]<2"
+]
+
+[project.urls]
+Homepage = "https://github.com/NotStatilko/tgbox-cli"
+Issues = "https://github.com/NotStatilko/tgbox-cli/issues"
+
+
+[tool.setuptools]
+packages = [
+    "cli", "cli.commands",
+    "cli.commands.account",
+    "cli.commands.box",
+    "cli.commands.chat",
+    "cli.commands.cli",
+    "cli.commands.dir",
+    "cli.commands.file",
+    "cli.commands.help",
+    "cli.commands.hidden",
+    "cli.commands.logfile",
+]
+py-modules = ["main"]
+
+[tool.setuptools.package-data]
+tgbox = ["cli/data"]
+
+[tool.setuptools.dynamic]
+version = { file = "cli/version.txt" }

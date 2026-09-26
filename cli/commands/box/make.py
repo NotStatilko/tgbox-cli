@@ -1,7 +1,7 @@
 import click
+import phrasegen
 
 from pathlib import Path
-
 from ..group import cli_group
 from ..helpers import ctx_require
 from ...tools.terminal import echo, clear_console
@@ -49,7 +49,28 @@ def box_make(ctx, box_path, box_name, box_salt, phrase, s, n, p, r, l):
     """Create the new Box (Remote & Local)"""
 
     if not phrase and click.confirm('Generate passphrase for you?'):
-        phrase = tgbox.keys.Phrase.generate(6).phrase.decode()
+        p_gen = phrasegen.Generator()
+
+        supported_langs = ''
+        for l in p_gen.supported_languages:
+            supported_langs += f'[W0b]{l}[X], '
+
+        supported_langs = supported_langs.rstrip(', ')
+
+        echo(
+            f'\nWe support {len(p_gen.supported_languages)} '
+            f'languages: {supported_langs}'
+        )
+        while True:
+            choice = click.prompt('\nSelect language code')
+            choice = choice.lower().strip()
+
+            if choice in p_gen.supported_languages:
+                break
+
+            echo('[R0b]x There\'s no such code. Try again[X]')
+
+        phrase = getattr(p_gen, choice).generate(6)
         echo(f'\nYour Phrase is [M0b]{phrase}[X]')
 
         echo(

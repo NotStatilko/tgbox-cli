@@ -55,7 +55,7 @@ def box_info(ctx, bytesize_total):
         if total_local != total_remote:
             status = f'[R0b]Out of sync! ({total_local}L/{total_remote}R)[X]'
         else:
-            status = '[G0b]Seems synchronized[X]'
+            status = '[G0b]In sync[X] [G0](by file count)[X]'
 
         total_local = f'[W0b]{total_local}[X]'
         total_remote = f'[W0b]{total_remote}[X]'
