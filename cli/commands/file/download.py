@@ -2,11 +2,11 @@ import click
 
 from time import sleep
 from pathlib import Path
-from asyncio import get_event_loop, gather
+from asyncio import to_thread
 
 from ..group import cli_group
 from ..helpers import check_ctx
-from ...tools.other import sync_async_gen
+from ...tools.other import sync_async_gen, gather
 from ...tools.terminal import echo, ProgressBar
 from ...tools.convert import filters_to_searchfilter
 from ...config import tgbox
@@ -77,7 +77,6 @@ def process_regular_download(
             return
         list_.clear()
 
-    loop = get_event_loop()
     current_workers = max_workers
     current_bytes = max_bytes
 
@@ -138,9 +137,8 @@ def process_regular_download(
                 offset = 0 # Reset offset for the next files
 
             if show or locate:
-                to_gather_files.append(loop.run_in_executor(
-                    None, lambda: _launch(outpath.name, locate, drbf.size))
-                )
+                launch_f = lambda: _launch(outpath.name, locate, drbf.size)
+                tgbox.sync(to_thread(launch_f), create_task=True)
 
             check = (current_workers <= 0, current_bytes <= 0)
             if any(check) and to_gather_files:
@@ -164,7 +162,6 @@ def process_multipart_download(
     # multipart file part and skip its parts. Here
     # we will cache ids to omit
     multipart_ignore = set()
-    loop = get_event_loop()
 
     while True:
         drbf, file_name, outfile = yield
@@ -240,10 +237,8 @@ def process_multipart_download(
         outpath = open(outfile, 'ab+')
 
         if show or locate:
-            launch_coro = loop.run_in_executor(None,
-                lambda: _launch(outpath.name, locate, total_size)
-            )
-            loop.create_task(launch_coro)
+            launch_f = lambda: _launch(outpath.name, locate, total_size)
+            tgbox.sync(to_thread(launch_f), create_task=True)
 
         for dlbf in parts[multipart_offset:]:
             # File name that will be displayed on Progressbar

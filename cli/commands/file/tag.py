@@ -1,13 +1,12 @@
 import click
 
 from time import sleep
-from asyncio import gather
 
 from ..group import cli_group
 from ..helpers import ctx_require
 from ...tools.terminal import echo
 from ...tools.convert import filters_to_searchfilter
-from ...tools.other import sync_async_gen
+from ...tools.other import sync_async_gen, gather
 from ...config import tgbox
 
 

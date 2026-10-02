@@ -3,7 +3,6 @@ import click
 from re import search as re_search
 from os.path import getsize
 from hashlib import sha256
-from asyncio import gather
 from copy import deepcopy
 from pathlib import Path
 from os import SEEK_SET
@@ -18,7 +17,7 @@ from ...tools.convert import (
 )
 from ..group import cli_group
 from ..helpers import ctx_require
-from ...tools.other import sync_async_gen
+from ...tools.other import sync_async_gen, gather
 from ...tools.terminal import echo, ProgressBar
 from ...config import tgbox
 

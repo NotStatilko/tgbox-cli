@@ -1,12 +1,11 @@
 import click
 
-from asyncio import gather
 from pathlib import Path
 
 from ..group import cli_group
 from ..helpers import ctx_require
 from ...tools.terminal import echo
-from ...tools.other import format_dxbf, sync_async_gen
+from ...tools.other import format_dxbf, sync_async_gen, gather
 from ...config import tgbox
 
 

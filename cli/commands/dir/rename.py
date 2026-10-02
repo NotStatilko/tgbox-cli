@@ -1,11 +1,9 @@
 import click
 
-from asyncio import gather
-
 from ..group import cli_group
 from ..helpers import check_ctx
 from ...tools.terminal import echo
-from ...tools.other import sync_async_gen
+from ...tools.other import sync_async_gen, gather
 from ...config import tgbox
 
 

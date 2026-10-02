@@ -3,6 +3,7 @@
 import click
 
 from typing import Optional, Union, AsyncGenerator, List
+from asyncio import gather as _gather
 from datetime import datetime, timedelta
 from base64 import urlsafe_b64encode
 from copy import deepcopy
@@ -390,3 +391,15 @@ def format_dxbf_message(
        f' {time}\n |\n [W0b]@[X] Message: {text}'
     )
     return colorize(formatted)
+
+
+async def gather(*args, **kwargs):
+    """
+    This is a helper coroutine that will defer execution of the
+    asyncio.gather(). As we work with internal loop of the
+    tgbox.sync(), we can't just create a gather() coro, because
+    it creates tasks on IT'S OWN LOOP immediately! LoopX can't
+    run tasks from LoopY. Instead, use this gather(). Here,
+    asyncio.gather() will receive tgbox.sync() loop.
+    """
+    return await _gather(*args, **kwargs)
